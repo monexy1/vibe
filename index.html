@@ -1,1437 +1,1208 @@
-```html
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
 
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>Vibe</title>
-
-    <style>
-
-        * {
-            box-sizing: border-box;
-        }
-
-        :root {
-            --bg: #0b1020;
-            --panel: #151b2f;
-            --panel2: #1c2440;
-            --text: #ffffff;
-            --muted: #98a2c0;
-            --accent: #8b5cf6;
-            --accent2: #6d28d9;
-            --border: rgba(255,255,255,0.08);
-            --bubble: #27304f;
-            --bubble-mine: #8b5cf6;
-        }
-
-        html,
-        body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            overflow: hidden;
-        }
-
-        button,
-        input,
-        textarea,
-        select {
-            font: inherit;
-        }
-
-        button {
-            border: none;
-            cursor: pointer;
-        }
-
-        /* =========================
-           ВХОД
-        ========================= */
-
-        .auth {
-            width: 420px;
-            max-width: calc(100% - 20px);
-            margin: 60px auto;
-            padding: 35px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            border-radius: 26px;
-            text-align: center;
-            box-shadow: 0 25px 70px rgba(0,0,0,0.35);
-        }
-
-        .auth-logo {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 12px;
-            border-radius: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background:
-                linear-gradient(
-                    135deg,
-                    #8b5cf6,
-                    #ec4899,
-                    #06b6d4
-                );
-            font-size: 34px;
-            font-weight: bold;
-        }
-
-        .auth h1 {
-            margin: 0;
-            font-size: 44px;
-        }
-
-        .auth p {
-            color: var(--muted);
-        }
-
-        .auth input {
-            width: 100%;
-            margin: 7px 0;
-            padding: 14px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            background: var(--panel2);
-            color: white;
-            outline: none;
-        }
-
-        .main-button,
-        .register-button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 10px;
-            border-radius: 14px;
-            color: white;
-        }
-
-        .main-button {
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--accent),
-                    var(--accent2)
-                );
-        }
-
-        .register-button {
-            background: var(--panel2);
-        }
-
-        /* =========================
-           МЕССЕНДЖЕР
-        ========================= */
-
-        .messenger {
-            display: none;
-            width: 100%;
-            height: 100dvh;
-        }
-
-        .layout {
-            width: 100%;
-            height: 100%;
-            display: grid;
-            grid-template-columns: 320px 1fr;
-        }
-
-        /* =========================
-           ЛЕВАЯ ПАНЕЛЬ
-        ========================= */
-
-        .sidebar {
-            height: 100%;
-            padding: 16px;
-            background: var(--panel);
-            border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .sidebar-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 0;
-        }
-
-        .brand-icon {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 14px;
-            background:
-                linear-gradient(
-                    135deg,
-                    #8b5cf6,
-                    #ec4899,
-                    #06b6d4
-                );
-            font-weight: bold;
-        }
-
-        .brand h2 {
-            margin: 0;
-        }
-
-        .account-name {
-            color: var(--muted);
-            font-size: 12px;
-            margin-top: 3px;
-            max-width: 130px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .profile-button {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
-            border-radius: 14px;
-            background: var(--panel2);
-            color: white;
-            border: 1px solid var(--border);
-        }
-
-        .search-box {
-            margin-bottom: 8px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 13px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            background: var(--panel2);
-            color: white;
-            outline: none;
-        }
-
-        .search-box input:focus {
-            border-color: var(--accent);
-        }
-
-        .search-results {
-            max-height: 260px;
-            overflow-y: auto;
-        }
-
-        .section-title {
-            color: var(--muted);
-            font-size: 11px;
-            text-transform: uppercase;
-            margin: 10px 4px 7px;
-            letter-spacing: 0.08em;
-        }
-
-        .friends-list {
-            flex: 1;
-            overflow-y: auto;
-            min-height: 0;
-        }
-
-        .friend,
-        .search-user {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            padding: 9px;
-            margin: 4px 0;
-            border-radius: 13px;
-        }
-
-        .friend {
-            cursor: pointer;
-        }
-
-        .friend:hover,
-        .friend.active,
-        .search-user:hover {
-            background: var(--panel2);
-        }
-
-        .avatar {
-            width: 42px;
-            height: 42px;
-            min-width: 42px;
-            object-fit: cover;
-            border-radius: 13px;
-            background:
-                linear-gradient(
-                    135deg,
-                    #8b5cf6,
-                    #ec4899
-                );
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .user-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .user-name {
-            font-weight: bold;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        .user-login {
-            color: var(--muted);
-            font-size: 11px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        .add-button,
-        .remove-button,
-        .logout-button {
-            width: auto;
-            padding: 7px 9px;
-            border-radius: 10px;
-            color: white;
-            flex-shrink: 0;
-        }
-
-        .add-button {
-            background: var(--accent);
-        }
-
-        .remove-button,
-        .logout-button {
-            background: #ef4444;
-        }
-
-        .empty-side {
-            color: var(--muted);
-            text-align: center;
-            padding: 20px 8px;
-            font-size: 12px;
-        }
-
-        .sidebar-bottom {
-            border-top: 1px solid var(--border);
-            margin-top: 8px;
-            padding-top: 9px;
-        }
-
-        .logout-button {
-            width: 100%;
-            margin-top: 7px;
-        }
-
-        /* =========================
-           ЧАТ
-        ========================= */
-
-        .chat {
-            min-width: 0;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg);
-        }
-
-        .chat-header {
-            min-height: 72px;
-            padding: 12px 18px;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            background: var(--panel);
-        }
-
-        .chat-user {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-        }
-
-        .chat-user-name {
-            font-weight: bold;
-        }
-
-        .chat-user-status {
-            color: var(--muted);
-            font-size: 11px;
-            margin-top: 3px;
-        }
-
-        .messages {
-            flex: 1;
-            min-height: 0;
-            overflow-y: auto;
-            padding: 18px;
-        }
-
-        .message {
-            width: fit-content;
-            max-width: min(65%, 620px);
-            margin: 7px 0;
-            padding: 11px 14px;
-            background: var(--bubble);
-            border-radius: 18px 18px 18px 6px;
-            word-break: break-word;
-        }
-
-        .message.mine {
-            margin-left: auto;
-            background: var(--bubble-mine);
-            border-radius: 18px 18px 6px 18px;
-        }
-
-        .message.square {
-            border-radius: 7px;
-        }
-
-        .message.neon {
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow:
-                0 0 18px rgba(139,92,246,0.2);
-        }
-
-        .message-time {
-            margin-top: 5px;
-            font-size: 10px;
-            opacity: 0.6;
-        }
-
-        .empty-chat {
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            color: var(--muted);
-            padding: 20px;
-        }
-
-        /* =========================
-           ПАНЕЛЬ СООБЩЕНИЯ
-        ========================= */
-
-        .message-input {
-            position: relative;
-            display: flex;
-            gap: 7px;
-            padding: 10px;
-            border-top: 1px solid var(--border);
-            background: var(--panel);
-        }
-
-        .emoji-button {
-            width: 44px;
-            min-width: 44px;
-            border-radius: 13px;
-            background: var(--panel2);
-            color: white;
-        }
-
-        .message-input input {
-            flex: 1;
-            min-width: 0;
-            padding: 12px;
-            border-radius: 13px;
-            border: 1px solid var(--border);
-            background: var(--panel2);
-            color: white;
-            outline: none;
-        }
-
-        .send-button {
-            width: 110px;
-            min-width: 110px;
-            border-radius: 13px;
-            color: white;
-            font-weight: bold;
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--accent),
-                    var(--accent2)
-                );
-        }
-
-        /* =========================
-           ЭМОДЗИ
-        ========================= */
-
-        .emoji-panel {
-            display: none;
-            position: absolute;
-            left: 10px;
-            bottom: 65px;
-            width: 270px;
-            max-width: calc(100vw - 20px);
-            padding: 10px;
-            border-radius: 16px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.35);
-            grid-template-columns: repeat(6, 1fr);
-            gap: 5px;
-            z-index: 50;
-        }
-
-        .emoji-panel.show {
-            display: grid;
-        }
-
-        .emoji-item {
-            width: 100%;
-            min-width: 0;
-            padding: 7px 3px;
-            border-radius: 9px;
-            background: var(--panel2);
-            color: white;
-            font-size: 18px;
-        }
-
-        /* =========================
-           ПРОФИЛЬ
-        ========================= */
-
-        .modal {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 18px;
-            background: rgba(0,0,0,0.65);
-            z-index: 100;
-        }
-
-        .modal.show {
-            display: flex;
-        }
-
-        .modal-card {
-            width: 460px;
-            max-width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 22px;
-            border-radius: 22px;
-            background: var(--panel);
-            border: 1px solid var(--border);
-        }
-
-        .modal-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 18px;
-        }
-
-        .modal-top h2 {
-            margin: 0;
-        }
-
-        .close-button {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: var(--panel2);
-            color: white;
-        }
-
-        .profile-preview {
-            display: flex;
-            align-items: center;
-            gap: 13px;
-            margin-bottom: 18px;
-        }
-
-        .profile-preview .avatar {
-            width: 70px;
-            height: 70px;
-            min-width: 70px;
-            border-radius: 20px;
-        }
-
-        .profile-login {
-            color: var(--muted);
-            font-size: 13px;
-            margin-top: 3px;
-        }
-
-        .profile-form label {
-            display: block;
-            color: var(--muted);
-            font-size: 12px;
-            margin: 12px 0 5px;
-        }
-
-        .profile-form input,
-        .profile-form textarea,
-        .profile-form select {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--panel2);
-            color: white;
-            outline: none;
-        }
-
-        .profile-form textarea {
-            min-height: 90px;
-            resize: vertical;
-        }
-
-        .photo-label {
-            display: inline-block;
-            padding: 8px 10px;
-            border-radius: 10px;
-            background: var(--panel2);
-            cursor: pointer;
-        }
-
-        .save-profile {
-            width: 100%;
-            margin-top: 16px;
-            padding: 13px;
-            border-radius: 13px;
-            background:
-                linear-gradient(
-                    135deg,
-                    var(--accent),
-                    var(--accent2)
-                );
-            color: white;
-            font-weight: bold;
-        }
-
-        /* =========================
-           ТЕМЫ
-        ========================= */
-
-        body.theme-light {
-            --bg: #eef2ff;
-            --panel: #ffffff;
-            --panel2: #f1f5f9;
-            --text: #111827;
-            --muted: #64748b;
-            --border: rgba(15,23,42,0.08);
-            --bubble: #e2e8f0;
-            --bubble-mine: #8b5cf6;
-        }
-
-        body.theme-purple {
-            --bg: #160b2c;
-            --panel: #21123d;
-            --panel2: #2e1a52;
-            --accent: #a855f7;
-            --accent2: #7e22ce;
-            --bubble: #38245a;
-            --bubble-mine: #a855f7;
-        }
-
-        body.theme-ocean {
-            --bg: #061923;
-            --panel: #0b2530;
-            --panel2: #103746;
-            --accent: #06b6d4;
-            --accent2: #0284c7;
-            --bubble: #173f4e;
-            --bubble-mine: #0891b2;
-        }
-
-        body.theme-sunset {
-            --bg: #24100e;
-            --panel: #361815;
-            --panel2: #48211b;
-            --accent: #f97316;
-            --accent2: #e11d48;
-            --bubble: #55261f;
-            --bubble-mine: #f97316;
-        }
-
-        /* =========================
-           МОБИЛЬНАЯ ВЕРСИЯ
-        ========================= */
-
-        @media (max-width: 750px) {
-
-            .auth {
-                margin: 25px auto;
-                padding: 25px 18px;
-            }
-
-            .auth h1 {
-                font-size: 36px;
-            }
-
-            .layout {
-                grid-template-columns: 145px 1fr;
-            }
-
-            .sidebar {
-                padding: 9px;
-            }
-
-            .brand h2 {
-                font-size: 18px;
-            }
-
-            .account-name {
-                max-width: 80px;
-                font-size: 10px;
-            }
-
-            .brand-icon,
-            .profile-button {
-                width: 36px;
-                height: 36px;
-                min-width: 36px;
-                border-radius: 11px;
-            }
-
-            .search-box input {
-                padding: 10px;
-                font-size: 12px;
-            }
-
-            .friend,
-            .search-user {
-                padding: 7px 4px;
-                gap: 6px;
-            }
-
-            .avatar {
-                width: 34px;
-                height: 34px;
-                min-width: 34px;
-                border-radius: 10px;
-            }
-
-            .user-name {
-                font-size: 11px;
-            }
-
-            .user-login {
-                font-size: 9px;
-            }
-
-            .add-button,
-            .remove-button {
-                padding: 5px 6px;
-                font-size: 9px;
-            }
-
-            .logout-button {
-                padding: 8px;
-                font-size: 11px;
-            }
-
-            .chat-header {
-                min-height: 62px;
-                padding: 9px;
-            }
-
-            .chat-user-name {
-                font-size: 13px;
-            }
-
-            .chat-user-status {
-                font-size: 9px;
-            }
-
-            .messages {
-                padding: 9px;
-            }
-
-            .message {
-                max-width: 84%;
-                font-size: 13px;
-                padding: 9px 11px;
-            }
-
-            .message-input {
-                padding: 7px;
-            }
-
-            .emoji-button {
-                width: 38px;
-                min-width: 38px;
-            }
-
-            .message-input input {
-                font-size: 12px;
-                padding: 10px;
-            }
-
-            .send-button {
-                width: 72px;
-                min-width: 72px;
-                font-size: 10px;
-                padding: 8px 3px;
-            }
-
-            .emoji-panel {
-                width: 235px;
-                max-width: calc(100vw - 14px);
-                grid-template-columns: repeat(6, 1fr);
-            }
-
-            .emoji-item {
-                font-size: 17px;
-            }
-        }
-
-        @media (max-width: 400px) {
-
-            .layout {
-                grid-template-columns: 130px 1fr;
-            }
-
-            .sidebar {
-                padding: 7px;
-            }
-
-            .brand h2 {
-                font-size: 16px;
-            }
-
-            .account-name {
-                max-width: 65px;
-            }
-
-            .chat-header {
-                padding: 8px;
-            }
-
-            .send-button {
-                width: 66px;
-                min-width: 66px;
-                font-size: 9px;
-            }
-        }
-
-    </style>
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0"
+
+>
+
+<title>Vibe</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #0b1020;
+    color: white;
+    overflow: hidden;
+    --bg: #0b1020;
+    --panel: #151b2f;
+    --panel2: #202943;
+    --text: #ffffff;
+    --muted: #9aa5c1;
+    --accent: #8b5cf6;
+    --accent2: #6d28d9;
+    --bubble: #293352;
+    --border: rgba(255,255,255,0.08);
+}
+
+body.light {
+    --bg: #eef2ff;
+    --panel: #ffffff;
+    --panel2: #f1f5f9;
+    --text: #111827;
+    --muted: #64748b;
+    --accent: #7c3aed;
+    --accent2: #6d28d9;
+    --bubble: #e2e8f0;
+    --border: rgba(15,23,42,0.1);
+}
+
+body.ocean {
+    --bg: #061923;
+    --panel: #0b2530;
+    --panel2: #103746;
+    --text: #ffffff;
+    --muted: #93b7c4;
+    --accent: #06b6d4;
+    --accent2: #0284c7;
+    --bubble: #173f4e;
+}
+
+body.sunset {
+    --bg: #24100e;
+    --panel: #361815;
+    --panel2: #48211b;
+    --text: #ffffff;
+    --muted: #d7aaa2;
+    --accent: #f97316;
+    --accent2: #e11d48;
+    --bubble: #55261f;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+    border: none;
+}
+
+.auth {
+    width: 410px;
+    max-width: calc(100% - 20px);
+    margin: 60px auto;
+    padding: 32px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    text-align: center;
+}
+
+.logo {
+    width: 70px;
+    height: 70px;
+    margin: auto;
+    border-radius: 20px;
+    display: grid;
+    place-items: center;
+    background:
+        linear-gradient(
+            135deg,
+            #8b5cf6,
+            #ec4899,
+            #06b6d4
+        );
+    font-size: 34px;
+    font-weight: bold;
+}
+
+.auth h1 {
+    margin: 10px 0 5px;
+    font-size: 44px;
+}
+
+.auth p {
+    color: var(--muted);
+}
+
+.auth input {
+    width: 100%;
+    padding: 13px;
+    margin: 6px 0;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--panel2);
+    color: var(--text);
+    outline: none;
+}
+
+.primary,
+.secondary {
+    width: 100%;
+    padding: 13px;
+    margin-top: 8px;
+    border-radius: 13px;
+    color: white;
+}
+
+.primary {
+    background:
+        linear-gradient(
+            135deg,
+            var(--accent),
+            var(--accent2)
+        );
+}
+
+.secondary {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+}
+
+.app {
+    display: none;
+    width: 100%;
+    height: 100dvh;
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    width: 100%;
+    height: 100%;
+}
+
+.sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.side-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+}
+
+.brand-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    display: grid;
+    place-items: center;
+    background:
+        linear-gradient(
+            135deg,
+            #8b5cf6,
+            #ec4899,
+            #06b6d4
+        );
+    font-weight: bold;
+}
+
+.brand h2 {
+    margin: 0;
+}
+
+.account {
+    color: var(--muted);
+    font-size: 11px;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--panel2);
+    color: var(--text);
+}
+
+.search {
+    margin-top: 12px;
+}
+
+.search input {
+    width: 100%;
+    padding: 13px;
+    margin: 0;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--panel2);
+    color: var(--text);
+    outline: none;
+}
+
+.results {
+    max-height: 230px;
+    overflow-y: auto;
+}
+
+.section {
+    margin: 12px 3px 6px;
+    color: var(--muted);
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.friends {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.person {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 12px;
+}
+
+.person.clickable {
+    cursor: pointer;
+}
+
+.person.clickable:hover,
+.person.active {
+    background: var(--panel2);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 12px;
+    object-fit: cover;
+    display: grid;
+    place-items: center;
+    background:
+        linear-gradient(
+            135deg,
+            #8b5cf6,
+            #ec4899
+        );
+    font-weight: bold;
+}
+
+.info {
+    flex: 1;
+    min-width: 0;
+}
+
+.name {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.login {
+    color: var(--muted);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-action,
+.logout {
+    width: auto;
+    padding: 7px 9px;
+    border-radius: 9px;
+    color: white;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.friend-action {
+    background: var(--accent);
+}
+
+.remove,
+.logout {
+    background: #ef4444;
+}
+
+.side-bottom {
+    border-top: 1px solid var(--border);
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.logout {
+    width: 100%;
+}
+
+.chat {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: 100%;
+    background: var(--bg);
+}
+
+.chat-head {
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+}
+
+.chat-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.bubble {
+    width: fit-content;
+    max-width: min(65%, 620px);
+    padding: 11px 14px;
+    margin: 7px 0;
+    background: var(--bubble);
+    border-radius: 17px 17px 17px 5px;
+    word-break: break-word;
+}
+
+.bubble.mine {
+    margin-left: auto;
+    background: var(--accent);
+    border-radius: 17px 17px 5px 17px;
+}
+
+.bubble.square {
+    border-radius: 7px;
+}
+
+.bubble.neon {
+    border: 1px solid var(--accent);
+    box-shadow:
+        0 0 16px rgba(139,92,246,0.35);
+}
+
+.time {
+    font-size: 10px;
+    opacity: .6;
+    margin-top: 4px;
+}
+
+.empty {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    color: var(--muted);
+}
+
+.composer {
+    position: relative;
+    display: flex;
+    gap: 7px;
+    padding: 9px;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+}
+
+.composer input {
+    flex: 1;
+    min-width: 0;
+    padding: 12px;
+    margin: 0;
+    border-radius: 13px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    outline: none;
+}
+
+.emoji-btn,
+.send {
+    border-radius: 12px;
+    color: white;
+}
+
+.emoji-btn {
+    width: 42px;
+    min-width: 42px;
+    background: var(--panel2);
+}
+
+.send {
+    width: 105px;
+    background:
+        linear-gradient(
+            135deg,
+            var(--accent),
+            var(--accent2)
+        );
+}
+
+.emoji-panel {
+    display: none;
+    position: absolute;
+    left: 8px;
+    bottom: 62px;
+    width: 250px;
+    max-width: calc(100vw - 16px);
+    padding: 9px;
+    grid-template-columns:
+        repeat(6, minmax(0, 1fr));
+    gap: 5px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 15px;
+    box-shadow:
+        0 15px 40px rgba(0,0,0,.35);
+}
+
+.emoji-panel.show {
+    display: grid;
+}
+
+.emoji-panel button {
+    min-width: 0;
+    padding: 7px 3px;
+    background: var(--panel2);
+    border-radius: 8px;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgba(0,0,0,.65);
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.profile {
+    width: 450px;
+    max-width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--panel);
+    padding: 20px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
+.profile-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.profile-top h2 {
+    margin: 0;
+}
+
+.close {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: var(--panel2);
+    color: var(--text);
+}
+
+.preview {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin: 15px 0;
+}
+
+.preview .avatar {
+    width: 68px;
+    height: 68px;
+}
+
+.profile label {
+    display: block;
+    color: var(--muted);
+    font-size: 12px;
+    margin: 10px 0 4px;
+}
+
+.profile input,
+.profile textarea,
+.profile select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--panel2);
+    color: var(--text);
+    outline: none;
+}
+
+.profile textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.save {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    background:
+        linear-gradient(
+            135deg,
+            var(--accent),
+            var(--accent2)
+        );
+    color: white;
+    margin-top: 10px;
+}
+
+@media (max-width: 750px) {
+
+    .auth {
+        margin: 25px auto;
+        padding: 25px 18px;
+    }
+
+    .auth h1 {
+        font-size: 36px;
+    }
+
+    .layout {
+        grid-template-columns: 140px 1fr;
+    }
+
+    .sidebar {
+        padding: 8px;
+    }
+
+    .brand h2 {
+        font-size: 17px;
+    }
+
+    .account {
+        max-width: 70px;
+    }
+
+    .brand-logo,
+    .icon-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    .search input {
+        font-size: 11px;
+        padding: 9px;
+    }
+
+    .section {
+        font-size: 9px;
+    }
+
+    .person {
+        padding: 6px;
+        gap: 5px;
+    }
+
+    .avatar {
+        width: 32px;
+        height: 32px;
+        min-width: 32px;
+        border-radius: 9px;
+    }
+
+    .name {
+        font-size: 11px;
+    }
+
+    .login {
+        font-size: 9px;
+    }
+
+    .friend-action {
+        padding: 5px;
+        font-size: 9px;
+    }
+
+    .logout {
+        font-size: 10px;
+        padding: 7px;
+    }
+
+    .chat-head {
+        min-height: 60px;
+        padding: 8px;
+    }
+
+    .messages {
+        padding: 8px;
+    }
+
+    .bubble {
+        max-width: 84%;
+        font-size: 13px;
+        padding: 9px 11px;
+    }
+
+    .composer {
+        padding: 6px;
+    }
+
+    .emoji-btn {
+        width: 36px;
+        min-width: 36px;
+    }
+
+    .composer input {
+        font-size: 12px;
+        padding: 9px;
+    }
+
+    .send {
+        width: 70px;
+        font-size: 10px;
+    }
+
+    .emoji-panel {
+        width: 225px;
+    }
+}
+
+@media (max-width: 400px) {
+
+    .layout {
+        grid-template-columns: 125px 1fr;
+    }
+
+    .brand h2 {
+        font-size: 15px;
+    }
+
+    .account {
+        max-width: 58px;
+    }
+
+    .name {
+        font-size: 10px;
+    }
+
+    .login {
+        font-size: 8px;
+    }
+
+    .send {
+        width: 64px;
+        font-size: 9px;
+    }
+
+    .emoji-panel {
+        width: 215px;
+    }
+}
+
+</style>
 
 </head>
 
 <body>
 
-
-<!-- =========================
-     ЭКРАН ВХОДА
-========================= -->
-
 <div
     class="auth"
-    id="authScreen"
+    id="auth"
 >
 
-    <div class="auth-logo">
-        V
-    </div>
-
-    <h1>Vibe</h1>
-
-    <p>
-        Твой новый мессенджер
-    </p>
-
-    <input
-        id="login"
-        type="text"
-        placeholder="Логин"
-    >
-
-    <input
-        id="password"
-        type="password"
-        placeholder="Пароль"
-    >
-
-    <button
-        class="main-button"
-        onclick="loginAccount()"
-    >
-        Войти
-    </button>
-
-    <button
-        class="register-button"
-        onclick="window.location.href='register.html'"
-    >
-        Создать аккаунт
-    </button>
-
+```
+<div class="logo">
+    V
 </div>
 
+<h1>
+    Vibe
+</h1>
 
-<!-- =========================
-     МЕССЕНДЖЕР
-========================= -->
+<p>
+    Твой новый мессенджер
+</p>
+
+<input
+    id="login"
+    placeholder="Логин"
+>
+
+<input
+    id="password"
+    type="password"
+    placeholder="Пароль"
+>
+
+<button
+    class="primary"
+    onclick="loginAccount()"
+>
+    Войти
+</button>
+
+<button
+    class="secondary"
+    onclick="location.href='register.html'"
+>
+    Создать аккаунт
+</button>
+```
+
+</div>
 
 <div
-    class="messenger"
-    id="messenger"
+    class="app"
+    id="app"
 >
 
-    <div class="layout">
+```
+<div class="layout">
 
+    <aside class="sidebar">
 
-        <!-- =====================
-             SIDEBAR
-        ====================== -->
+        <div class="side-top">
 
-        <aside class="sidebar">
+            <div class="brand">
 
-            <div class="sidebar-top">
-
-                <div class="brand">
-
-                    <div class="brand-icon">
-                        V
-                    </div>
-
-                    <div>
-
-                        <h2>
-                            Vibe
-                        </h2>
-
-                        <div
-                            class="account-name"
-                            id="accountName"
-                        >
-                            @user
-                        </div>
-
-                    </div>
-
+                <div class="brand-logo">
+                    V
                 </div>
 
+                <div>
 
-                <button
-                    class="profile-button"
-                    onclick="openProfile()"
-                >
-                    👤
-                </button>
-
-            </div>
-
-
-            <div class="search-box">
-
-                <input
-                    id="search"
-                    type="text"
-                    placeholder="Поиск людей..."
-                    oninput="searchUsers()"
-                >
-
-            </div>
-
-
-            <div
-                class="search-results"
-                id="searchResults"
-            ></div>
-
-
-            <div class="section-title">
-                Мои чаты
-            </div>
-
-
-            <div
-                class="friends-list"
-                id="friendsList"
-            ></div>
-
-
-            <div class="sidebar-bottom">
-
-                <button
-                    class="logout-button"
-                    onclick="logout()"
-                >
-                    🚪 Выйти из аккаунта
-                </button>
-
-            </div>
-
-        </aside>
-
-
-        <!-- =====================
-             CHAT
-        ====================== -->
-
-        <main class="chat">
-
-
-            <div
-                class="chat-header"
-                id="chatHeader"
-            >
-
-                <div class="chat-user">
+                    <h2>
+                        Vibe
+                    </h2>
 
                     <div
-                        class="avatar"
-                        id="chatAvatar"
+                        class="account"
+                        id="account"
                     >
-                        V
-                    </div>
-
-                    <div>
-
-                        <div
-                            class="chat-user-name"
-                            id="chatTitle"
-                        >
-                            Выбери друга
-                        </div>
-
-                        <div
-                            class="chat-user-status"
-                            id="chatStatus"
-                        >
-                            Найди человека через поиск
-                        </div>
-
+                        @user
                     </div>
 
                 </div>
 
             </div>
 
+            <button
+                class="icon-btn"
+                onclick="openProfile()"
+            >
+                👤
+            </button>
 
-            <div
-                class="messages"
-                id="messages"
+        </div>
+
+
+        <div class="search">
+
+            <input
+                id="search"
+                placeholder="Поиск людей..."
+                oninput="searchUsers()"
             >
 
-                <div class="empty-chat">
-
-                    💬<br><br>
-
-                    Найди пользователя,
-                    добавь его в друзья
-                    и начни общение.
-
-                </div>
-
-            </div>
+        </div>
 
 
-            <!-- ПОЛЕ СООБЩЕНИЯ -->
+        <div
+            class="results"
+            id="results"
+        ></div>
 
-            <div class="message-input">
 
+        <div class="section">
+            Мои чаты
+        </div>
+
+
+        <div
+            class="friends"
+            id="friends"
+        ></div>
+
+
+        <div class="side-bottom">
+
+            <button
+                class="logout"
+                onclick="logout()"
+            >
+                🚪 Выйти
+            </button>
+
+        </div>
+
+    </aside>
+
+
+    <main class="chat">
+
+        <div class="chat-head">
+
+            <div class="chat-user">
 
                 <div
-                    class="emoji-panel"
-                    id="emojiPanel"
+                    class="avatar"
+                    id="chatAvatar"
                 >
+                    V
+                </div>
 
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('😀')"
-                    >😀</button>
+                <div>
 
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('😂')"
-                    >😂</button>
+                    <div
+                        class="name"
+                        id="chatTitle"
+                    >
+                        Выбери друга
+                    </div>
 
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('😍')"
-                    >😍</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('😎')"
-                    >😎</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('😭')"
-                    >😭</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('😡')"
-                    >😡</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('❤️')"
-                    >❤️</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('🔥')"
-                    >🔥</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('👍')"
-                    >👍</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('👎')"
-                    >👎</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('🎉')"
-                    >🎉</button>
-
-                    <button
-                        class="emoji-item"
-                        onclick="addEmoji('💀')"
-                    >💀</button>
+                    <div
+                        class="login"
+                        id="chatStatus"
+                    >
+                        Найди человека через поиск
+                    </div>
 
                 </div>
 
+            </div>
 
-                <button
-                    class="emoji-button"
-                    onclick="toggleEmojiPanel()"
-                >
-                    😊
-                </button>
+        </div>
 
 
-                <input
-                    id="messageInput"
-                    type="text"
-                    placeholder="Сообщение..."
-                    onkeydown="handleEnter(event)"
-                >
+        <div
+            class="messages"
+            id="messages"
+        >
 
+            <div class="empty">
 
-                <button
-                    class="send-button"
-                    onclick="sendMessage()"
-                >
-                    Отправить
-                </button>
+                💬<br><br>
+
+                Найди пользователя
+                и добавь его в друзья.
 
             </div>
 
-        </main>
+        </div>
 
-    </div>
+
+        <div class="composer">
+
+            <div
+                class="emoji-panel"
+                id="emojiPanel"
+            ></div>
+
+            <button
+                class="emoji-btn"
+                onclick="toggleEmoji()"
+            >
+                😊
+            </button>
+
+            <input
+                id="messageInput"
+                placeholder="Сообщение..."
+                onkeydown="handleEnter(event)"
+            >
+
+            <button
+                class="send"
+                onclick="sendMessage()"
+            >
+                Отправить
+            </button>
+
+        </div>
+
+    </main>
 
 </div>
+```
 
-
-<!-- =========================
-     ПРОФИЛЬ
-========================= -->
+</div>
 
 <div
     class="modal"
     id="profileModal"
 >
 
-    <div class="modal-card">
+```
+<div class="profile">
+
+    <div class="profile-top">
+
+        <h2>
+            Мой профиль
+        </h2>
+
+        <button
+            class="close"
+            onclick="closeProfile()"
+        >
+            ✕
+        </button>
+
+    </div>
 
 
-        <div class="modal-top">
+    <div class="preview">
 
-            <h2>
-                Мой профиль
-            </h2>
-
-            <button
-                class="close-button"
-                onclick="closeProfile()"
-            >
-                ✕
-            </button>
-
+        <div
+            class="avatar"
+            id="profileAvatar"
+        >
+            V
         </div>
 
-
-        <div class="profile-preview">
+        <div>
 
             <div
-                class="avatar"
-                id="profileAvatar"
+                class="name"
+                id="profilePreviewName"
             >
-                V
+                Vibe
             </div>
 
-            <div>
-
-                <div
-                    class="user-name"
-                    id="profilePreviewName"
-                >
-                    Vibe
-                </div>
-
-                <div
-                    class="profile-login"
-                    id="profileLogin"
-                >
-                    @user
-                </div>
-
+            <div
+                class="login"
+                id="profileLogin"
+            >
+                @user
             </div>
-
-        </div>
-
-
-        <div class="profile-form">
-
-
-            <label>
-                Фото профиля
-            </label>
-
-            <input
-                id="photoInput"
-                type="file"
-                accept="image/*"
-                style="display:none"
-                onchange="handlePhoto(event)"
-            >
-
-            <label
-                class="photo-label"
-                for="photoInput"
-            >
-                📷 Выбрать фото
-            </label>
-
-
-            <label>
-                Имя
-            </label>
-
-            <input
-                id="profileName"
-                type="text"
-                maxlength="40"
-                placeholder="Твоё имя"
-            >
-
-
-            <label>
-                О себе
-            </label>
-
-            <textarea
-                id="profileAbout"
-                maxlength="200"
-                placeholder="Расскажи немного о себе..."
-            ></textarea>
-
-
-            <label>
-                Тема Vibe
-            </label>
-
-            <select id="themeSelect">
-
-                <option value="dark">
-                    🌙 Ночная
-                </option>
-
-                <option value="light">
-                    ☀️ Светлая
-                </option>
-
-                <option value="purple">
-                    💜 Фиолетовая
-                </option>
-
-                <option value="ocean">
-                    🌊 Океан
-                </option>
-
-                <option value="sunset">
-                    🌅 Закат
-                </option>
-
-            </select>
-
-
-            <label>
-                Стиль сообщений
-            </label>
-
-            <select id="messageStyle">
-
-                <option value="classic">
-                    Классический
-                </option>
-
-                <option value="square">
-                    Квадратный
-                </option>
-
-                <option value="neon">
-                    Неоновый
-                </option>
-
-            </select>
-
-
-            <button
-                class="save-profile"
-                onclick="saveProfile()"
-            >
-                Сохранить изменения
-            </button>
 
         </div>
 
     </div>
 
+
+    <label>
+        Фото профиля
+    </label>
+
+    <input
+        id="photoInput"
+        type="file"
+        accept="image/*"
+        onchange="handlePhoto(event)"
+    >
+
+
+    <label>
+        Имя
+    </label>
+
+    <input
+        id="profileName"
+        maxlength="40"
+        placeholder="Твоё имя"
+    >
+
+
+    <label>
+        О себе
+    </label>
+
+    <textarea
+        id="profileAbout"
+        maxlength="200"
+        placeholder="Расскажи о себе..."
+    ></textarea>
+
+
+    <label>
+        Тема
+    </label>
+
+    <select
+        id="themeSelect"
+    >
+
+        <option value="dark">
+            🌙 Ночная
+        </option>
+
+        <option value="light">
+            ☀️ Дневная
+        </option>
+
+        <option value="ocean">
+            🌊 Океан
+        </option>
+
+        <option value="sunset">
+            🌅 Закат
+        </option>
+
+    </select>
+
+
+    <label>
+        Стиль сообщений
+    </label>
+
+    <select
+        id="styleSelect"
+    >
+
+        <option value="classic">
+            Классический
+        </option>
+
+        <option value="square">
+            Квадратный
+        </option>
+
+        <option value="neon">
+            Неоновый
+        </option>
+
+    </select>
+
+
+    <button
+        class="save"
+        onclick="saveProfile()"
+    >
+        Сохранить
+    </button>
+
+</div>
+```
+
 </div>
 
-
 <script>
+
+const emojis = [
+    "😀",
+    "😂",
+    "😍",
+    "😎",
+    "😭",
+    "😡",
+    "❤️",
+    "🔥",
+    "👍",
+    "👎",
+    "🎉",
+    "💀",
+    "😢",
+    "😆",
+    "🤩",
+    "🥳",
+    "😮",
+    "🤔",
+    "🙌",
+    "💯",
+    "✨",
+    "🚀",
+    "😴",
+    "🤝"
+];
 
 let currentUser = "";
 let currentChat = "";
 let friends = [];
-let currentProfilePhoto = "";
-let messageTimer = null;
+let currentPhoto = "";
+let timer = null;
 
+function $(id) {
+    return document.getElementById(id);
+}
 
-// ============================
-// ВСПОМОГАТЕЛЬНЫЕ
-// ============================
-
-function escapeHTML(text) {
-
-    return String(text)
+function escapeHTML(value) {
+    return String(value)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
-
 }
 
+function initial(value) {
+    const text =
+        String(value || "V")
+            .trim();
 
-function escapeJS(text) {
-
-    return String(text)
-        .replaceAll("\\", "\\\\")
-        .replaceAll("'", "\\'");
-
+    return text[0]
+        ? text[0].toUpperCase()
+        : "V";
 }
 
-
-function getInitial(name) {
-
-    return (
-        String(name || "V")
-            .trim()
-            .charAt(0)
-            .toUpperCase()
-    ) || "V";
-
-}
-
-
-// ============================
-// ТЕМА
-// ============================
-
-function applyTheme(theme) {
+function setTheme(theme) {
 
     document.body.classList.remove(
-        "theme-light",
-        "theme-purple",
-        "theme-ocean",
-        "theme-sunset"
+        "light",
+        "ocean",
+        "sunset"
     );
 
     if (theme !== "dark") {
-
         document.body.classList.add(
-            "theme-" + theme
+            theme
         );
-
     }
 
     localStorage.setItem(
         "vibeTheme",
         theme
     );
-
 }
 
+function getTheme() {
 
-function loadSavedTheme() {
-
-    const theme =
+    return (
         localStorage.getItem(
             "vibeTheme"
-        ) || "dark";
-
-    applyTheme(theme);
-
+        ) || "dark"
+    );
 }
-
-
-// ============================
-// ВХОД
-// ============================
 
 async function loginAccount() {
 
     const login =
-        document
-            .getElementById("login")
+        $("login")
             .value
             .trim();
 
     const password =
-        document
-            .getElementById("password")
+        $("password")
             .value
             .trim();
 
@@ -1451,78 +1222,67 @@ async function loginAccount() {
                 "/login",
                 {
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
-                    body: JSON.stringify({
-                        login,
-                        password
-                    })
+                    body:
+                        JSON.stringify({
+                            login,
+                            password
+                        })
                 }
             );
 
-        const result =
+        const data =
             await response.json();
 
-        if (!result.success) {
+        if (!data.success) {
 
-            alert(result.message);
+            alert(
+                data.message
+            );
 
             return;
         }
 
-        currentUser = login;
+        currentUser =
+            login;
 
         localStorage.setItem(
             "vibeUser",
-            currentUser
+            login
         );
 
-        showMessenger();
+        showApp();
 
     } catch {
 
         alert(
             "Не удалось подключиться к серверу"
         );
-
     }
-
 }
 
+function showApp() {
 
-// ============================
-// МЕССЕНДЖЕР
-// ============================
+    $("auth").style.display =
+        "none";
 
-function showMessenger() {
+    $("app").style.display =
+        "block";
 
-    document
-        .getElementById("authScreen")
-        .style.display = "none";
+    $("account").textContent =
+        "@" + currentUser;
 
-    document
-        .getElementById("messenger")
-        .style.display = "block";
+    setTheme(
+        getTheme()
+    );
 
-    document
-        .getElementById("accountName")
-        .textContent =
-            "@" + currentUser;
-
-    loadSavedTheme();
+    renderEmoji();
 
     loadFriends();
-
 }
-
-
-// ============================
-// ДРУЗЬЯ
-// ============================
 
 async function loadFriends() {
 
@@ -1544,118 +1304,123 @@ async function loadFriends() {
     } catch {
 
         console.log(
-            "Ошибка загрузки друзей"
+            "Ошибка друзей"
         );
-
     }
-
 }
-
 
 function renderFriends() {
 
-    const list =
-        document.getElementById(
-            "friendsList"
-        );
+    const box =
+        $("friends");
 
-    list.innerHTML = "";
+    box.innerHTML = "";
 
-    if (friends.length === 0) {
+    if (!friends.length) {
 
-        list.innerHTML = `
-            <div class="empty-side">
-                Пока нет друзей.<br><br>
-                Найди человека через поиск.
+        box.innerHTML = `
+            <div
+                class="empty"
+                style="
+                    height:auto;
+                    padding:25px 5px;
+                    font-size:12px
+                "
+            >
+                Пока нет друзей.<br>
+                Найди человека выше.
             </div>
         `;
 
         return;
     }
 
-    friends.forEach(user => {
+    friends.forEach(
+        user => {
 
-        const div =
-            document.createElement("div");
+            const div =
+                document.createElement(
+                    "div"
+                );
 
-        div.className =
-            "friend";
+            div.className =
+                "person clickable";
 
-        if (
-            user.login === currentChat
-        ) {
-            div.classList.add("active");
-        }
+            if (
+                user.login ===
+                currentChat
+            ) {
+                div.classList.add(
+                    "active"
+                );
+            }
 
-        div.innerHTML = `
-
-            ${
-                user.photo
-
-                ? `
-                    <img
-                        class="avatar"
-                        src="${user.photo}"
-                        alt=""
-                    >
+            div.innerHTML =
+                avatarHTML(user) +
                 `
+                <div class="info">
 
-                : `
-                    <div class="avatar">
-                        ${getInitial(
+                    <div class="name">
+                        ${escapeHTML(
                             user.name ||
                             user.login
                         )}
                     </div>
-                `
-            }
 
-            <div class="user-info">
+                    <div class="login">
+                        @${escapeHTML(
+                            user.login
+                        )}
+                    </div>
 
-                <div class="user-name">
-                    ${escapeHTML(
-                        user.name ||
-                        user.login
-                    )}
                 </div>
+                `;
 
-                <div class="user-login">
-                    @${escapeHTML(
-                        user.login
-                    )}
-                </div>
+            div.onclick =
+                () =>
+                    openChat(user);
 
-            </div>
-        `;
-
-        div.onclick =
-            () => openChat(user);
-
-        list.appendChild(div);
-
-    });
-
+            box.appendChild(
+                div
+            );
+        }
+    );
 }
 
+function avatarHTML(user) {
 
-// ============================
-// ПОИСК
-// ============================
+    if (user.photo) {
+
+        return `
+            <img
+                class="avatar"
+                src="${user.photo}"
+                alt=""
+            >
+        `;
+    }
+
+    return `
+        <div class="avatar">
+            ${initial(
+                user.name ||
+                user.login
+            )}
+        </div>
+    `;
+}
 
 async function searchUsers() {
 
     const query =
-        document
-            .getElementById("search")
+        $("search")
             .value
             .trim();
 
-    const resultBox =
-        document.getElementById(
-            "searchResults"
-        );
+    const box =
+        $("results");
 
-    resultBox.innerHTML = "";
+    box.innerHTML = "";
 
     if (!query) {
         return;
@@ -1670,16 +1435,25 @@ async function searchUsers() {
                     currentUser
                 ) +
                 "&q=" +
-                encodeURIComponent(query)
+                encodeURIComponent(
+                    query
+                )
             );
 
-        const users =
+        const list =
             await response.json();
 
-        if (!users.length) {
+        if (!list.length) {
 
-            resultBox.innerHTML = `
-                <div class="empty-side">
+            box.innerHTML = `
+                <div
+                    class="empty"
+                    style="
+                        height:auto;
+                        padding:15px;
+                        font-size:12px
+                    "
+                >
                     Никого не нашли
                 </div>
             `;
@@ -1687,185 +1461,137 @@ async function searchUsers() {
             return;
         }
 
-        users.forEach(user => {
+        list.forEach(
+            user => {
 
-            const div =
-                document.createElement("div");
+                const div =
+                    document.createElement(
+                        "div"
+                    );
 
-            div.className =
-                "search-user";
+                div.className =
+                    "person";
 
-            div.innerHTML = `
+                const safeLogin =
+                    escapeHTML(
+                        user.login
+                    );
 
-                ${
-                    user.photo
-
-                    ? `
-                        <img
-                            class="avatar"
-                            src="${user.photo}"
-                            alt=""
-                        >
+                div.innerHTML =
+                    avatarHTML(user) +
                     `
+                    <div class="info">
 
-                    : `
-                        <div class="avatar">
-                            ${getInitial(
+                        <div class="name">
+                            ${escapeHTML(
                                 user.name ||
                                 user.login
                             )}
                         </div>
-                    `
+
+                        <div class="login">
+                            @${safeLogin}
+                        </div>
+
+                    </div>
+                    `;
+
+                const button =
+                    document.createElement(
+                        "button"
+                    );
+
+                button.className =
+                    "friend-action";
+
+                if (user.isFriend) {
+
+                    button.classList.add(
+                        "remove"
+                    );
+
+                    button.textContent =
+                        "Убрать";
+
+                    button.onclick =
+                        event => {
+                            event.stopPropagation();
+                            removeFriend(
+                                user.login
+                            );
+                        };
+
+                } else {
+
+                    button.textContent =
+                        "+";
+
+                    button.onclick =
+                        event => {
+                            event.stopPropagation();
+                            addFriend(
+                                user.login
+                            );
+                        };
                 }
 
-                <div class="user-info">
+                div.appendChild(
+                    button
+                );
 
-                    <div class="user-name">
-                        ${escapeHTML(
-                            user.name ||
-                            user.login
-                        )}
-                    </div>
+                div.onclick =
+                    () =>
+                        openChat(
+                            user
+                        );
 
-                    <div class="user-login">
-                        @${escapeHTML(
-                            user.login
-                        )}
-                    </div>
-
-                </div>
-
-                ${
-                    user.isFriend
-
-                    ? `
-                        <button
-                            class="remove-button"
-                            onclick="
-                                removeFriend(
-                                    event,
-                                    '${escapeJS(
-                                        user.login
-                                    )}'
-                                )
-                            "
-                        >
-                            Убрать
-                        </button>
-                    `
-
-                    : `
-                        <button
-                            class="add-button"
-                            onclick="
-                                addFriend(
-                                    event,
-                                    '${escapeJS(
-                                        user.login
-                                    )}'
-                                )
-                            "
-                        >
-                            +
-                        </button>
-                    `
-                }
-
-            `;
-
-            resultBox.appendChild(div);
-
-        });
+                box.appendChild(
+                    div
+                );
+            }
+        );
 
     } catch {
 
-        resultBox.innerHTML = `
-            <div class="empty-side">
+        box.innerHTML = `
+            <div
+                class="empty"
+                style="
+                    height:auto;
+                    padding:15px;
+                    font-size:12px
+                "
+            >
                 Ошибка поиска
             </div>
         `;
-
     }
-
 }
-
-
-// ============================
-// ДОБАВЛЕНИЕ ДРУГА
-// ============================
 
 async function addFriend(
-    event,
     login
 ) {
 
-    event.stopPropagation();
-
-    try {
-
-        const response =
-            await fetch(
-                "/friends",
-                {
-
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body: JSON.stringify({
-
-                        from:
-                            currentUser,
-
-                        to:
-                            login,
-
-                        action:
-                            "add"
-
-                    })
-
-                }
-            );
-
-        const result =
-            await response.json();
-
-        if (!result.success) {
-
-            alert(result.message);
-
-            return;
-        }
-
-        await loadFriends();
-
-        await searchUsers();
-
-    } catch {
-
-        alert(
-            "Не удалось добавить друга"
-        );
-
-    }
-
+    await friendAction(
+        login,
+        "add"
+    );
 }
-
-
-// ============================
-// УДАЛЕНИЕ ДРУГА
-// ============================
 
 async function removeFriend(
-    event,
     login
 ) {
 
-    event.stopPropagation();
+    await friendAction(
+        login,
+        "remove"
+    );
+}
+
+async function friendAction(
+    login,
+    action
+) {
 
     try {
 
@@ -1873,173 +1599,102 @@ async function removeFriend(
             await fetch(
                 "/friends",
                 {
-
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
-                    body: JSON.stringify({
-
-                        from:
-                            currentUser,
-
-                        to:
-                            login,
-
-                        action:
-                            "remove"
-
-                    })
-
+                    body:
+                        JSON.stringify({
+                            from:
+                                currentUser,
+                            to:
+                                login,
+                            action:
+                                action
+                        })
                 }
             );
 
-        const result =
+        const data =
             await response.json();
 
-        if (!result.success) {
+        if (!data.success) {
 
-            alert(result.message);
+            alert(
+                data.message
+            );
 
             return;
         }
 
-        if (
-            currentChat === login
-        ) {
-
-            currentChat = "";
-
-            document
-                .getElementById(
-                    "chatTitle"
-                )
-                .textContent =
-                    "Выбери друга";
-
-            document
-                .getElementById(
-                    "chatStatus"
-                )
-                .textContent =
-                    "Найди человека через поиск";
-
-            document
-                .getElementById(
-                    "messages"
-                )
-                .innerHTML = `
-                    <div class="empty-chat">
-                        💬<br><br>
-                        Выбери друга,
-                        чтобы начать общение.
-                    </div>
-                `;
-
-            if (messageTimer) {
-                clearInterval(
-                    messageTimer
-                );
-            }
-
-        }
-
         await loadFriends();
-
         await searchUsers();
 
     } catch {
 
         alert(
-            "Ошибка удаления друга"
+            "Ошибка работы с друзьями"
         );
-
     }
-
 }
 
-
-// ============================
-// ОТКРЫТИЕ ЧАТА
-// ============================
-
-function openChat(user) {
+function openChat(
+    user
+) {
 
     currentChat =
         user.login;
 
-    document
-        .getElementById(
-            "chatTitle"
-        )
+    $("chatTitle")
         .textContent =
             user.name ||
             user.login;
 
-    document
-        .getElementById(
-            "chatStatus"
-        )
+    $("chatStatus")
         .textContent =
-            "@" + user.login;
+            "@" +
+            user.login;
 
-    const avatar =
-        document.getElementById(
-            "chatAvatar"
-        );
-
-    if (user.photo) {
-
-        avatar.outerHTML = `
-            <img
-                class="avatar"
-                id="chatAvatar"
-                src="${user.photo}"
-                alt=""
-            >
-        `;
-
-    } else {
-
-        avatar.outerHTML = `
-            <div
-                class="avatar"
-                id="chatAvatar"
-            >
-                ${getInitial(
-                    user.name ||
-                    user.login
-                )}
-            </div>
-        `;
-
-    }
+    $("chatAvatar")
+        .outerHTML =
+            user.photo
+                ? `
+                    <img
+                        class="avatar"
+                        id="chatAvatar"
+                        src="${user.photo}"
+                        alt=""
+                    >
+                  `
+                : `
+                    <div
+                        class="avatar"
+                        id="chatAvatar"
+                    >
+                        ${initial(
+                            user.name ||
+                            user.login
+                        )}
+                    </div>
+                  `;
 
     renderFriends();
 
     loadMessages();
 
-    if (messageTimer) {
+    if (timer) {
         clearInterval(
-            messageTimer
+            timer
         );
     }
 
-    messageTimer =
+    timer =
         setInterval(
             loadMessages,
-            1000
+            1500
         );
-
 }
-
-
-// ============================
-// СООБЩЕНИЯ
-// ============================
 
 async function loadMessages() {
 
@@ -2061,20 +1716,18 @@ async function loadMessages() {
                 )
             );
 
-        const messages =
+        const list =
             await response.json();
 
-        const container =
-            document.getElementById(
-                "messages"
-            );
+        const box =
+            $("messages");
 
-        container.innerHTML = "";
+        box.innerHTML = "";
 
-        if (!messages.length) {
+        if (!list.length) {
 
-            container.innerHTML = `
-                <div class="empty-chat">
+            box.innerHTML = `
+                <div class="empty">
                     💬<br><br>
                     Здесь пока нет сообщений.
                 </div>
@@ -2083,73 +1736,72 @@ async function loadMessages() {
             return;
         }
 
-        const messageStyle =
+        const style =
             localStorage.getItem(
-                "vibeMessageStyle"
+                "vibeStyle"
             ) || "classic";
 
-        messages.forEach(message => {
+        list.forEach(
+            message => {
 
-            const div =
-                document.createElement(
-                    "div"
-                );
+                const div =
+                    document.createElement(
+                        "div"
+                    );
 
-            div.className =
-                "message " +
-                messageStyle;
+                div.className =
+                    "bubble " +
+                    style;
 
-            if (
-                message.from ===
-                currentUser
-            ) {
-                div.classList.add(
-                    "mine"
+                if (
+                    message.from ===
+                    currentUser
+                ) {
+                    div.classList.add(
+                        "mine"
+                    );
+                }
+
+                const time =
+                    new Date(
+                        message.time
+                    )
+                        .toLocaleTimeString(
+                            [],
+                            {
+                                hour:
+                                    "2-digit",
+                                minute:
+                                    "2-digit"
+                            }
+                        );
+
+                div.innerHTML =
+                    escapeHTML(
+                        message.text
+                    ) +
+                    `
+                    <div class="time">
+                        ${time}
+                    </div>
+                    `;
+
+                box.appendChild(
+                    div
                 );
             }
+        );
 
-            const time =
-                new Date(
-                    message.time
-                );
-
-            div.innerHTML = `
-                ${escapeHTML(
-                    message.text
-                )}
-
-                <div class="message-time">
-                    ${time.toLocaleTimeString(
-                        [],
-                        {
-                            hour: "2-digit",
-                            minute: "2-digit"
-                        }
-                    )}
-                </div>
-            `;
-
-            container.appendChild(div);
-
-        });
-
-        container.scrollTop =
-            container.scrollHeight;
+        box.scrollTop =
+            box.scrollHeight;
 
     } catch {
 
         console.log(
-            "Ошибка загрузки сообщений"
+            "Ошибка сообщений"
         );
-
     }
-
 }
-
-
-// ============================
-// ОТПРАВКА
-// ============================
 
 async function sendMessage() {
 
@@ -2163,9 +1815,7 @@ async function sendMessage() {
     }
 
     const input =
-        document.getElementById(
-            "messageInput"
-        );
+        $("messageInput");
 
     const text =
         input.value.trim();
@@ -2180,36 +1830,30 @@ async function sendMessage() {
             await fetch(
                 "/send-message",
                 {
-
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
-                    body: JSON.stringify({
-
-                        from:
-                            currentUser,
-
-                        to:
-                            currentChat,
-
-                        text
-
-                    })
-
+                    body:
+                        JSON.stringify({
+                            from:
+                                currentUser,
+                            to:
+                                currentChat,
+                            text:
+                                text
+                        })
                 }
             );
 
-        const result =
+        const data =
             await response.json();
 
-        if (!result.success) {
+        if (!data.success) {
 
             alert(
-                result.message
+                data.message
             );
 
             return;
@@ -2224,17 +1868,12 @@ async function sendMessage() {
         alert(
             "Ошибка отправки сообщения"
         );
-
     }
-
 }
 
-
-// ============================
-// ENTER
-// ============================
-
-function handleEnter(event) {
+function handleEnter(
+    event
+) {
 
     if (
         event.key === "Enter" &&
@@ -2244,54 +1883,51 @@ function handleEnter(event) {
         event.preventDefault();
 
         sendMessage();
-
     }
-
 }
 
+function renderEmoji() {
 
-// ============================
-// EMOJI
-// ============================
+    $("emojiPanel")
+        .innerHTML =
+            emojis
+                .map(
+                    emoji =>
+                        `
+                        <button
+                            type="button"
+                            onclick="addEmoji('${emoji}')"
+                        >
+                            ${emoji}
+                        </button>
+                        `
+                )
+                .join("");
+}
 
-function toggleEmojiPanel() {
+function toggleEmoji() {
 
-    document
-        .getElementById(
-            "emojiPanel"
-        )
+    $("emojiPanel")
         .classList.toggle(
             "show"
         );
-
 }
 
+function addEmoji(
+    emoji
+) {
 
-function addEmoji(emoji) {
+    $("messageInput")
+        .value += emoji;
 
-    const input =
-        document.getElementById(
-            "messageInput"
-        );
+    $("messageInput")
+        .focus();
 
-    input.value += emoji;
-
-    input.focus();
-
-    document
-        .getElementById(
-            "emojiPanel"
-        )
+    $("emojiPanel")
         .classList.remove(
             "show"
         );
-
 }
-
-
-// ============================
-// ПРОФИЛЬ
-// ============================
 
 async function openProfile() {
 
@@ -2305,106 +1941,75 @@ async function openProfile() {
                 )
             );
 
-        const result =
+        const data =
             await response.json();
 
-        if (!result.success) {
+        if (!data.success) {
 
             alert(
-                result.message
+                data.message
             );
 
             return;
         }
 
         const user =
-            result.user;
+            data.user;
 
-        document
-            .getElementById(
-                "profileLogin"
-            )
+        $("profileLogin")
             .textContent =
-                "@" + user.login;
+                "@" +
+                user.login;
 
-        document
-            .getElementById(
-                "profilePreviewName"
-            )
+        $("profilePreviewName")
             .textContent =
                 user.name ||
                 user.login;
 
-        document
-            .getElementById(
-                "profileName"
-            )
+        $("profileName")
             .value =
                 user.name || "";
 
-        document
-            .getElementById(
-                "profileAbout"
-            )
+        $("profileAbout")
             .value =
                 user.about || "";
 
-        document
-            .getElementById(
-                "messageStyle"
-            )
+        $("themeSelect")
+            .value =
+                getTheme();
+
+        $("styleSelect")
             .value =
                 user.messageStyle ||
                 "classic";
 
-        document
-            .getElementById(
-                "themeSelect"
-            )
-            .value =
-                localStorage.getItem(
-                    "vibeTheme"
-                ) || "dark";
-
-        currentProfilePhoto =
+        currentPhoto =
             user.photo || "";
 
-        const avatar =
-            document.getElementById(
-                "profileAvatar"
-            );
+        $("profileAvatar")
+            .outerHTML =
+                user.photo
+                    ? `
+                        <img
+                            class="avatar"
+                            id="profileAvatar"
+                            src="${user.photo}"
+                            alt=""
+                        >
+                      `
+                    : `
+                        <div
+                            class="avatar"
+                            id="profileAvatar"
+                        >
+                            ${initial(
+                                user.name ||
+                                user.login
+                            )}
+                        </div>
+                      `;
 
-        if (user.photo) {
-
-            avatar.outerHTML = `
-                <img
-                    class="avatar"
-                    id="profileAvatar"
-                    src="${user.photo}"
-                    alt=""
-                >
-            `;
-
-        } else {
-
-            avatar.outerHTML = `
-                <div
-                    class="avatar"
-                    id="profileAvatar"
-                >
-                    ${getInitial(
-                        user.name ||
-                        user.login
-                    )}
-                </div>
-            `;
-
-        }
-
-        document
-            .getElementById(
-                "profileModal"
-            )
+        $("profileModal")
             .classList.add(
                 "show"
             );
@@ -2414,30 +2019,20 @@ async function openProfile() {
         alert(
             "Не удалось открыть профиль"
         );
-
     }
-
 }
-
 
 function closeProfile() {
 
-    document
-        .getElementById(
-            "profileModal"
-        )
+    $("profileModal")
         .classList.remove(
             "show"
         );
-
 }
 
-
-// ============================
-// ФОТО
-// ============================
-
-function handlePhoto(event) {
+function handlePhoto(
+    event
+) {
 
     const file =
         event.target.files[0];
@@ -2449,141 +2044,107 @@ function handlePhoto(event) {
     const reader =
         new FileReader();
 
-    reader.onload = function() {
+    reader.onload =
+        () => {
 
-        const image =
-            new Image();
+            const image =
+                new Image();
 
-        image.onload = function() {
+            image.onload =
+                () => {
 
-            const canvas =
-                document.createElement(
-                    "canvas"
-                );
+                    const canvas =
+                        document.createElement(
+                            "canvas"
+                        );
 
-            const maxSize = 500;
+                    const max =
+                        400;
 
-            let width =
-                image.width;
+                    const scale =
+                        Math.min(
+                            1,
+                            max / image.width,
+                            max / image.height
+                        );
 
-            let height =
-                image.height;
+                    canvas.width =
+                        Math.round(
+                            image.width * scale
+                        );
 
-            if (
-                width > maxSize ||
-                height > maxSize
-            ) {
+                    canvas.height =
+                        Math.round(
+                            image.height * scale
+                        );
 
-                const scale =
-                    Math.min(
-                        maxSize / width,
-                        maxSize / height
+                    const context =
+                        canvas.getContext(
+                            "2d"
+                        );
+
+                    context.drawImage(
+                        image,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
                     );
 
-                width =
-                    Math.round(
-                        width * scale
-                    );
+                    currentPhoto =
+                        canvas.toDataURL(
+                            "image/jpeg",
+                            0.8
+                        );
 
-                height =
-                    Math.round(
-                        height * scale
-                    );
+                    $("profileAvatar")
+                        .outerHTML =
+                            `
+                            <img
+                                class="avatar"
+                                id="profileAvatar"
+                                src="${currentPhoto}"
+                                alt=""
+                            >
+                            `;
+                };
 
-            }
-
-            canvas.width =
-                width;
-
-            canvas.height =
-                height;
-
-            const ctx =
-                canvas.getContext(
-                    "2d"
-                );
-
-            ctx.drawImage(
-                image,
-                0,
-                0,
-                width,
-                height
-            );
-
-            currentProfilePhoto =
-                canvas.toDataURL(
-                    "image/jpeg",
-                    0.8
-                );
-
-            const avatar =
-                document.getElementById(
-                    "profileAvatar"
-                );
-
-            avatar.outerHTML = `
-                <img
-                    class="avatar"
-                    id="profileAvatar"
-                    src="${currentProfilePhoto}"
-                    alt=""
-                >
-            `;
-
+            image.src =
+                reader.result;
         };
 
-        image.src =
-            reader.result;
-
-    };
-
-    reader.readAsDataURL(file);
-
+    reader.readAsDataURL(
+        file
+    );
 }
-
-
-// ============================
-// СОХРАНЕНИЕ ПРОФИЛЯ
-// ============================
 
 async function saveProfile() {
 
     const name =
-        document
-            .getElementById(
-                "profileName"
-            )
+        $("profileName")
             .value
             .trim();
 
     const about =
-        document
-            .getElementById(
-                "profileAbout"
-            )
+        $("profileAbout")
             .value
             .trim();
 
     const theme =
-        document
-            .getElementById(
-                "themeSelect"
-            )
+        $("themeSelect")
             .value;
 
-    const messageStyle =
-        document
-            .getElementById(
-                "messageStyle"
-            )
+    const style =
+        $("styleSelect")
             .value;
 
-    applyTheme(theme);
+    setTheme(
+        theme
+    );
 
     localStorage.setItem(
-        "vibeMessageStyle",
-        messageStyle
+        "vibeStyle",
+        style
     );
 
     try {
@@ -2592,79 +2153,49 @@ async function saveProfile() {
             await fetch(
                 "/profile",
                 {
-
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
-                    body: JSON.stringify({
-
-                        login:
-                            currentUser,
-
-                        name,
-                        about,
-
-                        photo:
-                            currentProfilePhoto,
-
-                        messageStyle
-
-                    })
-
+                    body:
+                        JSON.stringify({
+                            login:
+                                currentUser,
+                            name,
+                            about,
+                            photo:
+                                currentPhoto,
+                            messageStyle:
+                                style
+                        })
                 }
             );
 
-        const result =
+        const data =
             await response.json();
 
-        if (!result.success) {
+        if (!data.success) {
 
             alert(
-                result.message
+                data.message
             );
 
             return;
         }
 
-        document
-            .getElementById(
-                "accountName"
-            )
+        $("account")
             .textContent =
-                "@" + currentUser;
+                "@" +
+                currentUser;
 
         closeProfile();
 
         await loadFriends();
 
         if (currentChat) {
-
-            const friend =
-                friends.find(
-                    item =>
-                        item.login ===
-                        currentChat
-                );
-
-            if (friend) {
-
-                document
-                    .getElementById(
-                        "chatTitle"
-                    )
-                    .textContent =
-                        friend.name ||
-                        friend.login;
-
-            }
-
+            loadMessages();
         }
-
-        loadMessages();
 
         alert(
             "Профиль сохранён!"
@@ -2675,27 +2206,18 @@ async function saveProfile() {
         alert(
             "Ошибка сохранения профиля"
         );
-
     }
-
 }
-
-
-// ============================
-// ВЫХОД
-// ============================
 
 function logout() {
 
-    if (
-        messageTimer
-    ) {
+    if (timer) {
         clearInterval(
-            messageTimer
+            timer
         );
     }
 
-    messageTimer = null;
+    timer = null;
 
     currentUser = "";
     currentChat = "";
@@ -2704,40 +2226,21 @@ function logout() {
         "vibeUser"
     );
 
-    document
-        .getElementById(
-            "messenger"
-        )
-        .style.display =
-            "none";
+    $("app").style.display =
+        "none";
 
-    document
-        .getElementById(
-            "authScreen"
-        )
-        .style.display =
-            "block";
+    $("auth").style.display =
+        "block";
 
-    document
-        .getElementById(
-            "login"
-        )
-        .value = "";
-
-    document
-        .getElementById(
-            "password"
-        )
-        .value = "";
-
+    $("login").value = "";
+    $("password").value = "";
 }
 
+setTheme(
+    getTheme()
+);
 
-// ============================
-// ЗАПУСК
-// ============================
-
-loadSavedTheme();
+renderEmoji();
 
 const savedUser =
     localStorage.getItem(
@@ -2749,8 +2252,7 @@ if (savedUser) {
     currentUser =
         savedUser;
 
-    showMessenger();
-
+    showApp();
 }
 
 </script>
@@ -2758,3 +2260,4 @@ if (savedUser) {
 </body>
 </html>
 ```
+
