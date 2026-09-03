@@ -1,267 +1,458 @@
 <!DOCTYPE html>
+
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Vibe</title>
 
-    <style>
-        * {
-            box-sizing: border-box;
-        }
+```
+<!-- АДАПТАЦИЯ ПОД ТЕЛЕФОН -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #111827;
-            color: white;
-        }
+<title>Vibe</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+        font-family: Arial, sans-serif;
+        background: #111827;
+        color: white;
+    }
+
+    body {
+        overflow-x: hidden;
+    }
+
+    /* =========================
+       ВХОД
+    ========================= */
+
+    .auth {
+        width: 400px;
+        max-width: calc(100% - 30px);
+        margin: 100px auto;
+        padding: 35px;
+        background: #1f2937;
+        border-radius: 20px;
+        text-align: center;
+    }
+
+    .auth h1 {
+        font-size: 45px;
+        margin: 0 0 10px;
+    }
+
+    .auth p {
+        color: #9ca3af;
+    }
+
+    input {
+        width: 100%;
+        padding: 14px;
+        margin: 8px 0;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        outline: none;
+    }
+
+    button {
+        width: 100%;
+        padding: 14px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 10px;
+        background: #7c3aed;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #6d28d9;
+    }
+
+    .register-button {
+        background: #374151;
+    }
+
+    /* =========================
+       МЕССЕНДЖЕР
+    ========================= */
+
+    .messenger {
+        display: none;
+        height: 100vh;
+        width: 100%;
+    }
+
+    .sidebar {
+        width: 300px;
+        background: #1f2937;
+        padding: 20px;
+        float: left;
+        height: 100vh;
+        overflow-y: auto;
+    }
+
+    .sidebar h2 {
+        margin-top: 0;
+    }
+
+    .user {
+        padding: 14px;
+        margin: 6px 0;
+        background: #374151;
+        border-radius: 10px;
+        cursor: pointer;
+        word-break: break-word;
+    }
+
+    .user:hover,
+    .user.active {
+        background: #7c3aed;
+    }
+
+    .chat {
+        margin-left: 300px;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .chat-header {
+        padding: 20px;
+        background: #1f2937;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        min-height: 0;
+    }
+
+    .message {
+        max-width: 60%;
+        padding: 12px 16px;
+        margin: 8px 0;
+        border-radius: 15px;
+        background: #374151;
+        word-break: break-word;
+    }
+
+    .message.mine {
+        margin-left: auto;
+        background: #7c3aed;
+    }
+
+    .message-input {
+        display: flex;
+        padding: 15px;
+        background: #1f2937;
+        flex-shrink: 0;
+    }
+
+    .message-input input {
+        margin: 0 10px 0 0;
+        min-width: 0;
+    }
+
+    .message-input button {
+        width: 120px;
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .logout {
+        width: auto;
+        padding: 8px 12px;
+        background: #ef4444;
+        font-size: 13px;
+        flex-shrink: 0;
+    }
+
+    .empty {
+        color: #9ca3af;
+        text-align: center;
+        margin-top: 100px;
+    }
+
+    /* =========================
+       ТЕЛЕФОН
+    ========================= */
+
+    @media (max-width: 700px) {
 
         .auth {
-            width: 400px;
-            margin: 100px auto;
-            padding: 35px;
-            background: #1f2937;
-            border-radius: 20px;
-            text-align: center;
+            width: calc(100% - 24px);
+            max-width: 450px;
+            margin: 30px auto;
+            padding: 25px 20px;
+            border-radius: 16px;
         }
 
         .auth h1 {
-            font-size: 45px;
-            margin: 0 0 10px;
+            font-size: 38px;
         }
 
         .auth p {
-            color: #9ca3af;
-        }
-
-        input {
-            width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 10px;
-            background: #7c3aed;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #6d28d9;
-        }
-
-        .register-button {
-            background: #374151;
+            font-size: 15px;
         }
 
         .messenger {
+            height: 100dvh;
             display: none;
-            height: 100vh;
         }
 
         .sidebar {
-            width: 300px;
-            background: #1f2937;
-            padding: 20px;
-            float: left;
-            height: 100vh;
+            width: 34%;
+            min-width: 115px;
+            max-width: 180px;
+            padding: 12px;
+            height: 100dvh;
         }
 
         .sidebar h2 {
-            margin-top: 0;
+            font-size: 22px;
+        }
+
+        .sidebar p {
+            font-size: 12px;
+            word-break: break-word;
+        }
+
+        .sidebar input {
+            font-size: 14px;
+            padding: 11px;
         }
 
         .user {
-            padding: 14px;
-            margin: 6px 0;
-            background: #374151;
-            border-radius: 10px;
-            cursor: pointer;
-        }
-
-        .user:hover,
-        .user.active {
-            background: #7c3aed;
+            padding: 11px 8px;
+            font-size: 14px;
         }
 
         .chat {
-            margin-left: 300px;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
+            margin-left: 34%;
+            height: 100dvh;
         }
 
         .chat-header {
-            padding: 20px;
-            background: #1f2937;
-            font-size: 20px;
+            padding: 15px;
+            font-size: 17px;
         }
 
         .messages {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
+            padding: 12px;
         }
 
         .message {
-            max-width: 60%;
-            padding: 12px 16px;
-            margin: 8px 0;
-            border-radius: 15px;
-            background: #374151;
-        }
-
-        .message.mine {
-            margin-left: auto;
-            background: #7c3aed;
+            max-width: 85%;
+            padding: 10px 13px;
+            font-size: 15px;
         }
 
         .message-input {
-            display: flex;
-            padding: 15px;
-            background: #1f2937;
+            padding: 8px;
         }
 
         .message-input input {
-            margin: 0 10px 0 0;
+            padding: 11px;
+            font-size: 14px;
+            margin-right: 6px;
         }
 
         .message-input button {
-            width: 120px;
-            margin: 0;
-        }
-
-        .top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logout {
-            width: auto;
-            padding: 8px 12px;
-            background: #ef4444;
+            width: 85px;
+            padding: 11px 5px;
             font-size: 13px;
         }
 
-        .empty {
-            color: #9ca3af;
-            text-align: center;
-            margin-top: 100px;
+        .logout {
+            padding: 6px 8px;
+            font-size: 11px;
         }
-    </style>
+
+        .empty {
+            margin-top: 60px;
+            font-size: 14px;
+        }
+    }
+
+    /* =========================
+       ОЧЕНЬ МАЛЕНЬКИЙ ЭКРАН
+    ========================= */
+
+    @media (max-width: 400px) {
+
+        .sidebar {
+            width: 38%;
+            min-width: 105px;
+        }
+
+        .chat {
+            margin-left: 38%;
+        }
+
+        .sidebar h2 {
+            font-size: 19px;
+        }
+
+        .sidebar p {
+            font-size: 11px;
+        }
+
+        .user {
+            font-size: 13px;
+        }
+
+        .chat-header {
+            font-size: 15px;
+            padding: 13px 10px;
+        }
+
+        .message-input button {
+            width: 75px;
+            font-size: 12px;
+        }
+    }
+</style>
+```
+
 </head>
 
 <body>
 
-    <!-- ВХОД -->
-    <div class="auth" id="authScreen">
+```
+<!-- ВХОД -->
 
-        <h1>Vibe</h1>
-        <p>Твой новый мессенджер</p>
+<div class="auth" id="authScreen">
+
+    <h1>Vibe</h1>
+
+    <p>Твой новый мессенджер</p>
+
+    <input
+        id="login"
+        type="text"
+        placeholder="Логин"
+    >
+
+    <input
+        id="password"
+        type="password"
+        placeholder="Пароль"
+    >
+
+    <button onclick="loginAccount()">
+        Войти
+    </button>
+
+    <button
+        class="register-button"
+        onclick="window.location.href='register.html'"
+    >
+        Создать аккаунт
+    </button>
+
+</div>
+
+
+<!-- МЕССЕНДЖЕР -->
+
+<div class="messenger" id="messenger">
+
+    <div class="sidebar">
+
+        <div class="top">
+
+            <h2>Vibe</h2>
+
+            <button
+                class="logout"
+                onclick="logout()"
+            >
+                Выйти
+            </button>
+
+        </div>
+
+        <p id="currentUser"></p>
 
         <input
-            id="login"
+            id="search"
             type="text"
-            placeholder="Логин"
+            placeholder="Поиск..."
+            oninput="searchUsers()"
         >
 
-        <input
-            id="password"
-            type="password"
-            placeholder="Пароль"
-        >
-
-        <button onclick="loginAccount()">
-            Войти
-        </button>
-
-        <button
-            class="register-button"
-            onclick="window.location.href='register.html'"
-        >
-            Создать аккаунт
-        </button>
+        <div id="usersList"></div>
 
     </div>
 
 
-    <!-- МЕССЕНДЖЕР -->
-    <div class="messenger" id="messenger">
+    <div class="chat">
 
-        <div class="sidebar">
+        <div class="chat-header">
 
-            <div class="top">
-                <h2>Vibe</h2>
+            <span id="chatTitle">
+                Выбери пользователя
+            </span>
 
-                <button
-                    class="logout"
-                    onclick="logout()"
-                >
-                    Выйти
-                </button>
+        </div>
+
+
+        <div
+            class="messages"
+            id="messages"
+        >
+
+            <div class="empty">
+
+                💬 Выбери пользователя,
+                чтобы начать чат
+
             </div>
 
-            <p id="currentUser"></p>
+        </div>
+
+
+        <div class="message-input">
 
             <input
-                id="search"
+                id="messageInput"
                 type="text"
-                placeholder="Поиск пользователя..."
-                oninput="searchUsers()"
+                placeholder="Введите сообщение..."
+                onkeydown="handleEnter(event)"
             >
 
-            <div id="usersList"></div>
-
-        </div>
-
-
-        <div class="chat">
-
-            <div class="chat-header">
-                <span id="chatTitle">
-                    Выбери пользователя
-                </span>
-            </div>
-
-            <div
-                class="messages"
-                id="messages"
-            >
-                <div class="empty">
-                    💬 Выбери пользователя,
-                    чтобы начать чат
-                </div>
-            </div>
-
-            <div class="message-input">
-
-                <input
-                    id="messageInput"
-                    type="text"
-                    placeholder="Введите сообщение..."
-                    onkeydown="handleEnter(event)"
-                >
-
-                <button onclick="sendMessage()">
-                    Отправить
-                </button>
-
-            </div>
+            <button onclick="sendMessage()">
+                Отправить
+            </button>
 
         </div>
 
     </div>
 
+</div>
+```
 
 <script>
 
@@ -284,13 +475,16 @@ async function loginAccount() {
         document.getElementById("password").value.trim();
 
     if (!login || !password) {
+
         alert("Заполни логин и пароль!");
+
         return;
     }
 
     try {
 
         const response = await fetch("/login", {
+
             method: "POST",
 
             headers: {
@@ -301,13 +495,16 @@ async function loginAccount() {
                 login: login,
                 password: password
             })
+
         });
 
         const result =
             await response.json();
 
         if (!result.success) {
+
             alert(result.message);
+
             return;
         }
 
@@ -536,7 +733,9 @@ async function loadMessages() {
 async function sendMessage() {
 
     if (!currentChat) {
+
         alert("Сначала выбери пользователя!");
+
         return;
     }
 
@@ -579,8 +778,8 @@ async function sendMessage() {
         if (!result.success) {
 
             alert(result.message);
-            return;
 
+            return;
         }
 
         input.value = "";
@@ -602,7 +801,9 @@ async function sendMessage() {
 function handleEnter(event) {
 
     if (event.key === "Enter") {
+
         sendMessage();
+
     }
 
 }
