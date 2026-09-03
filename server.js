@@ -84,9 +84,7 @@ function safeUser(user, currentLogin = "") {
         about: user.profile.about || "",
         photo: user.profile.photo || "",
         messageStyle: user.profile.messageStyle || "classic",
-        isFriend:
-            Array.isArray(user.friends) &&
-            user.friends.includes(currentLogin)
+        isFriend: user.friends.includes(currentLogin)
     };
 }
 
@@ -167,7 +165,7 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(
         req.url,
-        `http://localhost:${PORT}`
+        "http://localhost:" + PORT
     );
 
     const pathname = url.pathname;
@@ -195,11 +193,8 @@ const server = http.createServer(async (req, res) => {
         try {
             const body = await getBody(req);
 
-            const login =
-                String(body.login || "").trim();
-
-            const password =
-                String(body.password || "").trim();
+            const login = String(body.login || "").trim();
+            const password = String(body.password || "").trim();
 
             if (!login || !password) {
                 sendJSON(res, {
@@ -228,8 +223,8 @@ const server = http.createServer(async (req, res) => {
             }
 
             users.push({
-                login,
-                password,
+                login: login,
+                password: password,
                 friends: [],
                 profile: {
                     name: "",
@@ -265,11 +260,8 @@ const server = http.createServer(async (req, res) => {
         try {
             const body = await getBody(req);
 
-            const login =
-                String(body.login || "").trim();
-
-            const password =
-                String(body.password || "").trim();
+            const login = String(body.login || "").trim();
+            const password = String(body.password || "").trim();
 
             const users = readUsers();
 
@@ -308,7 +300,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // =========================
-    // ПОИСК
+    // ПОИСК ПОЛЬЗОВАТЕЛЕЙ
     // =========================
 
     if (req.method === "GET" && pathname === "/users") {
@@ -316,7 +308,7 @@ const server = http.createServer(async (req, res) => {
         const current =
             url.searchParams.get("current") || "";
 
-        const q =
+        const query =
             (url.searchParams.get("q") || "")
                 .trim()
                 .toLowerCase();
@@ -329,7 +321,7 @@ const server = http.createServer(async (req, res) => {
             .filter(user => user.login !== current)
             .filter(user => {
 
-                if (!q) {
+                if (!query) {
                     return true;
                 }
 
@@ -343,12 +335,14 @@ const server = http.createServer(async (req, res) => {
                     user.profile.about.toLowerCase();
 
                 return (
-                    login.includes(q) ||
-                    name.includes(q) ||
-                    about.includes(q)
+                    login.includes(query) ||
+                    name.includes(query) ||
+                    about.includes(query)
                 );
             })
-            .map(user => safeUser(user, current));
+            .map(user =>
+                safeUser(user, current)
+            );
 
         saveUsers(users);
 
@@ -370,7 +364,6 @@ const server = http.createServer(async (req, res) => {
                 success: false,
                 message: "Логин не указан"
             }, 400);
-
             return;
         }
 
@@ -385,7 +378,6 @@ const server = http.createServer(async (req, res) => {
                 success: false,
                 message: "Пользователь не найден"
             }, 404);
-
             return;
         }
 
@@ -424,9 +416,10 @@ const server = http.createServer(async (req, res) => {
 
             const users = readUsers();
 
-            const user = users.find(
-                item => item.login === login
-            );
+            const user =
+                users.find(
+                    item => item.login === login
+                );
 
             if (!user) {
                 sendJSON(res, {
@@ -452,13 +445,17 @@ const server = http.createServer(async (req, res) => {
                 user.profile.photo = photo;
             }
 
-            const styles = [
+            const allowedStyles = [
                 "classic",
                 "square",
                 "neon"
             ];
 
-            if (styles.includes(messageStyle)) {
+            if (
+                allowedStyles.includes(
+                    messageStyle
+                )
+            ) {
                 user.profile.messageStyle =
                     messageStyle;
             }
@@ -467,6 +464,7 @@ const server = http.createServer(async (req, res) => {
 
             sendJSON(res, {
                 success: true,
+                message: "Профиль сохранён",
                 user: safeUser(user)
             });
 
@@ -556,7 +554,10 @@ const server = http.createServer(async (req, res) => {
                     user => user.login === to
                 );
 
-            if (!currentUser || !targetUser) {
+            if (
+                !currentUser ||
+                !targetUser
+            ) {
                 sendJSON(res, {
                     success: false,
                     message: "Пользователь не найден"
@@ -595,6 +596,7 @@ const server = http.createServer(async (req, res) => {
                     );
 
             } else {
+
                 sendJSON(res, {
                     success: false,
                     message: "Неизвестное действие"
@@ -620,7 +622,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     // =========================
-    // СООБЩЕНИЯ
+    // ОТПРАВКА СООБЩЕНИЯ
     // =========================
 
     if (
@@ -651,17 +653,20 @@ const server = http.createServer(async (req, res) => {
 
             const users = readUsers();
 
-            const fromExists =
+            const senderExists =
                 users.some(
                     user => user.login === from
                 );
 
-            const toExists =
+            const receiverExists =
                 users.some(
                     user => user.login === to
                 );
 
-            if (!fromExists || !toExists) {
+            if (
+                !senderExists ||
+                !receiverExists
+            ) {
                 sendJSON(res, {
                     success: false,
                     message: "Пользователь не найден"
@@ -670,13 +675,14 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
-            const messages = readMessages();
+            const messages =
+                readMessages();
 
             const newMessage = {
                 id: Date.now(),
-                from,
-                to,
-                text,
+                from: from,
+                to: to,
+                text: text,
                 time: new Date().toISOString()
             };
 
@@ -699,6 +705,10 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // =========================
+    // ПОЛУЧЕНИЕ СООБЩЕНИЙ
+    // =========================
+
     if (
         req.method === "GET" &&
         pathname === "/messages"
@@ -715,23 +725,29 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        const messages = readMessages();
+        const messages =
+            readMessages();
 
-        const result =
+        const chatMessages =
             messages.filter(message =>
                 (
                     message.from === user1 &&
                     message.to === user2
-                ) ||
+                )
+                ||
                 (
                     message.from === user2 &&
                     message.to === user1
                 )
             );
 
-        sendJSON(res, result);
+        sendJSON(res, chatMessages);
         return;
     }
+
+    // =========================
+    // 404
+    // =========================
 
     res.writeHead(404, {
         "Content-Type":
@@ -741,9 +757,14 @@ const server = http.createServer(async (req, res) => {
     res.end("Страница не найдена");
 });
 
-server.listen(PORT, HOST, () => {
-    console.log(
-        `Vibe запущен на порту ${PORT}`
-    );
-});
+server.listen(
+    PORT,
+    HOST,
+    () => {
+        console.log(
+            "Vibe запущен на порту " +
+            PORT
+        );
+    }
+);
 ```
