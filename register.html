@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Vibe — Регистрация</title>
+
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #111;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+
+        .box {
+            width: 350px;
+            padding: 30px;
+            background: #1e1e1e;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #aaa;
+        }
+
+        input {
+            width: 90%;
+            padding: 14px;
+            margin: 8px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 95%;
+            padding: 14px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            background: #7c3aed;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #6d28d9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="box">
+
+        <h1>Vibe</h1>
+
+        <p>Создай свой аккаунт</p>
+
+        <input id="login" type="text" placeholder="Придумай логин">
+
+        <input id="password" type="password" placeholder="Придумай пароль">
+
+        <button onclick="register()">Создать аккаунт</button>
+
+    </div>
+
+    <script>
+        async function register() {
+
+            const login = document.getElementById("login").value;
+            const password = document.getElementById("password").value;
+
+            if (!login || !password) {
+                alert("Заполни оба поля!");
+                return;
+            }
+
+            const response = await fetch("/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    login: login,
+                    password: password
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert("Аккаунт создан!");
+            } else {
+                alert(result.message);
+            }
+        }
+    </script>
+
+</body>
+</html>

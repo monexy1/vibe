@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Vibe</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #111827;
+            color: white;
+        }
+
+        .auth {
+            width: 400px;
+            margin: 100px auto;
+            padding: 35px;
+            background: #1f2937;
+            border-radius: 20px;
+            text-align: center;
+        }
+
+        .auth h1 {
+            font-size: 45px;
+            margin: 0 0 10px;
+        }
+
+        .auth p {
+            color: #9ca3af;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            background: #7c3aed;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #6d28d9;
+        }
+
+        .register-button {
+            background: #374151;
+        }
+
+        .messenger {
+            display: none;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #1f2937;
+            padding: 20px;
+            float: left;
+            height: 100vh;
+        }
+
+        .sidebar h2 {
+            margin-top: 0;
+        }
+
+        .user {
+            padding: 14px;
+            margin: 6px 0;
+            background: #374151;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .user:hover,
+        .user.active {
+            background: #7c3aed;
+        }
+
+        .chat {
+            margin-left: 300px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            padding: 20px;
+            background: #1f2937;
+            font-size: 20px;
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .message {
+            max-width: 60%;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 15px;
+            background: #374151;
+        }
+
+        .message.mine {
+            margin-left: auto;
+            background: #7c3aed;
+        }
+
+        .message-input {
+            display: flex;
+            padding: 15px;
+            background: #1f2937;
+        }
+
+        .message-input input {
+            margin: 0 10px 0 0;
+        }
+
+        .message-input button {
+            width: 120px;
+            margin: 0;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logout {
+            width: auto;
+            padding: 8px 12px;
+            background: #ef4444;
+            font-size: 13px;
+        }
+
+        .empty {
+            color: #9ca3af;
+            text-align: center;
+            margin-top: 100px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ВХОД -->
+    <div class="auth" id="authScreen">
+
+        <h1>Vibe</h1>
+        <p>Твой новый мессенджер</p>
+
+        <input
+            id="login"
+            type="text"
+            placeholder="Логин"
+        >
+
+        <input
+            id="password"
+            type="password"
+            placeholder="Пароль"
+        >
+
+        <button onclick="loginAccount()">
+            Войти
+        </button>
+
+        <button
+            class="register-button"
+            onclick="window.location.href='register.html'"
+        >
+            Создать аккаунт
+        </button>
+
+    </div>
+
+
+    <!-- МЕССЕНДЖЕР -->
+    <div class="messenger" id="messenger">
+
+        <div class="sidebar">
+
+            <div class="top">
+                <h2>Vibe</h2>
+
+                <button
+                    class="logout"
+                    onclick="logout()"
+                >
+                    Выйти
+                </button>
+            </div>
+
+            <p id="currentUser"></p>
+
+            <input
+                id="search"
+                type="text"
+                placeholder="Поиск пользователя..."
+                oninput="searchUsers()"
+            >
+
+            <div id="usersList"></div>
+
+        </div>
+
+
+        <div class="chat">
+
+            <div class="chat-header">
+                <span id="chatTitle">
+                    Выбери пользователя
+                </span>
+            </div>
+
+            <div
+                class="messages"
+                id="messages"
+            >
+                <div class="empty">
+                    💬 Выбери пользователя,
+                    чтобы начать чат
+                </div>
+            </div>
+
+            <div class="message-input">
+
+                <input
+                    id="messageInput"
+                    type="text"
+                    placeholder="Введите сообщение..."
+                    onkeydown="handleEnter(event)"
+                >
+
+                <button onclick="sendMessage()">
+                    Отправить
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+<script>
+
+let currentUser = "";
+let currentChat = "";
+let allUsers = [];
+let messageTimer = null;
+
+
+// ============================
+// ВХОД
+// ============================
+
+async function loginAccount() {
+
+    const login =
+        document.getElementById("login").value.trim();
+
+    const password =
+        document.getElementById("password").value.trim();
+
+    if (!login || !password) {
+        alert("Заполни логин и пароль!");
+        return;
+    }
+
+    try {
+
+        const response = await fetch("/login", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                login: login,
+                password: password
+            })
+        });
+
+        const result =
+            await response.json();
+
+        if (!result.success) {
+            alert(result.message);
+            return;
+        }
+
+        currentUser = login;
+
+        localStorage.setItem(
+            "vibeUser",
+            currentUser
+        );
+
+        showMessenger();
+
+    } catch {
+
+        alert("Не удалось подключиться к серверу");
+
+    }
+}
+
+
+// ============================
+// ПОКАЗ МЕССЕНДЖЕРА
+// ============================
+
+function showMessenger() {
+
+    document.getElementById("authScreen")
+        .style.display = "none";
+
+    document.getElementById("messenger")
+        .style.display = "block";
+
+    document.getElementById("currentUser")
+        .textContent = "Вы вошли как: " + currentUser;
+
+    loadUsers();
+}
+
+
+// ============================
+// ПОЛЬЗОВАТЕЛИ
+// ============================
+
+async function loadUsers() {
+
+    try {
+
+        const response =
+            await fetch("/users");
+
+        allUsers =
+            await response.json();
+
+        searchUsers();
+
+    } catch {
+
+        console.log("Ошибка загрузки пользователей");
+
+    }
+}
+
+
+// ============================
+// ПОИСК
+// ============================
+
+function searchUsers() {
+
+    const search =
+        document.getElementById("search")
+            .value
+            .toLowerCase()
+            .trim();
+
+    const list =
+        document.getElementById("usersList");
+
+    list.innerHTML = "";
+
+    allUsers
+        .filter(user => {
+
+            const login =
+                typeof user === "string"
+                    ? user
+                    : user.login;
+
+            return (
+                login !== currentUser &&
+                login.toLowerCase().includes(search)
+            );
+
+        })
+        .forEach(user => {
+
+            const login =
+                typeof user === "string"
+                    ? user
+                    : user.login;
+
+            const div =
+                document.createElement("div");
+
+            div.className = "user";
+
+            if (login === currentChat) {
+                div.classList.add("active");
+            }
+
+            div.textContent = "👤 " + login;
+
+            div.onclick = function() {
+                openChat(login);
+            };
+
+            list.appendChild(div);
+
+        });
+
+    if (list.innerHTML === "") {
+
+        list.innerHTML =
+            "<p style='color:#9ca3af'>Пользователь не найден</p>";
+
+    }
+}
+
+
+// ============================
+// ОТКРЫТЬ ЧАТ
+// ============================
+
+function openChat(login) {
+
+    currentChat = login;
+
+    document.getElementById("chatTitle")
+        .textContent = login;
+
+    loadMessages();
+
+    if (messageTimer) {
+        clearInterval(messageTimer);
+    }
+
+    messageTimer =
+        setInterval(loadMessages, 1000);
+
+    searchUsers();
+}
+
+
+// ============================
+// ЗАГРУЗКА СООБЩЕНИЙ
+// ============================
+
+async function loadMessages() {
+
+    if (!currentChat) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                "/messages?user1=" +
+                encodeURIComponent(currentUser) +
+                "&user2=" +
+                encodeURIComponent(currentChat)
+            );
+
+        const messages =
+            await response.json();
+
+        const container =
+            document.getElementById("messages");
+
+        container.innerHTML = "";
+
+        if (messages.length === 0) {
+
+            container.innerHTML = `
+                <div class="empty">
+                    💬 Новый чат<br>
+                    Здесь пока нет сообщений.
+                </div>
+            `;
+
+            return;
+        }
+
+        messages.forEach(message => {
+
+            const div =
+                document.createElement("div");
+
+            div.className = "message";
+
+            if (message.from === currentUser) {
+                div.classList.add("mine");
+            }
+
+            div.textContent = message.text;
+
+            container.appendChild(div);
+
+        });
+
+        container.scrollTop =
+            container.scrollHeight;
+
+    } catch {
+
+        console.log("Ошибка загрузки сообщений");
+
+    }
+}
+
+
+// ============================
+// ОТПРАВКА
+// ============================
+
+async function sendMessage() {
+
+    if (!currentChat) {
+        alert("Сначала выбери пользователя!");
+        return;
+    }
+
+    const input =
+        document.getElementById("messageInput");
+
+    const text =
+        input.value.trim();
+
+    if (!text) {
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch("/send-message", {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+
+                    from: currentUser,
+
+                    to: currentChat,
+
+                    text: text
+
+                })
+
+            });
+
+        const result =
+            await response.json();
+
+        if (!result.success) {
+
+            alert(result.message);
+            return;
+
+        }
+
+        input.value = "";
+
+        loadMessages();
+
+    } catch {
+
+        alert("Ошибка отправки сообщения");
+
+    }
+}
+
+
+// ============================
+// ENTER
+// ============================
+
+function handleEnter(event) {
+
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+
+}
+
+
+// ============================
+// ВЫХОД
+// ============================
+
+function logout() {
+
+    localStorage.removeItem("vibeUser");
+
+    currentUser = "";
+    currentChat = "";
+
+    if (messageTimer) {
+        clearInterval(messageTimer);
+    }
+
+    document.getElementById("messenger")
+        .style.display = "none";
+
+    document.getElementById("authScreen")
+        .style.display = "block";
+}
+
+
+// ============================
+// АВТОВХОД
+// ============================
+
+const savedUser =
+    localStorage.getItem("vibeUser");
+
+if (savedUser) {
+
+    currentUser = savedUser;
+
+    showMessenger();
+
+}
+
+</script>
+
+</body>
+</html>
