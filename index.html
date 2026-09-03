@@ -1,756 +1,2550 @@
-```html
-<style>
-/* ==========================================
-   VIBE — FINAL RESPONSIVE DESIGN
-   ПК + ТЕЛЕФОН
-========================================== */
-
-html,
-body {
-    width: 100%;
-    height: 100%;
-    min-height: 100%;
-    margin: 0;
-}
-
-body {
-    overflow: hidden;
-}
-
-/* Приложение занимает весь экран */
-.app {
-    width: 100%;
-    height: 100dvh;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.layout {
-    width: 100%;
-    height: 100dvh;
-    min-height: 0;
-
-    display: grid;
-    grid-template-columns: 320px minmax(0, 1fr);
-}
-
-/* Защита от вылезания элементов */
-.sidebar,
-.chat,
-.friends,
-.messages {
-    min-width: 0;
-    min-height: 0;
-}
-
-.chat {
-    overflow: hidden;
-}
-
-.messages {
-    overflow-x: hidden;
-    overflow-y: auto;
-}
-
-/* ==========================================
-   ПК
-========================================== */
-
-@media (min-width: 751px) {
-
-    /* Поднимаем блок входа выше */
-    .auth {
-        margin-top: 25px;
-    }
-
-    .layout {
-        grid-template-columns:
-            minmax(280px, 320px)
-            minmax(0, 1fr);
-    }
-
-    .sidebar {
-        width: 100%;
-        height: 100%;
-    }
-
-    .chat {
-        width: 100%;
-        height: 100%;
-    }
-
-    .chat-head {
-        flex-shrink: 0;
-    }
-
-    .messages {
-        flex: 1;
-        min-height: 0;
-    }
-
-    .composer {
-        flex-shrink: 0;
-    }
-}
-
-
-/* ==========================================
-   ТЕЛЕФОН
-   ОСТАВЛЯЕМ ДИЗАЙН КАК НА ПК:
-   СЛЕВА — МЕНЮ
-   СПРАВА — ЧАТ
-========================================== */
-
-@media (max-width: 750px) {
-
-    .app {
-        width: 100vw;
-        height: 100dvh;
-        overflow: hidden;
-    }
-
-    .layout {
-        width: 100vw;
-        height: 100dvh;
-
-        display: grid;
-
-        /*
-          Боковая панель занимает примерно 30%.
-          Чат — остальные 70%.
-        */
-        grid-template-columns:
-            30vw
-            minmax(0, 70vw);
-
-        grid-template-rows: 1fr;
-    }
-
-
-    /* ======================================
-       ЛЕВАЯ ПАНЕЛЬ
-    ====================================== */
-
-    .sidebar {
-        width: 100%;
-        height: 100%;
-
-        min-width: 0;
-        min-height: 0;
-
-        padding: 7px;
-
-        overflow: hidden;
-
-        border-right:
-            1px solid var(--border);
-
-        border-bottom: none;
-    }
-
-    .side-top {
-        width: 100%;
-        min-width: 0;
-
-        gap: 4px;
-    }
-
-    .brand {
-        min-width: 0;
-        width: 100%;
-        gap: 5px;
-    }
-
-    .brand-logo {
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-
-        border-radius: 9px;
-
-        font-size: 14px;
-    }
-
-    .brand h2 {
-        font-size: 13px;
-
-        white-space: nowrap;
-        overflow: hidden;
-    }
-
-    .account {
-        max-width: 65px;
-
-        font-size: 8px;
-    }
-
-    .icon-btn {
-        width: 30px;
-        height: 30px;
-        min-width: 30px;
-
-        padding: 0;
-
-        border-radius: 9px;
-
-        font-size: 13px;
-    }
-
-
-    /* ======================================
-       ПОИСК
-    ====================================== */
-
-    .search {
-        width: 100%;
-        margin-top: 6px;
-    }
-
-    .search input {
-        width: 100%;
-        height: 32px;
-
-        padding: 6px;
-
-        font-size: 9px;
-
-        border-radius: 9px;
-    }
-
-
-    /* ======================================
-       РЕЗУЛЬТАТЫ ПОИСКА
-    ====================================== */
-
-    .results {
-        width: 100%;
-
-        max-height: 100px;
-
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-
-    .results .person {
-        width: 100%;
-
-        min-width: 0;
-
-        padding: 5px 2px;
-
-        gap: 4px;
-
-        margin: 2px 0;
-    }
-
-
-    /* ======================================
-       МОИ ЧАТЫ
-    ====================================== */
-
-    .section {
-        margin:
-            7px 2px 3px;
-
-        font-size: 7px;
-    }
-
-    .friends {
-        width: 100%;
-
-        flex: 1;
-
-        min-height: 0;
-
-        display: block;
-
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-
-    .friends .person {
-        width: 100%;
-
-        min-width: 0;
-
-        height: auto;
-
-        padding: 6px 2px;
-
-        gap: 4px;
-
-        margin: 2px 0;
-    }
-
-
-    /* ======================================
-       АВАТАРЫ
-    ====================================== */
-
-    .avatar {
-        width: 28px;
-        height: 28px;
-
-        min-width: 28px;
-
-        border-radius: 8px;
-
-        font-size: 10px;
-    }
-
-
-    /* ======================================
-       ИМЯ / ЛОГИН
-    ====================================== */
-
-    .info {
-        min-width: 0;
-        width: 100%;
-    }
-
-    .name {
-        width: 100%;
-
-        font-size: 9px;
-
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .login {
-        width: 100%;
-
-        font-size: 7px;
-
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-
-    /* ======================================
-       КНОПКИ ДРУЗЕЙ
-    ====================================== */
-
-    .friend-action {
-        width: 20px;
-        min-width: 20px;
-
-        padding: 4px 2px;
-
-        font-size: 8px;
-
-        border-radius: 6px;
-    }
-
-    .remove {
-        width: auto;
-        min-width: 20px;
-
-        padding: 4px 3px;
-
-        font-size: 7px;
-    }
-
-
-    /* ======================================
-       ВЫХОД
-    ====================================== */
-
-    .side-bottom {
-        width: 100%;
-
-        padding-top: 5px;
-        margin-top: 5px;
-    }
-
-    .logout {
-        width: 100%;
-        height: 29px;
-
-        padding: 4px;
-
-        font-size: 8px;
-
-        border-radius: 8px;
-    }
-
-
-    /* ======================================
-       ПРАВАЯ ЧАСТЬ — ЧАТ
-    ====================================== */
-
-    .chat {
-        width: 100%;
-        height: 100%;
-
-        min-width: 0;
-        min-height: 0;
-
-        display: flex;
-        flex-direction: column;
-
-        overflow: hidden;
-    }
-
-
-    /* ======================================
-       ШАПКА ЧАТА
-    ====================================== */
-
-    .chat-head {
-        width: 100%;
-
-        height: 55px;
-        min-height: 55px;
-
-        padding: 6px 8px;
-
-        flex-shrink: 0;
-
-        overflow: hidden;
-    }
-
-    .chat-user {
-        min-width: 0;
-
-        gap: 6px;
-    }
-
-    .chat-head .avatar {
-        width: 32px;
-        height: 32px;
-
-        min-width: 32px;
-
-        border-radius: 9px;
-    }
-
-    .chat-head .name {
-        font-size: 11px;
-    }
-
-    .chat-head .login {
-        font-size: 8px;
-    }
-
-
-    /* ======================================
-       СООБЩЕНИЯ
-    ====================================== */
-
-    .messages {
-        width: 100%;
-
-        flex: 1;
-
-        min-width: 0;
-        min-height: 0;
-
-        padding: 7px;
-
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-
-    .bubble {
-        max-width: 88%;
-
-        padding: 8px 9px;
-
-        margin: 5px 0;
-
-        font-size: 11px;
-
-        border-radius:
-            13px 13px 13px 4px;
-    }
-
-    .bubble.mine {
-        border-radius:
-            13px 13px 4px 13px;
-    }
-
-    .time {
-        font-size: 7px;
-    }
-
-
-    /* ======================================
-       ПОЛЕ ВВОДА
-    ====================================== */
-
-    .composer {
-        width: 100%;
-
-        height: 52px;
-        min-height: 52px;
-
-        padding: 6px;
-
-        flex-shrink: 0;
-
-        gap: 5px;
-    }
-
-    .composer input {
-        width: 100%;
-        min-width: 0;
-
-        height: 40px;
-
-        padding: 8px;
-
-        font-size: 10px;
-
-        border-radius: 10px;
-    }
-
-    .emoji-btn {
-        width: 34px;
-        min-width: 34px;
-
-        height: 40px;
-
-        padding: 0;
-
-        font-size: 14px;
-
-        border-radius: 10px;
-    }
-
-    .send {
-        width: 58px;
-        min-width: 58px;
-
-        height: 40px;
-
-        padding: 3px;
-
-        font-size: 8px;
-
-        border-radius: 10px;
-    }
-
-
-    /* ======================================
-       ЭМОДЗИ
-    ====================================== */
-
-    .emoji-panel {
-        left: 5px;
-        bottom: 57px;
-
-        width: 200px;
-        max-width:
-            calc(100vw - 10px);
-
-        max-height: 190px;
-
-        overflow-y: auto;
-        overflow-x: hidden;
-
-        grid-template-columns:
-            repeat(6, minmax(0, 1fr));
-
-        padding: 7px;
-
-        gap: 4px;
-
-        border-radius: 12px;
-    }
-
-    .emoji-panel button {
-        width: 100%;
-        min-width: 0;
-
-        height: 30px;
-
-        padding: 0;
-
-        font-size: 14px;
-
-        border-radius: 7px;
-    }
-
-
-    /* ======================================
-       ПРОФИЛЬ
-    ====================================== */
-
-    .modal {
-        width: 100vw;
-        height: 100dvh;
-
-        padding: 8px;
-    }
-
-    .profile {
-        width: 100%;
-
-        max-width: 400px;
-
-        max-height:
-            calc(100dvh - 16px);
-
-        padding: 14px;
-
-        border-radius: 16px;
-    }
-}
-
-
-/* ==========================================
-   ОЧЕНЬ МАЛЕНЬКИЕ ТЕЛЕФОНЫ
-========================================== */
-
-@media (max-width: 380px) {
-
-    .layout {
-        grid-template-columns:
-            29vw
-            minmax(0, 71vw);
-    }
-
-    .sidebar {
-        padding: 5px;
-    }
-
-    .brand-logo {
-        width: 27px;
-        height: 27px;
-        min-width: 27px;
-    }
-
-    .brand h2 {
-        font-size: 11px;
-    }
-
-    .account {
-        max-width: 55px;
-        font-size: 7px;
-    }
-
-    .icon-btn {
-        width: 27px;
-        height: 27px;
-        min-width: 27px;
-    }
-
-    .search input {
-        height: 29px;
-        font-size: 8px;
-    }
-
-    .avatar {
-        width: 25px;
-        height: 25px;
-        min-width: 25px;
-    }
-
-    .name {
-        font-size: 8px;
-    }
-
-    .login {
-        font-size: 6px;
-    }
-
-    .friend-action {
-        width: 18px;
-        min-width: 18px;
-        font-size: 7px;
-    }
-
-    .chat-head {
-        height: 50px;
-        min-height: 50px;
-    }
-
-    .chat-head .avatar {
-        width: 29px;
-        height: 29px;
-        min-width: 29px;
-    }
-
-    .bubble {
-        max-width: 90%;
-        font-size: 10px;
-    }
-
-    .composer {
-        height: 48px;
-        min-height: 48px;
-    }
-
-    .composer input {
-        height: 36px;
-        font-size: 9px;
-    }
-
-    .emoji-btn {
-        width: 30px;
-        min-width: 30px;
-        height: 36px;
-    }
-
-    .send {
-        width: 52px;
-        min-width: 52px;
-        height: 36px;
-        font-size: 7px;
-    }
-}
-
-
-/* ==========================================
-   СОВСЕМ УЗКИЙ ЭКРАН
-========================================== */
-
-@media (max-width: 330px) {
-
-    .layout {
-        grid-template-columns:
-            27vw
-            minmax(0, 73vw);
-    }
-
-    .brand h2 {
-        font-size: 10px;
-    }
-
-    .account {
-        display: none;
-    }
-
-    .search input {
-        font-size: 7px;
-        padding: 4px;
-    }
-
-    .friends .person {
-        padding: 4px 1px;
-    }
-
-    .name {
-        font-size: 7px;
-    }
-
-    .login {
-        display: none;
-    }
-
-    .bubble {
-        font-size: 9px;
-        padding: 7px 8px;
-    }
-
-    .send {
-        width: 47px;
-        min-width: 47px;
-        font-size: 6px;
-    }
-}
-</style>
-```
+<!DOCTYPE html> 
+ 
+<html lang="ru"> 
+<head> 
+ 
+<meta charset="UTF-8"> 
+ 
+<meta 
+name="viewport" 
+content="width=device-width, initial-scale=1.0" 
+ 
+> 
+ 
+<title>Vibe</title> 
+ 
+<style> 
+ 
+* { 
+    box-sizing: border-box; 
+} 
+ 
+html, 
+body { 
+    margin: 0; 
+    width: 100%; 
+    height: 100%; 
+} 
+ 
+body { 
+    font-family: Arial, sans-serif; 
+    background: #0b1020; 
+    color: white; 
+    overflow: hidden; 
+    --bg: #0b1020; 
+    --panel: #151b2f; 
+    --panel2: #202943; 
+    --text: #ffffff; 
+    --muted: #9aa5c1; 
+    --accent: #8b5cf6; 
+    --accent2: #6d28d9; 
+    --bubble: #293352; 
+    --border: rgba(255,255,255,0.08); 
+} 
+ 
+body.light { 
+    --bg: #eef2ff; 
+    --panel: #ffffff; 
+    --panel2: #f1f5f9; 
+    --text: #111827; 
+    --muted: #64748b; 
+    --accent: #7c3aed; 
+    --accent2: #6d28d9; 
+    --bubble: #e2e8f0; 
+    --border: rgba(15,23,42,0.1); 
+} 
+ 
+body.ocean { 
+    --bg: #061923; 
+    --panel: #0b2530; 
+    --panel2: #103746; 
+    --text: #ffffff; 
+    --muted: #93b7c4; 
+    --accent: #06b6d4; 
+    --accent2: #0284c7; 
+    --bubble: #173f4e; 
+} 
+ 
+body.sunset { 
+    --bg: #24100e; 
+    --panel: #361815; 
+    --panel2: #48211b; 
+    --text: #ffffff; 
+    --muted: #d7aaa2; 
+    --accent: #f97316; 
+    --accent2: #e11d48; 
+    --bubble: #55261f; 
+} 
+ 
+button, 
+input, 
+textarea, 
+select { 
+    font: inherit; 
+} 
+ 
+button { 
+    cursor: pointer; 
+    border: none; 
+} 
+ 
+.auth { 
+    width: 410px; 
+    max-width: calc(100% - 20px); 
+    margin: 60px auto; 
+    padding: 32px; 
+    background: var(--panel); 
+    border: 1px solid var(--border); 
+    border-radius: 24px; 
+    text-align: center; 
+} 
+ 
+.logo { 
+    width: 70px; 
+    height: 70px; 
+    margin: auto; 
+    border-radius: 20px; 
+    display: grid; 
+    place-items: center; 
+    background: 
+        linear-gradient( 
+            135deg, 
+            #8b5cf6, 
+            #ec4899, 
+            #06b6d4 
+        ); 
+    font-size: 34px; 
+    font-weight: bold; 
+} 
+ 
+.auth h1 { 
+    margin: 10px 0 5px; 
+    font-size: 44px; 
+} 
+ 
+.auth p { 
+    color: var(--muted); 
+} 
+ 
+.auth input { 
+    width: 100%; 
+    padding: 13px; 
+    margin: 6px 0; 
+    border: 1px solid var(--border); 
+    border-radius: 13px; 
+    background: var(--panel2); 
+    color: var(--text); 
+    outline: none; 
+} 
+ 
+.primary, 
+.secondary { 
+    width: 100%; 
+    padding: 13px; 
+    margin-top: 8px; 
+    border-radius: 13px; 
+    color: white; 
+} 
+ 
+.primary { 
+    background: 
+        linear-gradient( 
+            135deg, 
+            var(--accent), 
+            var(--accent2) 
+        ); 
+} 
+ 
+.secondary { 
+    background: var(--panel2); 
+    border: 1px solid var(--border); 
+} 
+ 
+.app { 
+    display: none; 
+    width: 100%; 
+    height: 100dvh; 
+} 
+ 
+.layout { 
+    display: grid; 
+    grid-template-columns: 320px 1fr; 
+    width: 100%; 
+    height: 100%; 
+} 
+ 
+.sidebar { 
+    background: var(--panel); 
+    border-right: 1px solid var(--border); 
+    padding: 14px; 
+    display: flex; 
+    flex-direction: column; 
+    min-width: 0; 
+} 
+ 
+.side-top { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    gap: 8px; 
+} 
+ 
+.brand { 
+    display: flex; 
+    align-items: center; 
+    gap: 9px; 
+    min-width: 0; 
+} 
+ 
+.brand-logo { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 13px; 
+    display: grid; 
+    place-items: center; 
+    background: 
+        linear-gradient( 
+            135deg, 
+            #8b5cf6, 
+            #ec4899, 
+            #06b6d4 
+        ); 
+    font-weight: bold; 
+} 
+ 
+.brand h2 { 
+    margin: 0; 
+} 
+ 
+.account { 
+    color: var(--muted); 
+    font-size: 11px; 
+    max-width: 130px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+} 
+ 
+.icon-btn { 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 12px; 
+    background: var(--panel2); 
+    color: var(--text); 
+} 
+ 
+.search { 
+    margin-top: 12px; 
+} 
+ 
+.search input { 
+    width: 100%; 
+    padding: 13px; 
+    margin: 0; 
+    border: 1px solid var(--border); 
+    border-radius: 13px; 
+    background: var(--panel2); 
+    color: var(--text); 
+    outline: none; 
+} 
+ 
+.results { 
+    max-height: 230px; 
+    overflow-y: auto; 
+} 
+ 
+.section { 
+    margin: 12px 3px 6px; 
+    color: var(--muted); 
+    font-size: 11px; 
+    text-transform: uppercase; 
+} 
+ 
+.friends { 
+    flex: 1; 
+    min-height: 0; 
+    overflow-y: auto; 
+} 
+ 
+.person { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    padding: 8px; 
+    margin: 4px 0; 
+    border-radius: 12px; 
+} 
+ 
+.person.clickable { 
+    cursor: pointer; 
+} 
+ 
+.person.clickable:hover, 
+.person.active { 
+    background: var(--panel2); 
+} 
+ 
+.avatar { 
+    width: 40px; 
+    height: 40px; 
+    min-width: 40px; 
+    border-radius: 12px; 
+    object-fit: cover; 
+    display: grid; 
+    place-items: center; 
+    background: 
+        linear-gradient( 
+            135deg, 
+            #8b5cf6, 
+            #ec4899 
+        ); 
+    font-weight: bold; 
+} 
+ 
+.info { 
+    flex: 1; 
+    min-width: 0; 
+} 
+ 
+.name { 
+    font-weight: bold; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+} 
+ 
+.login { 
+    color: var(--muted); 
+    font-size: 11px; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+} 
+ 
+.friend-action, 
+.logout { 
+    width: auto; 
+    padding: 7px 9px; 
+    border-radius: 9px; 
+    color: white; 
+    font-size: 11px; 
+    flex-shrink: 0; 
+} 
+ 
+.friend-action { 
+    background: var(--accent); 
+} 
+ 
+.remove, 
+.logout { 
+    background: #ef4444; 
+} 
+ 
+.side-bottom { 
+    border-top: 1px solid var(--border); 
+    padding-top: 8px; 
+    margin-top: 8px; 
+} 
+ 
+.logout { 
+    width: 100%; 
+} 
+ 
+.chat { 
+    display: flex; 
+    flex-direction: column; 
+    min-width: 0; 
+    height: 100%; 
+    background: var(--bg); 
+} 
+ 
+.chat-head { 
+    min-height: 70px; 
+    display: flex; 
+    align-items: center; 
+    padding: 10px 16px; 
+    background: var(--panel); 
+    border-bottom: 1px solid var(--border); 
+} 
+ 
+.chat-user { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+} 
+ 
+.messages { 
+    flex: 1; 
+    min-height: 0; 
+    overflow-y: auto; 
+    padding: 16px; 
+} 
+ 
+.bubble { 
+    width: fit-content; 
+    max-width: min(65%, 620px); 
+    padding: 11px 14px; 
+    margin: 7px 0; 
+    background: var(--bubble); 
+    border-radius: 17px 17px 17px 5px; 
+    word-break: break-word; 
+} 
+ 
+.bubble.mine { 
+    margin-left: auto; 
+    background: var(--accent); 
+    border-radius: 17px 17px 5px 17px; 
+} 
+ 
+.bubble.square { 
+    border-radius: 7px; 
+} 
+ 
+.bubble.neon { 
+    border: 1px solid var(--accent); 
+    box-shadow: 
+        0 0 16px rgba(139,92,246,0.35); 
+} 
+ 
+.time { 
+    font-size: 10px; 
+    opacity: .6; 
+    margin-top: 4px; 
+} 
+ 
+.empty { 
+    height: 100%; 
+    display: grid; 
+    place-items: center; 
+    text-align: center; 
+    color: var(--muted); 
+} 
+ 
+.composer { 
+    position: relative; 
+    display: flex; 
+    gap: 7px; 
+    padding: 9px; 
+    background: var(--panel); 
+    border-top: 1px solid var(--border); 
+} 
+ 
+.composer input { 
+    flex: 1; 
+    min-width: 0; 
+    padding: 12px; 
+    margin: 0; 
+    border-radius: 13px; 
+    border: 1px solid var(--border); 
+    background: var(--panel2); 
+    color: var(--text); 
+    outline: none; 
+} 
+ 
+.emoji-btn, 
+.send { 
+    border-radius: 12px; 
+    color: white; 
+} 
+ 
+.emoji-btn { 
+    width: 42px; 
+    min-width: 42px; 
+    background: var(--panel2); 
+} 
+ 
+.send { 
+    width: 105px; 
+    background: 
+        linear-gradient( 
+            135deg, 
+            var(--accent), 
+            var(--accent2) 
+        ); 
+} 
+ 
+.emoji-panel { 
+    display: none; 
+    position: absolute; 
+    left: 8px; 
+    bottom: 62px; 
+    width: 250px; 
+    max-width: calc(100vw - 16px); 
+    padding: 9px; 
+    grid-template-columns: 
+        repeat(6, minmax(0, 1fr)); 
+    gap: 5px; 
+    background: var(--panel); 
+    border: 1px solid var(--border); 
+    border-radius: 15px; 
+    box-shadow: 
+        0 15px 40px rgba(0,0,0,.35); 
+} 
+ 
+.emoji-panel.show { 
+    display: grid; 
+} 
+ 
+.emoji-panel button { 
+    min-width: 0; 
+    padding: 7px 3px; 
+    background: var(--panel2); 
+    border-radius: 8px; 
+} 
+ 
+.modal { 
+    display: none; 
+    position: fixed; 
+    inset: 0; 
+    z-index: 50; 
+    background: rgba(0,0,0,.65); 
+    align-items: center; 
+    justify-content: center; 
+    padding: 16px; 
+} 
+ 
+.modal.show { 
+    display: flex; 
+} 
+ 
+.profile { 
+    width: 450px; 
+    max-width: 100%; 
+    max-height: 90vh; 
+    overflow-y: auto; 
+    background: var(--panel); 
+    padding: 20px; 
+    border-radius: 20px; 
+    border: 1px solid var(--border); 
+} 
+ 
+.profile-top { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+} 
+ 
+.profile-top h2 { 
+    margin: 0; 
+} 
+ 
+.close { 
+    width: 34px; 
+    height: 34px; 
+    border-radius: 9px; 
+    background: var(--panel2); 
+    color: var(--text); 
+} 
+ 
+.preview { 
+    display: flex; 
+    gap: 12px; 
+    align-items: center; 
+    margin: 15px 0; 
+} 
+ 
+.preview .avatar { 
+    width: 68px; 
+    height: 68px; 
+} 
+ 
+.profile label { 
+    display: block; 
+    color: var(--muted); 
+    font-size: 12px; 
+    margin: 10px 0 4px; 
+} 
+ 
+.profile input, 
+.profile textarea, 
+.profile select { 
+    width: 100%; 
+    padding: 12px; 
+    border-radius: 12px; 
+    border: 1px solid var(--border); 
+    background: var(--panel2); 
+    color: var(--text); 
+    outline: none; 
+} 
+ 
+.profile textarea { 
+    min-height: 90px; 
+    resize: vertical; 
+} 
+ 
+.save { 
+    width: 100%; 
+    padding: 12px; 
+    border-radius: 12px; 
+    background: 
+        linear-gradient( 
+            135deg, 
+            var(--accent), 
+            var(--accent2) 
+        ); 
+    color: white; 
+    margin-top: 10px; 
+} 
+ 
+@media (max-width: 750px) { 
+ 
+    .auth { 
+        margin: 25px auto; 
+        padding: 25px 18px; 
+    } 
+ 
+    .auth h1 { 
+        font-size: 36px; 
+    } 
+ 
+    .layout { 
+        grid-template-columns: 140px 1fr; 
+    } 
+ 
+    .sidebar { 
+        padding: 8px; 
+    } 
+ 
+    .brand h2 { 
+        font-size: 17px; 
+    } 
+ 
+    .account { 
+        max-width: 70px; 
+    } 
+ 
+    .brand-logo, 
+    .icon-btn { 
+        width: 34px; 
+        height: 34px; 
+    } 
+ 
+    .search input { 
+        font-size: 11px; 
+        padding: 9px; 
+    } 
+ 
+    .section { 
+        font-size: 9px; 
+    } 
+ 
+    .person { 
+        padding: 6px; 
+        gap: 5px; 
+    } 
+ 
+    .avatar { 
+        width: 32px; 
+        height: 32px; 
+        min-width: 32px; 
+        border-radius: 9px; 
+    } 
+ 
+    .name { 
+        font-size: 11px; 
+    } 
+ 
+    .login { 
+        font-size: 9px; 
+    } 
+ 
+    .friend-action { 
+        padding: 5px; 
+        font-size: 9px; 
+    } 
+ 
+    .logout { 
+        font-size: 10px; 
+        padding: 7px; 
+    } 
+ 
+    .chat-head { 
+        min-height: 60px; 
+        padding: 8px; 
+    } 
+ 
+    .messages { 
+        padding: 8px; 
+    } 
+ 
+    .bubble { 
+        max-width: 84%; 
+        font-size: 13px; 
+        padding: 9px 11px; 
+    } 
+ 
+    .composer { 
+        padding: 6px; 
+    } 
+ 
+    .emoji-btn { 
+        width: 36px; 
+        min-width: 36px; 
+    } 
+ 
+    .composer input { 
+        font-size: 12px; 
+        padding: 9px; 
+    } 
+ 
+    .send { 
+        width: 70px; 
+        font-size: 10px; 
+    } 
+ 
+    .emoji-panel { 
+        width: 225px; 
+    } 
+} 
+ 
+@media (max-width: 400px) { 
+ 
+    .layout { 
+        grid-template-columns: 125px 1fr; 
+    } 
+ 
+    .brand h2 { 
+        font-size: 15px; 
+    } 
+ 
+    .account { 
+        max-width: 58px; 
+    } 
+ 
+    .name { 
+        font-size: 10px; 
+    } 
+ 
+    .login { 
+        font-size: 8px; 
+    } 
+ 
+    .send { 
+        width: 64px; 
+        font-size: 9px; 
+    } 
+ 
+    .emoji-panel { 
+        width: 215px; 
+    } 
+} 
+ 
+</style> 
+ 
+ 
+<style> 
+/* FINAL RESPONSIVE LAYOUT OVERRIDES */ 
+html, body { 
+    width: 100%; 
+    height: 100%; 
+    min-height: 100%; 
+} 
+ 
+body { 
+    overflow: hidden; 
+} 
+ 
+.app { 
+    width: 100%; 
+    height: 100dvh; 
+    min-height: 0; 
+} 
+ 
+.layout { 
+    width: 100%; 
+    height: 100dvh; 
+    min-height: 0; 
+} 
+ 
+.sidebar, 
+.chat, 
+.friends, 
+.messages { 
+    min-height: 0; 
+} 
+ 
+@media (max-width: 750px) { 
+    .app, .layout { 
+        height: 100dvh; 
+    } 
+ 
+    .layout { 
+        display: grid; 
+        grid-template-columns: 1fr; 
+        grid-template-rows: 176px minmax(0, 1fr); 
+    } 
+ 
+    .sidebar { 
+        width: 100%; 
+        height: 176px; 
+        min-height: 0; 
+        padding: 8px 10px; 
+        border-right: none; 
+        border-bottom: 1px solid var(--border); 
+        overflow: hidden; 
+    } 
+ 
+    .side-top { 
+        min-height: 36px; 
+    } 
+ 
+    .brand-logo, 
+    .icon-btn { 
+        width: 34px; 
+        height: 34px; 
+        min-width: 34px; 
+        border-radius: 10px; 
+    } 
+ 
+    .brand h2 { 
+        font-size: 17px; 
+    } 
+ 
+    .account { 
+        max-width: 140px; 
+        font-size: 10px; 
+    } 
+ 
+    .search { 
+        margin-top: 7px; 
+    } 
+ 
+    .search input { 
+        height: 36px; 
+        padding: 8px 10px; 
+        font-size: 13px; 
+    } 
+ 
+    .results { 
+        max-height: 54px; 
+        overflow-x: auto; 
+        overflow-y: hidden; 
+        display: flex; 
+        gap: 5px; 
+    } 
+ 
+    .results .person { 
+        flex: 0 0 170px; 
+        margin: 3px 0; 
+    } 
+ 
+    .section { 
+        margin: 4px 3px 3px; 
+        font-size: 9px; 
+    } 
+ 
+    .friends { 
+        flex: 0 0 50px; 
+        display: flex; 
+        gap: 6px; 
+        overflow-x: auto; 
+        overflow-y: hidden; 
+        scrollbar-width: thin; 
+    } 
+ 
+    .friends .person { 
+        flex: 0 0 auto; 
+        min-width: 145px; 
+        height: 44px; 
+        margin: 0; 
+        padding: 5px 7px; 
+    } 
+ 
+    .friends .avatar { 
+        width: 30px; 
+        height: 30px; 
+        min-width: 30px; 
+    } 
+ 
+    .friends .name { 
+        font-size: 11px; 
+    } 
+ 
+    .friends .login { 
+        font-size: 9px; 
+    } 
+ 
+    .side-bottom { 
+        padding-top: 4px; 
+        margin-top: 4px; 
+        border-top: none; 
+    } 
+ 
+    .logout { 
+        height: 30px; 
+        padding: 4px 8px; 
+        font-size: 10px; 
+    } 
+ 
+    .chat { 
+        width: 100%; 
+        height: auto; 
+        min-height: 0; 
+    } 
+ 
+    .chat-head { 
+        min-height: 58px; 
+        height: 58px; 
+        padding: 7px 10px; 
+        flex-shrink: 0; 
+    } 
+ 
+    .chat-head .avatar { 
+        width: 36px; 
+        height: 36px; 
+        min-width: 36px; 
+    } 
+ 
+    .chat-head .name { 
+        font-size: 13px; 
+    } 
+ 
+    .chat-head .login { 
+        font-size: 9px; 
+    } 
+ 
+    .messages { 
+        width: 100%; 
+        min-height: 0; 
+        overflow-x: hidden; 
+        overflow-y: auto; 
+        padding: 8px; 
+    } 
+ 
+    .bubble { 
+        max-width: 88%; 
+        font-size: 14px; 
+        padding: 9px 11px; 
+    } 
+ 
+    .composer { 
+        width: 100%; 
+        min-height: 52px; 
+        padding: 6px; 
+        flex-shrink: 0; 
+    } 
+ 
+    .composer input { 
+        width: auto; 
+        min-width: 0; 
+        height: 40px; 
+        font-size: 13px; 
+        padding: 9px 10px; 
+    } 
+ 
+    .emoji-btn { 
+        width: 40px; 
+        min-width: 40px; 
+        height: 40px; 
+    } 
+ 
+    .send { 
+        width: 74px; 
+        min-width: 74px; 
+        height: 40px; 
+        padding: 4px; 
+        font-size: 10px; 
+    } 
+ 
+    .emoji-panel { 
+        left: 6px; 
+        bottom: 58px; 
+        width: 230px; 
+        max-width: calc(100vw - 12px); 
+        max-height: 210px; 
+        overflow-y: auto; 
+        overflow-x: hidden; 
+        grid-template-columns: repeat(6, minmax(0, 1fr)); 
+    } 
+ 
+    .emoji-panel button { 
+        width: 100%; 
+        min-width: 0; 
+        height: 34px; 
+        padding: 0; 
+    } 
+ 
+    .modal { 
+        padding: 10px; 
+    } 
+ 
+    .profile { 
+        width: 100%; 
+        max-width: 460px; 
+        max-height: calc(100dvh - 20px); 
+        padding: 16px; 
+        border-radius: 18px; 
+    } 
+} 
+ 
+@media (max-width: 420px) { 
+    .layout { 
+        grid-template-rows: 162px minmax(0, 1fr); 
+    } 
+ 
+    .sidebar { 
+        height: 162px; 
+        padding: 7px 8px; 
+    } 
+ 
+    .account { 
+        max-width: 105px; 
+    } 
+ 
+    .results .person { 
+        flex-basis: 155px; 
+    } 
+ 
+    .friends { 
+        flex-basis: 46px; 
+    } 
+ 
+    .friends .person { 
+        min-width: 135px; 
+    } 
+ 
+    .chat-head { 
+        min-height: 54px; 
+        height: 54px; 
+    } 
+ 
+    .composer { 
+        min-height: 50px; 
+    } 
+ 
+    .send { 
+        width: 65px; 
+        min-width: 65px; 
+        font-size: 9px; 
+    } 
+} 
+</style> 
+ 
+</head> 
+ 
+<body> 
+ 
+<div 
+    class="auth" 
+    id="auth" 
+> 
+ 
+``` 
+<div class="logo"> 
+    V 
+</div> 
+ 
+<h1> 
+    Vibe 
+</h1> 
+ 
+<p> 
+    Твой новый мессенджер 
+</p> 
+ 
+<input 
+    id="login" 
+    placeholder="Логин" 
+> 
+ 
+<input 
+    id="password" 
+    type="password" 
+    placeholder="Пароль" 
+> 
+ 
+<button 
+    class="primary" 
+    onclick="loginAccount()" 
+> 
+    Войти 
+</button> 
+ 
+<button 
+    class="secondary" 
+    onclick="location.href='register.html'" 
+> 
+    Создать аккаунт 
+</button> 
+``` 
+ 
+</div> 
+ 
+<div 
+    class="app" 
+    id="app" 
+> 
+ 
+``` 
+<div class="layout"> 
+ 
+    <aside class="sidebar"> 
+ 
+        <div class="side-top"> 
+ 
+            <div class="brand"> 
+ 
+                <div class="brand-logo"> 
+                    V 
+                </div> 
+ 
+                <div> 
+ 
+                    <h2> 
+                        Vibe 
+                    </h2> 
+ 
+                    <div 
+                        class="account" 
+                        id="account" 
+                    > 
+                        @user 
+                    </div> 
+ 
+                </div> 
+ 
+            </div> 
+ 
+            <button 
+                class="icon-btn" 
+                onclick="openProfile()" 
+            > 
+                👤 
+            </button> 
+ 
+        </div> 
+ 
+ 
+        <div class="search"> 
+ 
+            <input 
+                id="search" 
+                placeholder="Поиск людей..." 
+                oninput="searchUsers()" 
+            > 
+ 
+        </div> 
+ 
+ 
+        <div 
+            class="results" 
+            id="results" 
+        ></div> 
+ 
+ 
+        <div class="section"> 
+            Мои чаты 
+        </div> 
+ 
+ 
+        <div 
+            class="friends" 
+            id="friends" 
+        ></div> 
+ 
+ 
+        <div class="side-bottom"> 
+ 
+            <button 
+                class="logout" 
+                onclick="logout()" 
+            > 
+                🚪 Выйти 
+            </button> 
+ 
+        </div> 
+ 
+    </aside> 
+ 
+ 
+    <main class="chat"> 
+ 
+        <div class="chat-head"> 
+ 
+            <div class="chat-user"> 
+ 
+                <div 
+                    class="avatar" 
+                    id="chatAvatar" 
+                > 
+                    V 
+                </div> 
+ 
+                <div> 
+ 
+                    <div 
+                        class="name" 
+                        id="chatTitle" 
+                    > 
+                        Выбери друга 
+                    </div> 
+ 
+                    <div 
+                        class="login" 
+                        id="chatStatus" 
+                    > 
+                        Найди человека через поиск 
+                    </div> 
+ 
+                </div> 
+ 
+            </div> 
+ 
+        </div> 
+ 
+ 
+        <div 
+            class="messages" 
+            id="messages" 
+        > 
+ 
+            <div class="empty"> 
+ 
+                💬<br><br> 
+ 
+                Найди пользователя 
+                и добавь его в друзья. 
+ 
+            </div> 
+ 
+        </div> 
+ 
+ 
+        <div class="composer"> 
+ 
+            <div 
+                class="emoji-panel" 
+                id="emojiPanel" 
+            ></div> 
+ 
+            <button 
+                class="emoji-btn" 
+                onclick="toggleEmoji()" 
+            > 
+                😊 
+            </button> 
+ 
+            <input 
+                id="messageInput" 
+                placeholder="Сообщение..." 
+                onkeydown="handleEnter(event)" 
+            > 
+ 
+            <button 
+                class="send" 
+                onclick="sendMessage()" 
+            > 
+                Отправить 
+            </button> 
+ 
+        </div> 
+ 
+    </main> 
+ 
+</div> 
+``` 
+ 
+</div> 
+ 
+<div 
+    class="modal" 
+    id="profileModal" 
+> 
+ 
+``` 
+<div class="profile"> 
+ 
+    <div class="profile-top"> 
+ 
+        <h2> 
+            Мой профиль 
+        </h2> 
+ 
+        <button 
+            class="close" 
+            onclick="closeProfile()" 
+        > 
+            ✕ 
+        </button> 
+ 
+    </div> 
+ 
+ 
+    <div class="preview"> 
+ 
+        <div 
+            class="avatar" 
+            id="profileAvatar" 
+        > 
+            V 
+        </div> 
+ 
+        <div> 
+ 
+            <div 
+                class="name" 
+                id="profilePreviewName" 
+            > 
+                Vibe 
+            </div> 
+ 
+            <div 
+                class="login" 
+                id="profileLogin" 
+            > 
+                @user 
+            </div> 
+ 
+        </div> 
+ 
+    </div> 
+ 
+ 
+    <label> 
+        Фото профиля 
+    </label> 
+ 
+    <input 
+        id="photoInput" 
+        type="file" 
+        accept="image/*" 
+        onchange="handlePhoto(event)" 
+    > 
+ 
+ 
+    <label> 
+        Имя 
+    </label> 
+ 
+    <input 
+        id="profileName" 
+        maxlength="40" 
+        placeholder="Твоё имя" 
+    > 
+ 
+ 
+    <label> 
+        О себе 
+    </label> 
+ 
+    <textarea 
+        id="profileAbout" 
+        maxlength="200" 
+        placeholder="Расскажи о себе..." 
+    ></textarea> 
+ 
+ 
+    <label> 
+        Тема 
+    </label> 
+ 
+    <select 
+        id="themeSelect" 
+    > 
+ 
+        <option value="dark"> 
+            🌙 Ночная 
+        </option> 
+ 
+        <option value="light"> 
+            ☀️ Дневная 
+        </option> 
+ 
+        <option value="ocean"> 
+            🌊 Океан 
+        </option> 
+ 
+        <option value="sunset"> 
+            🌅 Закат 
+        </option> 
+ 
+    </select> 
+ 
+ 
+    <label> 
+        Стиль сообщений 
+    </label> 
+ 
+    <select 
+        id="styleSelect" 
+    > 
+ 
+        <option value="classic"> 
+            Классический 
+        </option> 
+ 
+        <option value="square"> 
+            Квадратный 
+        </option> 
+ 
+        <option value="neon"> 
+            Неоновый 
+        </option> 
+ 
+    </select> 
+ 
+ 
+    <button 
+        class="save" 
+        onclick="saveProfile()" 
+    > 
+        Сохранить 
+    </button> 
+ 
+</div> 
+``` 
+ 
+</div> 
+ 
+<script> 
+ 
+const emojis = [ 
+    "😀", 
+    "😂", 
+    "😍", 
+    "😎", 
+    "😭", 
+    "😡", 
+    "❤️", 
+    "🔥", 
+    "👍", 
+    "👎", 
+    "🎉", 
+    "💀", 
+    "😢", 
+    "😆", 
+    "🤩", 
+    "🥳", 
+    "😮", 
+    "🤔", 
+    "🙌", 
+    "💯", 
+    "✨", 
+    "🚀", 
+    "😴", 
+    "🤝" 
+]; 
+ 
+let currentUser = ""; 
+let currentChat = ""; 
+let friends = []; 
+let currentPhoto = ""; 
+let timer = null; 
+ 
+function $(id) { 
+    return document.getElementById(id); 
+} 
+ 
+function escapeHTML(value) { 
+    return String(value) 
+        .replaceAll("&", "&amp;") 
+        .replaceAll("<", "&lt;") 
+        .replaceAll(">", "&gt;") 
+        .replaceAll('"', "&quot;") 
+        .replaceAll("'", "&#039;"); 
+} 
+ 
+function initial(value) { 
+    const text = 
+        String(value || "V") 
+            .trim(); 
+ 
+    return text[0] 
+        ? text[0].toUpperCase() 
+        : "V"; 
+} 
+ 
+function setTheme(theme) { 
+ 
+    document.body.classList.remove( 
+        "light", 
+        "ocean", 
+        "sunset" 
+    ); 
+ 
+    if (theme !== "dark") { 
+        document.body.classList.add( 
+            theme 
+        ); 
+    } 
+ 
+    localStorage.setItem( 
+        "vibeTheme", 
+        theme 
+    ); 
+} 
+ 
+function getTheme() { 
+ 
+    return ( 
+        localStorage.getItem( 
+            "vibeTheme" 
+        ) || "dark" 
+    ); 
+} 
+ 
+async function loginAccount() { 
+ 
+    const login = 
+        $("login") 
+            .value 
+            .trim(); 
+ 
+    const password = 
+        $("password") 
+            .value 
+            .trim(); 
+ 
+    if (!login || !password) { 
+ 
+        alert( 
+            "Заполни логин и пароль!" 
+        ); 
+ 
+        return; 
+    } 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/login", 
+                { 
+                    method: "POST", 
+                    headers: { 
+                        "Content-Type": 
+                            "application/json" 
+                    }, 
+                    body: 
+                        JSON.stringify({ 
+                            login, 
+                            password 
+                        }) 
+                } 
+            ); 
+ 
+        const data = 
+            await response.json(); 
+ 
+        if (!data.success) { 
+ 
+            alert( 
+                data.message 
+            ); 
+ 
+            return; 
+        } 
+ 
+        currentUser = 
+            login; 
+ 
+        localStorage.setItem( 
+            "vibeUser", 
+            login 
+        ); 
+ 
+        showApp(); 
+ 
+    } catch { 
+ 
+        alert( 
+            "Не удалось подключиться к серверу" 
+        ); 
+    } 
+} 
+ 
+function showApp() { 
+ 
+    $("auth").style.display = 
+        "none"; 
+ 
+    $("app").style.display = 
+        "block"; 
+ 
+    $("account").textContent = 
+        "@" + currentUser; 
+ 
+    setTheme( 
+        getTheme() 
+    ); 
+ 
+    renderEmoji(); 
+ 
+    loadFriends(); 
+} 
+ 
+async function loadFriends() { 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/friends?login=" + 
+                encodeURIComponent( 
+                    currentUser 
+                ) 
+            ); 
+ 
+        friends = 
+            await response.json(); 
+ 
+        renderFriends(); 
+ 
+    } catch { 
+ 
+        console.log( 
+            "Ошибка друзей" 
+        ); 
+    } 
+} 
+ 
+function renderFriends() { 
+ 
+    const box = 
+        $("friends"); 
+ 
+    box.innerHTML = ""; 
+ 
+    if (!friends.length) { 
+ 
+        box.innerHTML = ` 
+            <div 
+                class="empty" 
+                style=" 
+                    height:auto; 
+                    padding:25px 5px; 
+                    font-size:12px 
+                " 
+            > 
+                Пока нет друзей.<br> 
+                Найди человека выше. 
+            </div> 
+        `; 
+ 
+        return; 
+    } 
+ 
+    friends.forEach( 
+        user => { 
+ 
+            const div = 
+                document.createElement( 
+                    "div" 
+                ); 
+ 
+            div.className = 
+                "person clickable"; 
+ 
+            if ( 
+                user.login === 
+                currentChat 
+            ) { 
+                div.classList.add( 
+                    "active" 
+                ); 
+            } 
+ 
+            div.innerHTML = 
+                avatarHTML(user) + 
+                ` 
+                <div class="info"> 
+ 
+                    <div class="name"> 
+                        ${escapeHTML( 
+                            user.name || 
+                            user.login 
+                        )} 
+                    </div> 
+ 
+                    <div class="login"> 
+                        @${escapeHTML( 
+                            user.login 
+                        )} 
+                    </div> 
+ 
+                </div> 
+                `; 
+ 
+            div.onclick = 
+                () => 
+                    openChat(user); 
+ 
+            box.appendChild( 
+                div 
+            ); 
+        } 
+    ); 
+} 
+ 
+function avatarHTML(user) { 
+ 
+    if (user.photo) { 
+ 
+        return ` 
+            <img 
+                class="avatar" 
+                src="${user.photo}" 
+                alt="" 
+            > 
+        `; 
+    } 
+ 
+    return ` 
+        <div class="avatar"> 
+            ${initial( 
+                user.name || 
+                user.login 
+            )} 
+        </div> 
+    `; 
+} 
+ 
+async function searchUsers() { 
+ 
+    const query = 
+        $("search") 
+            .value 
+            .trim(); 
+ 
+    const box = 
+        $("results"); 
+ 
+    box.innerHTML = ""; 
+ 
+    if (!query) { 
+        return; 
+    } 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/users?current=" + 
+                encodeURIComponent( 
+                    currentUser 
+                ) + 
+                "&q=" + 
+                encodeURIComponent( 
+                    query 
+                ) 
+            ); 
+ 
+        const list = 
+            await response.json(); 
+ 
+        if (!list.length) { 
+ 
+            box.innerHTML = ` 
+                <div 
+                    class="empty" 
+                    style=" 
+                        height:auto; 
+                        padding:15px; 
+                        font-size:12px 
+                    " 
+                > 
+                    Никого не нашли 
+                </div> 
+            `; 
+ 
+            return; 
+        } 
+ 
+        list.forEach( 
+            user => { 
+ 
+                const div = 
+                    document.createElement( 
+                        "div" 
+                    ); 
+ 
+                div.className = 
+                    "person"; 
+ 
+                const safeLogin = 
+                    escapeHTML( 
+                        user.login 
+                    ); 
+ 
+                div.innerHTML = 
+                    avatarHTML(user) + 
+                    ` 
+                    <div class="info"> 
+ 
+                        <div class="name"> 
+                            ${escapeHTML( 
+                                user.name || 
+                                user.login 
+                            )} 
+                        </div> 
+ 
+                        <div class="login"> 
+                            @${safeLogin} 
+                        </div> 
+ 
+                    </div> 
+                    `; 
+ 
+                const button = 
+                    document.createElement( 
+                        "button" 
+                    ); 
+ 
+                button.className = 
+                    "friend-action"; 
+ 
+                if (user.isFriend) { 
+ 
+                    button.classList.add( 
+                        "remove" 
+                    ); 
+ 
+                    button.textContent = 
+                        "Убрать"; 
+ 
+                    button.onclick = 
+                        event => { 
+                            event.stopPropagation(); 
+                            removeFriend( 
+                                user.login 
+                            ); 
+                        }; 
+ 
+                } else { 
+ 
+                    button.textContent = 
+                        "+"; 
+ 
+                    button.onclick = 
+                        event => { 
+                            event.stopPropagation(); 
+                            addFriend( 
+                                user.login 
+                            ); 
+                        }; 
+                } 
+ 
+                div.appendChild( 
+                    button 
+                ); 
+ 
+                div.onclick = 
+                    () => 
+                        openChat( 
+                            user 
+                        ); 
+ 
+                box.appendChild( 
+                    div 
+                ); 
+            } 
+        ); 
+ 
+    } catch { 
+ 
+        box.innerHTML = ` 
+            <div 
+                class="empty" 
+                style=" 
+                    height:auto; 
+                    padding:15px; 
+                    font-size:12px 
+                " 
+            > 
+                Ошибка поиска 
+            </div> 
+        `; 
+    } 
+} 
+ 
+async function addFriend( 
+    login 
+) { 
+ 
+    await friendAction( 
+        login, 
+        "add" 
+    ); 
+} 
+ 
+async function removeFriend( 
+    login 
+) { 
+ 
+    await friendAction( 
+        login, 
+        "remove" 
+    ); 
+} 
+ 
+async function friendAction( 
+    login, 
+    action 
+) { 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/friends", 
+                { 
+                    method: "POST", 
+                    headers: { 
+                        "Content-Type": 
+                            "application/json" 
+                    }, 
+                    body: 
+                        JSON.stringify({ 
+                            from: 
+                                currentUser, 
+                            to: 
+                                login, 
+                            action: 
+                                action 
+                        }) 
+                } 
+            ); 
+ 
+        const data = 
+            await response.json(); 
+ 
+        if (!data.success) { 
+ 
+            alert( 
+                data.message 
+            ); 
+ 
+            return; 
+        } 
+ 
+        await loadFriends(); 
+        await searchUsers(); 
+ 
+    } catch { 
+ 
+        alert( 
+            "Ошибка работы с друзьями" 
+        ); 
+    } 
+} 
+ 
+function openChat( 
+    user 
+) { 
+ 
+    currentChat = 
+        user.login; 
+ 
+    $("chatTitle") 
+        .textContent = 
+            user.name || 
+            user.login; 
+ 
+    $("chatStatus") 
+        .textContent = 
+            "@" + 
+            user.login; 
+ 
+    $("chatAvatar") 
+        .outerHTML = 
+            user.photo 
+                ? ` 
+                    <img 
+                        class="avatar" 
+                        id="chatAvatar" 
+                        src="${user.photo}" 
+                        alt="" 
+                    > 
+                  ` 
+                : ` 
+                    <div 
+                        class="avatar" 
+                        id="chatAvatar" 
+                    > 
+                        ${initial( 
+                            user.name || 
+                            user.login 
+                        )} 
+                    </div> 
+                  `; 
+ 
+    renderFriends(); 
+ 
+    loadMessages(); 
+ 
+    if (timer) { 
+        clearInterval( 
+            timer 
+        ); 
+    } 
+ 
+    timer = 
+        setInterval( 
+            loadMessages, 
+            1500 
+        ); 
+} 
+ 
+async function loadMessages() { 
+ 
+    if (!currentChat) { 
+        return; 
+    } 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/messages?user1=" + 
+                encodeURIComponent( 
+                    currentUser 
+                ) + 
+                "&user2=" + 
+                encodeURIComponent( 
+                    currentChat 
+                ) 
+            ); 
+ 
+        const list = 
+            await response.json(); 
+ 
+        const box = 
+            $("messages"); 
+ 
+        box.innerHTML = ""; 
+ 
+        if (!list.length) { 
+ 
+            box.innerHTML = ` 
+                <div class="empty"> 
+                    💬<br><br> 
+                    Здесь пока нет сообщений. 
+                </div> 
+            `; 
+ 
+            return; 
+        } 
+ 
+        const style = 
+            localStorage.getItem( 
+                "vibeStyle" 
+            ) || "classic"; 
+ 
+        list.forEach( 
+            message => { 
+ 
+                const div = 
+                    document.createElement( 
+                        "div" 
+                    ); 
+ 
+                div.className = 
+                    "bubble " + 
+                    style; 
+ 
+                if ( 
+                    message.from === 
+                    currentUser 
+                ) { 
+                    div.classList.add( 
+                        "mine" 
+                    ); 
+                } 
+ 
+                const time = 
+                    new Date( 
+                        message.time 
+                    ) 
+                        .toLocaleTimeString( 
+                            [], 
+                            { 
+                                hour: 
+                                    "2-digit", 
+                                minute: 
+                                    "2-digit" 
+                            } 
+                        ); 
+ 
+                div.innerHTML = 
+                    escapeHTML( 
+                        message.text 
+                    ) + 
+                    ` 
+                    <div class="time"> 
+                        ${time} 
+                    </div> 
+                    `; 
+ 
+                box.appendChild( 
+                    div 
+                ); 
+            } 
+        ); 
+ 
+        box.scrollTop = 
+            box.scrollHeight; 
+ 
+    } catch { 
+ 
+        console.log( 
+            "Ошибка сообщений" 
+        ); 
+    } 
+} 
+ 
+async function sendMessage() { 
+ 
+    if (!currentChat) { 
+ 
+        alert( 
+            "Сначала добавь друга!" 
+        ); 
+ 
+        return; 
+    } 
+ 
+    const input = 
+        $("messageInput"); 
+ 
+    const text = 
+        input.value.trim(); 
+ 
+    if (!text) { 
+        return; 
+    } 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/send-message", 
+                { 
+                    method: "POST", 
+                    headers: { 
+                        "Content-Type": 
+                            "application/json" 
+                    }, 
+                    body: 
+                        JSON.stringify({ 
+                            from: 
+                                currentUser, 
+                            to: 
+                                currentChat, 
+                            text: 
+                                text 
+                        }) 
+                } 
+            ); 
+ 
+        const data = 
+            await response.json(); 
+ 
+        if (!data.success) { 
+ 
+            alert( 
+                data.message 
+            ); 
+ 
+            return; 
+        } 
+ 
+        input.value = ""; 
+ 
+        loadMessages(); 
+ 
+    } catch { 
+ 
+        alert( 
+            "Ошибка отправки сообщения" 
+        ); 
+    } 
+} 
+ 
+function handleEnter( 
+    event 
+) { 
+ 
+    if ( 
+        event.key === "Enter" && 
+        !event.shiftKey 
+    ) { 
+ 
+        event.preventDefault(); 
+ 
+        sendMessage(); 
+    } 
+} 
+ 
+function renderEmoji() { 
+ 
+    $("emojiPanel") 
+        .innerHTML = 
+            emojis 
+                .map( 
+                    emoji => 
+                        ` 
+                        <button 
+                            type="button" 
+                            onclick="addEmoji('${emoji}')" 
+                        > 
+                            ${emoji} 
+                        </button> 
+                        ` 
+                ) 
+                .join(""); 
+} 
+ 
+function toggleEmoji() { 
+ 
+    $("emojiPanel") 
+        .classList.toggle( 
+            "show" 
+        ); 
+} 
+ 
+function addEmoji( 
+    emoji 
+) { 
+ 
+    $("messageInput") 
+        .value += emoji; 
+ 
+    $("messageInput") 
+        .focus(); 
+ 
+    $("emojiPanel") 
+        .classList.remove( 
+            "show" 
+        ); 
+} 
+ 
+async function openProfile() { 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/profile?login=" + 
+                encodeURIComponent( 
+                    currentUser 
+                ) 
+            ); 
+ 
+        const data = 
+            await response.json(); 
+ 
+        if (!data.success) { 
+ 
+            alert( 
+                data.message 
+            ); 
+ 
+            return; 
+        } 
+ 
+        const user = 
+            data.user; 
+ 
+        $("profileLogin") 
+            .textContent = 
+                "@" + 
+                user.login; 
+ 
+        $("profilePreviewName") 
+            .textContent = 
+                user.name || 
+                user.login; 
+ 
+        $("profileName") 
+            .value = 
+                user.name || ""; 
+ 
+        $("profileAbout") 
+            .value = 
+                user.about || ""; 
+ 
+        $("themeSelect") 
+            .value = 
+                getTheme(); 
+ 
+        $("styleSelect") 
+            .value = 
+                user.messageStyle || 
+                "classic"; 
+ 
+        currentPhoto = 
+            user.photo || ""; 
+ 
+        $("profileAvatar") 
+            .outerHTML = 
+                user.photo 
+                    ? ` 
+                        <img 
+                            class="avatar" 
+                            id="profileAvatar" 
+                            src="${user.photo}" 
+                            alt="" 
+                        > 
+                      ` 
+                    : ` 
+                        <div 
+                            class="avatar" 
+                            id="profileAvatar" 
+                        > 
+                            ${initial( 
+                                user.name || 
+                                user.login 
+                            )} 
+                        </div> 
+                      `; 
+ 
+        $("profileModal") 
+            .classList.add( 
+                "show" 
+            ); 
+ 
+    } catch { 
+ 
+        alert( 
+            "Не удалось открыть профиль" 
+        ); 
+    } 
+} 
+ 
+function closeProfile() { 
+ 
+    $("profileModal") 
+        .classList.remove( 
+            "show" 
+        ); 
+} 
+ 
+function handlePhoto( 
+    event 
+) { 
+ 
+    const file = 
+        event.target.files[0]; 
+ 
+    if (!file) { 
+        return; 
+    } 
+ 
+    const reader = 
+        new FileReader(); 
+ 
+    reader.onload = 
+        () => { 
+ 
+            const image = 
+                new Image(); 
+ 
+            image.onload = 
+                () => { 
+ 
+                    const canvas = 
+                        document.createElement( 
+                            "canvas" 
+                        ); 
+ 
+                    const max = 
+                        400; 
+ 
+                    const scale = 
+                        Math.min( 
+                            1, 
+                            max / image.width, 
+                            max / image.height 
+                        ); 
+ 
+                    canvas.width = 
+                        Math.round( 
+                            image.width * scale 
+                        ); 
+ 
+                    canvas.height = 
+                        Math.round( 
+                            image.height * scale 
+                        ); 
+ 
+                    const context = 
+                        canvas.getContext( 
+                            "2d" 
+                        ); 
+ 
+                    context.drawImage( 
+                        image, 
+                        0, 
+                        0, 
+                        canvas.width, 
+                        canvas.height 
+                    ); 
+ 
+                    currentPhoto = 
+                        canvas.toDataURL( 
+                            "image/jpeg", 
+                            0.8 
+                        ); 
+ 
+                    $("profileAvatar") 
+                        .outerHTML = 
+                            ` 
+                            <img 
+                                class="avatar" 
+                                id="profileAvatar" 
+                                src="${currentPhoto}" 
+                                alt="" 
+                            > 
+                            `; 
+                }; 
+ 
+            image.src = 
+                reader.result; 
+        }; 
+ 
+    reader.readAsDataURL( 
+        file 
+    ); 
+} 
+ 
+async function saveProfile() { 
+ 
+    const name = 
+        $("profileName") 
+            .value 
+            .trim(); 
+ 
+    const about = 
+        $("profileAbout") 
+            .value 
+            .trim(); 
+ 
+    const theme = 
+        $("themeSelect") 
+            .value; 
+ 
+    const style = 
+        $("styleSelect") 
+            .value; 
+ 
+    setTheme( 
+        theme 
+    ); 
+ 
+    localStorage.setItem( 
+        "vibeStyle", 
+        style 
+    ); 
+ 
+    try { 
+ 
+        const response = 
+            await fetch( 
+                "/profile", 
+                { 
+                    method: "POST", 
+                    headers: { 
+                        "Content-Type": 
+                            "application/json" 
+                    }, 
+                    body: 
+                        JSON.stringify({ 
+                            login: 
+                                currentUser, 
+                            name, 
+                            about, 
+                            photo: 
+                                currentPhoto, 
+                            messageStyle: 
+                                style 
+                        }) 
+                } 
+            ); 
+ 
+        const data = 
+            await response.json(); 
+ 
+        if (!data.success) { 
+ 
+            alert( 
+                data.message 
+            ); 
+ 
+            return; 
+        } 
+ 
+        $("account") 
+            .textContent = 
+                "@" + 
+                currentUser; 
+ 
+        closeProfile(); 
+ 
+        await loadFriends(); 
+ 
+        if (currentChat) { 
+            loadMessages(); 
+        } 
+ 
+        alert( 
+            "Профиль сохранён!" 
+        ); 
+ 
+    } catch { 
+ 
+        alert( 
+            "Ошибка сохранения профиля" 
+        ); 
+    } 
+} 
+ 
+function logout() { 
+ 
+    if (timer) { 
+        clearInterval( 
+            timer 
+        ); 
+    } 
+ 
+    timer = null; 
+ 
+    currentUser = ""; 
+    currentChat = ""; 
+ 
+    localStorage.removeItem( 
+        "vibeUser" 
+    ); 
+ 
+    $("app").style.display = 
+        "none"; 
+ 
+    $("auth").style.display = 
+        "block"; 
+ 
+    $("login").value = ""; 
+    $("password").value = ""; 
+} 
+ 
+setTheme( 
+    getTheme() 
+); 
+ 
+renderEmoji(); 
+ 
+const savedUser = 
+    localStorage.getItem( 
+        "vibeUser" 
+    ); 
+ 
+if (savedUser) { 
+ 
+    currentUser = 
+        savedUser; 
+ 
+    showApp(); 
+} 
+ 
+</script> 
+ 
+</body> 
+</html> 
