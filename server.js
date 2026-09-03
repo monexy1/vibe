@@ -2,7 +2,8 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const HOST = "0.0.0.0";
 
 const usersFile = path.join(__dirname, "users.json");
 const messagesFile = path.join(__dirname, "messages.json");
@@ -32,28 +33,88 @@ function readMessages() {
 }
 
 function saveUsers(users) {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+    fs.writeFileSync(
+        usersFile,
+        JSON.stringify(users, null, 2)
+    );
 }
 
 function saveMessages(messages) {
-    fs.writeFileSync(messagesFile, JSON.stringify(messages, null, 2));
+    fs.writeFileSync(
+        messagesFile,
+        JSON.stringify(messages, null, 2)
+    );
+}
+
+function normalizeUser(user) {
+    if (!Array.isArray(user.friends)) {
+        user.friends = [];
+    }
+
+    if (!user.profile || typeof user.profile !== "object") {
+        user.profile = {};
+    }
+
+    if (typeof user.profile.name !== "string") {
+        user.profile.name = "";
+    }
+
+    if (typeof user.profile.about !== "string") {
+        user.profile.about = "";
+    }
+
+    if (typeof user.profile.photo !== "string") {
+        user.profile.photo = "";
+    }
+
+    if (typeof user.profile.messageStyle !== "string") {
+        user.profile.messageStyle = "classic";
+    }
+
+    return user;
+}
+
+function getSafeUser(user, currentUser = "") {
+    normalizeUser(user);
+
+    return {
+        login: user.login,
+        name: user.profile.name || user.login,
+        about: user.profile.about || "",
+        photo: user.profile.photo || "",
+        messageStyle: user.profile.messageStyle || "classic",
+        isFriend: user.friends.includes(currentUser),
+    };
 }
 
 function getBody(req) {
     return new Promise((resolve, reject) => {
         let body = "";
+        const MAX_SIZE = 10 * 1024 * 1024;
 
         req.on("data", chunk => {
             body += chunk;
+
+            if (Buffer.byteLength(body, "utf8") > MAX_SIZE) {
+                reject(new Error("Слишком большой запрос"));
+                req.destroy();
+            }
         });
 
         req.on("end", () => {
+            if (!body) {
+                resolve({});
+                return;
+            }
+
             try {
-                resolve(body ? JSON.parse(body) : {});
+                resolve(JSON.parse(body));
             } catch {
                 reject(new Error("Неверный JSON"));
             }
         });
+
+        req.on("error", reject);
     });
 }
 
@@ -102,16 +163,23 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    const url = new URL(
+        req.url,
+        `http://localhost:${PORT}`
+    );
+
+    const pathname = url.pathname;
+
     // =========================
     // СТРАНИЦЫ
     // =========================
 
-    if (req.method === "GET" && req.url === "/") {
+    if (req.method === "GET" && pathname === "/") {
         sendHTML(res, "index.html");
         return;
     }
 
-    if (req.method === "GET" && req.url === "/register.html") {
+    if (req.method === "GET" && pathname === "/register.html") {
         sendHTML(res, "register.html");
         return;
     }
@@ -120,7 +188,7 @@ const server = http.createServer(async (req, res) => {
     // РЕГИСТРАЦИЯ
     // =========================
 
-    if (req.method === "POST" && req.url === "/register") {
+    if (req.method === "POST" && pathname === "/register") {
 
         try {
             const body = await getBody(req);
@@ -138,8 +206,11 @@ const server = http.createServer(async (req, res) => {
 
             const users = readUsers();
 
+            users.forEach(normalizeUser);
+
             const exists = users.some(
-                user => user.login.toLowerCase() === login.toLowerCase()
+                user =>
+                    user.login.toLowerCase() === login.toLowerCase()
             );
 
             if (exists) {
@@ -152,7 +223,14 @@ const server = http.createServer(async (req, res) => {
 
             users.push({
                 login: login,
-                password: password
+                password: password,
+                friends: [],
+                profile: {
+                    name: "",
+                    about: "",
+                    photo: "",
+                    messageStyle: "classic"
+                }
             });
 
             saveUsers(users);
@@ -176,7 +254,7 @@ const server = http.createServer(async (req, res) => {
     // ВХОД
     // =========================
 
-    if (req.method === "POST" && req.url === "/login") {
+    if (req.method === "POST" && pathname === "/login") {
 
         try {
             const body = await getBody(req);
@@ -185,6 +263,10 @@ const server = http.createServer(async (req, res) => {
             const password = String(body.password || "").trim();
 
             const users = readUsers();
+
+            users.forEach(normalizeUser);
+
+            saveUsers(users);
 
             const user = users.find(
                 item =>
@@ -216,18 +298,262 @@ const server = http.createServer(async (req, res) => {
     }
 
     // =========================
-    // ПОЛЬЗОВАТЕЛИ
+    // ПОИСК ПОЛЬЗОВАТЕЛЕЙ
     // =========================
 
-    if (req.method === "GET" && req.url === "/users") {
+    if (req.method === "GET" && pathname === "/users") {
+
+        const currentUser = url.searchParams.get("current") || "";
+        const query = (url.searchParams.get("q") || "")
+            .toLowerCase()
+            .trim();
 
         const users = readUsers();
 
-        const safeUsers = users.map(user => ({
-            login: user.login
-        }));
+        users.forEach(normalizeUser);
 
-        sendJSON(res, safeUsers);
+        saveUsers(users);
+
+        const result = users
+            .filter(user => user.login !== currentUser)
+            .filter(user => {
+
+                if (!query) {
+                    return true;
+                }
+
+                const login = user.login.toLowerCase();
+                const name = user.profile.name.toLowerCase();
+                const about = user.profile.about.toLowerCase();
+
+                return (
+                    login.includes(query) ||
+                    name.includes(query) ||
+                    about.includes(query)
+                );
+            })
+            .map(user => getSafeUser(user, currentUser));
+
+        sendJSON(res, result);
+        return;
+    }
+
+    // =========================
+    // ПРОФИЛЬ
+    // =========================
+
+    if (req.method === "GET" && pathname === "/profile") {
+
+        const login = url.searchParams.get("login");
+
+        if (!login) {
+            sendJSON(res, {
+                success: false,
+                message: "Логин не указан"
+            }, 400);
+            return;
+        }
+
+        const users = readUsers();
+
+        const user = users.find(
+            item => item.login === login
+        );
+
+        if (!user) {
+            sendJSON(res, {
+                success: false,
+                message: "Пользователь не найден"
+            }, 404);
+            return;
+        }
+
+        normalizeUser(user);
+
+        sendJSON(res, {
+            success: true,
+            user: getSafeUser(user)
+        });
+
+        return;
+    }
+
+    if (req.method === "POST" && pathname === "/profile") {
+
+        try {
+            const body = await getBody(req);
+
+            const login = String(body.login || "").trim();
+            const name = String(body.name || "").trim();
+            const about = String(body.about || "").trim();
+            const photo = String(body.photo || "");
+            const messageStyle =
+                String(body.messageStyle || "classic");
+
+            const users = readUsers();
+
+            const user = users.find(
+                item => item.login === login
+            );
+
+            if (!user) {
+                sendJSON(res, {
+                    success: false,
+                    message: "Пользователь не найден"
+                }, 404);
+                return;
+            }
+
+            normalizeUser(user);
+
+            user.profile.name = name.slice(0, 40);
+            user.profile.about = about.slice(0, 200);
+
+            if (
+                photo === "" ||
+                photo.startsWith("data:image/")
+            ) {
+                user.profile.photo = photo;
+            }
+
+            const allowedStyles = [
+                "classic",
+                "square",
+                "neon"
+            ];
+
+            if (allowedStyles.includes(messageStyle)) {
+                user.profile.messageStyle = messageStyle;
+            }
+
+            saveUsers(users);
+
+            sendJSON(res, {
+                success: true,
+                message: "Профиль сохранён",
+                user: getSafeUser(user)
+            });
+
+        } catch {
+            sendJSON(res, {
+                success: false,
+                message: "Ошибка сохранения профиля"
+            }, 500);
+        }
+
+        return;
+    }
+
+    // =========================
+    // ДРУЗЬЯ
+    // =========================
+
+    if (req.method === "GET" && pathname === "/friends") {
+
+        const login = url.searchParams.get("login");
+
+        if (!login) {
+            sendJSON(res, []);
+            return;
+        }
+
+        const users = readUsers();
+
+        const current = users.find(
+            user => user.login === login
+        );
+
+        if (!current) {
+            sendJSON(res, []);
+            return;
+        }
+
+        normalizeUser(current);
+
+        const friends = users
+            .filter(user => current.friends.includes(user.login))
+            .map(user => getSafeUser(user, login));
+
+        sendJSON(res, friends);
+        return;
+    }
+
+    if (req.method === "POST" && pathname === "/friends") {
+
+        try {
+            const body = await getBody(req);
+
+            const from = String(body.from || "").trim();
+            const to = String(body.to || "").trim();
+            const action = String(body.action || "add").trim();
+
+            if (!from || !to || from === to) {
+                sendJSON(res, {
+                    success: false,
+                    message: "Неверные данные"
+                }, 400);
+                return;
+            }
+
+            const users = readUsers();
+
+            const currentUser = users.find(
+                user => user.login === from
+            );
+
+            const targetUser = users.find(
+                user => user.login === to
+            );
+
+            if (!currentUser || !targetUser) {
+                sendJSON(res, {
+                    success: false,
+                    message: "Пользователь не найден"
+                }, 404);
+                return;
+            }
+
+            normalizeUser(currentUser);
+            normalizeUser(targetUser);
+
+            if (action === "add") {
+
+                if (!currentUser.friends.includes(to)) {
+                    currentUser.friends.push(to);
+                }
+
+                if (!targetUser.friends.includes(from)) {
+                    targetUser.friends.push(from);
+                }
+
+            } else if (action === "remove") {
+
+                currentUser.friends =
+                    currentUser.friends.filter(
+                        login => login !== to
+                    );
+
+                targetUser.friends =
+                    targetUser.friends.filter(
+                        login => login !== from
+                    );
+
+            }
+
+            saveUsers(users);
+
+            sendJSON(res, {
+                success: true,
+                action: action
+            });
+
+        } catch {
+            sendJSON(res, {
+                success: false,
+                message: "Ошибка работы с друзьями"
+            }, 500);
+        }
+
         return;
     }
 
@@ -235,7 +561,7 @@ const server = http.createServer(async (req, res) => {
     // ОТПРАВКА СООБЩЕНИЯ
     // =========================
 
-    if (req.method === "POST" && req.url === "/send-message") {
+    if (req.method === "POST" && pathname === "/send-message") {
 
         try {
             const body = await getBody(req);
@@ -303,16 +629,14 @@ const server = http.createServer(async (req, res) => {
     // СООБЩЕНИЯ
     // =========================
 
-    if (req.method === "GET" && req.url.startsWith("/messages")) {
+    if (req.method === "GET" && pathname === "/messages") {
 
         try {
-            const url = new URL(
-                req.url,
-                `http://localhost:${PORT}`
-            );
+            const user1 =
+                url.searchParams.get("user1");
 
-            const user1 = url.searchParams.get("user1");
-            const user2 = url.searchParams.get("user2");
+            const user2 =
+                url.searchParams.get("user2");
 
             if (!user1 || !user2) {
                 sendJSON(res, []);
@@ -321,17 +645,22 @@ const server = http.createServer(async (req, res) => {
 
             const messages = readMessages();
 
-            const chatMessages = messages.filter(message =>
-                (
-                    message.from === user1 &&
-                    message.to === user2
-                )
-                ||
-                (
-                    message.from === user2 &&
-                    message.to === user1
-                )
-            );
+            const chatMessages =
+                messages.filter(message =>
+
+                    (
+                        message.from === user1 &&
+                        message.to === user2
+                    )
+
+                    ||
+
+                    (
+                        message.from === user2 &&
+                        message.to === user1
+                    )
+
+                );
 
             sendJSON(res, chatMessages);
 
@@ -356,6 +685,8 @@ const server = http.createServer(async (req, res) => {
     res.end("Страница не найдена");
 });
 
-server.listen(PORT, () => {
-    console.log(`Vibe запущен: http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+    console.log(
+        `Vibe запущен на порту ${PORT}`
+    );
 });
