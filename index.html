@@ -3,13 +3,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe</title>
 
 ```
-<!-- АДАПТАЦИЯ ПОД ТЕЛЕФОН -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Vibe</title>
-
 <style>
     * {
         box-sizing: border-box;
@@ -30,13 +27,9 @@
         overflow-x: hidden;
     }
 
-    /* =========================
-       ВХОД
-    ========================= */
-
     .auth {
         width: 400px;
-        max-width: calc(100% - 30px);
+        max-width: calc(100% - 24px);
         margin: 100px auto;
         padding: 35px;
         background: #1f2937;
@@ -82,10 +75,6 @@
     .register-button {
         background: #374151;
     }
-
-    /* =========================
-       МЕССЕНДЖЕР
-    ========================= */
 
     .messenger {
         display: none;
@@ -202,97 +191,96 @@
     @media (max-width: 700px) {
 
         .auth {
-            width: calc(100% - 24px);
+            width: calc(100% - 20px);
             max-width: 450px;
-            margin: 30px auto;
-            padding: 25px 20px;
+            margin: 25px auto;
+            padding: 24px 18px;
             border-radius: 16px;
         }
 
         .auth h1 {
-            font-size: 38px;
+            font-size: 36px;
         }
 
         .auth p {
-            font-size: 15px;
+            font-size: 14px;
         }
 
         .messenger {
             height: 100dvh;
-            display: none;
         }
 
         .sidebar {
-            width: 34%;
-            min-width: 115px;
-            max-width: 180px;
-            padding: 12px;
+            width: 32%;
+            min-width: 105px;
+            max-width: 175px;
+            padding: 10px;
             height: 100dvh;
         }
 
         .sidebar h2 {
-            font-size: 22px;
+            font-size: 21px;
         }
 
         .sidebar p {
-            font-size: 12px;
+            font-size: 11px;
             word-break: break-word;
         }
 
         .sidebar input {
-            font-size: 14px;
-            padding: 11px;
+            font-size: 13px;
+            padding: 10px;
         }
 
         .user {
-            padding: 11px 8px;
-            font-size: 14px;
+            padding: 10px 7px;
+            font-size: 13px;
         }
 
         .chat {
-            margin-left: 34%;
+            margin-left: 32%;
             height: 100dvh;
         }
 
         .chat-header {
-            padding: 15px;
-            font-size: 17px;
+            padding: 13px;
+            font-size: 16px;
         }
 
         .messages {
-            padding: 12px;
+            padding: 10px;
         }
 
         .message {
-            max-width: 85%;
-            padding: 10px 13px;
-            font-size: 15px;
+            max-width: 82%;
+            padding: 9px 12px;
+            font-size: 14px;
         }
 
         .message-input {
-            padding: 8px;
+            padding: 7px;
         }
 
         .message-input input {
-            padding: 11px;
-            font-size: 14px;
-            margin-right: 6px;
+            padding: 10px;
+            font-size: 13px;
+            margin-right: 5px;
         }
 
         .message-input button {
-            width: 85px;
-            padding: 11px 5px;
-            font-size: 13px;
+            width: 78px;
+            padding: 10px 3px;
+            font-size: 12px;
         }
 
         .logout {
-            padding: 6px 8px;
-            font-size: 11px;
+            padding: 5px 7px;
+            font-size: 10px;
         }
 
         .empty {
-            margin-top: 60px;
-            font-size: 14px;
+            margin-top: 50px;
+            font-size: 13px;
         }
     }
 
@@ -303,34 +291,34 @@
     @media (max-width: 400px) {
 
         .sidebar {
-            width: 38%;
-            min-width: 105px;
+            width: 35%;
+            min-width: 100px;
         }
 
         .chat {
-            margin-left: 38%;
+            margin-left: 35%;
         }
 
         .sidebar h2 {
-            font-size: 19px;
+            font-size: 18px;
         }
 
         .sidebar p {
-            font-size: 11px;
+            font-size: 10px;
         }
 
         .user {
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .chat-header {
-            font-size: 15px;
-            padding: 13px 10px;
+            font-size: 14px;
+            padding: 12px 9px;
         }
 
         .message-input button {
-            width: 75px;
-            font-size: 12px;
+            width: 70px;
+            font-size: 11px;
         }
     }
 </style>
@@ -341,8 +329,6 @@
 <body>
 
 ```
-<!-- ВХОД -->
-
 <div class="auth" id="authScreen">
 
     <h1>Vibe</h1>
@@ -374,8 +360,6 @@
 
 </div>
 
-
-<!-- МЕССЕНДЖЕР -->
 
 <div class="messenger" id="messenger">
 
@@ -418,21 +402,17 @@
 
         </div>
 
-
         <div
             class="messages"
             id="messages"
         >
 
             <div class="empty">
-
                 💬 Выбери пользователя,
                 чтобы начать чат
-
             </div>
 
         </div>
-
 
         <div class="message-input">
 
@@ -462,9 +442,7 @@ let allUsers = [];
 let messageTimer = null;
 
 
-// ============================
 // ВХОД
-// ============================
 
 async function loginAccount() {
 
@@ -525,9 +503,7 @@ async function loginAccount() {
 }
 
 
-// ============================
 // ПОКАЗ МЕССЕНДЖЕРА
-// ============================
 
 function showMessenger() {
 
@@ -544,9 +520,7 @@ function showMessenger() {
 }
 
 
-// ============================
 // ПОЛЬЗОВАТЕЛИ
-// ============================
 
 async function loadUsers() {
 
@@ -568,9 +542,7 @@ async function loadUsers() {
 }
 
 
-// ============================
 // ПОИСК
-// ============================
 
 function searchUsers() {
 
@@ -634,9 +606,7 @@ function searchUsers() {
 }
 
 
-// ============================
 // ОТКРЫТЬ ЧАТ
-// ============================
 
 function openChat(login) {
 
@@ -658,9 +628,7 @@ function openChat(login) {
 }
 
 
-// ============================
 // ЗАГРУЗКА СООБЩЕНИЙ
-// ============================
 
 async function loadMessages() {
 
@@ -726,9 +694,7 @@ async function loadMessages() {
 }
 
 
-// ============================
 // ОТПРАВКА
-// ============================
 
 async function sendMessage() {
 
@@ -794,24 +760,18 @@ async function sendMessage() {
 }
 
 
-// ============================
 // ENTER
-// ============================
 
 function handleEnter(event) {
 
     if (event.key === "Enter") {
-
         sendMessage();
-
     }
 
 }
 
 
-// ============================
 // ВЫХОД
-// ============================
 
 function logout() {
 
@@ -832,9 +792,7 @@ function logout() {
 }
 
 
-// ============================
 // АВТОВХОД
-// ============================
 
 const savedUser =
     localStorage.getItem("vibeUser");
