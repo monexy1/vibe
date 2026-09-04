@@ -928,7 +928,6 @@ button {
 
 </head>
 
-
 <body>
 
 
@@ -998,11 +997,6 @@ button {
 
     <div class="layout">
 
-
-        <!-- =================================================
-             SIDEBAR
-        ================================================== -->
-
         <aside class="sidebar">
 
             <div class="side-top">
@@ -1022,8 +1016,6 @@ button {
             </div>
 
 
-            <!-- SEARCH -->
-
             <div class="search">
 
                 <input
@@ -1040,8 +1032,6 @@ button {
                 class="results"
             ></div>
 
-
-            <!-- CHATS -->
 
             <div class="section-title">
                 Мои чаты
@@ -1072,10 +1062,6 @@ button {
         </aside>
 
 
-        <!-- =================================================
-             CHAT
-        ================================================== -->
-
         <main class="chat">
 
             <div class="chat-head">
@@ -1088,14 +1074,12 @@ button {
                     ←
                 </button>
 
-
                 <div
                     id="chatAvatar"
                     class="avatar"
                 >
                     💬
                 </div>
-
 
                 <div class="chat-user">
 
@@ -1114,7 +1098,6 @@ button {
                     </div>
 
                 </div>
-
 
                 <div class="call-buttons">
 
@@ -1175,7 +1158,7 @@ button {
 
 
 <!-- =======================================================
-     PROFILE MODAL
+     PROFILE
 ======================================================= -->
 
 <div
@@ -1250,7 +1233,7 @@ button {
 
 
 <!-- =======================================================
-     CHANNELS MODAL
+     CHANNELS
 ======================================================= -->
 
 <div
@@ -1521,6 +1504,10 @@ const $ = id =>
     document.getElementById(id);
 
 
+/* =========================================================
+   STATE
+========================================================= */
+
 let currentUser = null;
 let currentChat = "";
 let friends = [];
@@ -1544,11 +1531,61 @@ let messageTimer = null;
 let chatTimer = null;
 
 
+/*
+    В этом объекте храним количество сообщений,
+    которые пользователь уже прочитал.
+
+    Например:
+
+    {
+        "alex": 5,
+        "max": 2
+    }
+
+    Если Alex отправил 6 сообщений,
+    рядом с ним будет показано 1.
+*/
+
+let readMessageCounts = {};
+
+try {
+
+    const savedReadCounts =
+        localStorage.getItem(
+            "vibeReadCounts"
+        );
+
+    if (savedReadCounts) {
+
+        readMessageCounts =
+            JSON.parse(
+                savedReadCounts
+            );
+    }
+
+} catch {
+
+    readMessageCounts = {};
+}
+
+
+function saveReadMessageCounts() {
+
+    localStorage.setItem(
+        "vibeReadCounts",
+        JSON.stringify(
+            readMessageCounts
+        )
+    );
+}
+
+
 /* =========================================================
    MOBILE
 ========================================================= */
 
 function isMobileView() {
+
     return window.matchMedia(
         "(max-width: 750px)"
     ).matches;
@@ -1561,20 +1598,28 @@ function openMobileChatView() {
         return;
     }
 
-    $("app").classList.add(
-        "mobile-chat-open"
-    );
+    $("app")
+        .classList
+        .add(
+            "mobile-chat-open"
+        );
 }
 
 
 function closeMobileChat() {
 
-    $("app").classList.remove(
-        "mobile-chat-open"
-    );
+    $("app")
+        .classList
+        .remove(
+            "mobile-chat-open"
+        );
 
     if (chatTimer) {
-        clearInterval(chatTimer);
+
+        clearInterval(
+            chatTimer
+        );
+
         chatTimer = null;
     }
 }
@@ -1586,9 +1631,11 @@ window.addEventListener(
 
         if (!isMobileView()) {
 
-            $("app").classList.remove(
-                "mobile-chat-open"
-            );
+            $("app")
+                .classList
+                .remove(
+                    "mobile-chat-open"
+                );
         }
     }
 );
@@ -1615,7 +1662,8 @@ async function login() {
         !password
     ) {
 
-        $("authMessage").textContent =
+        $("authMessage")
+            .textContent =
             "Заполни все поля";
 
         return;
@@ -1638,6 +1686,7 @@ async function login() {
                         JSON.stringify({
                             login:
                                 loginValue,
+
                             password:
                                 password
                         })
@@ -1649,25 +1698,46 @@ async function login() {
 
         if (!data.success) {
 
-            $("authMessage").textContent =
+            $("authMessage")
+                .textContent =
                 data.message;
 
             return;
         }
 
+
         currentUser =
             data.user;
+
+
+        /*
+            Главное исправление:
+
+            Сохраняем не только логин,
+            а весь объект пользователя.
+        */
 
         localStorage.setItem(
             "vibeLogin",
             currentUser.login
         );
 
+        localStorage.setItem(
+            "vibeUser",
+            JSON.stringify(
+                currentUser
+            )
+        );
+
+
         showApp();
 
     } catch (error) {
 
-        $("authMessage").textContent =
+        console.error(error);
+
+        $("authMessage")
+            .textContent =
             "Сервер не отвечает";
     }
 }
@@ -1690,7 +1760,8 @@ async function register() {
         !password
     ) {
 
-        $("authMessage").textContent =
+        $("authMessage")
+            .textContent =
             "Заполни все поля";
 
         return;
@@ -1711,10 +1782,13 @@ async function register() {
 
                     body:
                         JSON.stringify({
+
                             login:
                                 loginValue,
+
                             password:
                                 password
+
                         })
                 }
             );
@@ -1722,30 +1796,109 @@ async function register() {
         const data =
             await response.json();
 
-        $("authMessage").textContent =
+        $("authMessage")
+            .textContent =
             data.message;
 
     } catch {
 
-        $("authMessage").textContent =
+        $("authMessage")
+            .textContent =
             "Ошибка сервера";
     }
 }
 
 
+/*
+    Автоматически восстанавливаем
+    аккаунт после F5.
+*/
+
 async function autoLogin() {
 
-    const saved =
+    const savedUser =
+        localStorage.getItem(
+            "vibeUser"
+        );
+
+
+    if (savedUser) {
+
+        try {
+
+            const user =
+                JSON.parse(
+                    savedUser
+                );
+
+
+            if (
+                user &&
+                user.login
+            ) {
+
+                /*
+                    Проверяем пользователя
+                    на сервере.
+                */
+
+                const userFromServer =
+                    await getUser(
+                        user.login
+                    );
+
+
+                if (userFromServer) {
+
+                    currentUser =
+                        userFromServer;
+
+
+                    localStorage.setItem(
+                        "vibeUser",
+                        JSON.stringify(
+                            currentUser
+                        )
+                    );
+
+
+                    showApp();
+
+                    return;
+                }
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Ошибка восстановления:",
+                error
+            );
+        }
+
+
+        localStorage.removeItem(
+            "vibeUser"
+        );
+    }
+
+
+    /*
+        Если сохранён только старый логин,
+        оставляем его в поле входа.
+    */
+
+    const savedLogin =
         localStorage.getItem(
             "vibeLogin"
         );
 
-    if (!saved) {
-        return;
-    }
 
-    $("loginInput").value =
-        saved;
+    if (savedLogin) {
+
+        $("loginInput").value =
+            savedLogin;
+    }
 }
 
 
@@ -1753,15 +1906,22 @@ function showApp() {
 
     $("authScreen")
         .classList
-        .add("hidden");
+        .add(
+            "hidden"
+        );
 
     $("app")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
 
     $("app")
         .classList
-        .remove("mobile-chat-open");
+        .remove(
+            "mobile-chat-open"
+        );
+
 
     connectSocket();
 
@@ -1775,26 +1935,66 @@ function showApp() {
 
 function logout() {
 
+    /*
+        Полностью удаляем сохранённый
+        аккаунт.
+    */
+
     localStorage.removeItem(
         "vibeLogin"
     );
 
+    localStorage.removeItem(
+        "vibeUser"
+    );
+
+    localStorage.removeItem(
+        "vibeReadCounts"
+    );
+
+
     if (socket) {
+
         try {
             socket.close();
         } catch {}
+
+        socket = null;
     }
+
+
+    if (chatTimer) {
+
+        clearInterval(
+            chatTimer
+        );
+
+        chatTimer = null;
+    }
+
 
     currentUser = null;
     currentChat = "";
+    chats = [];
+    friends = [];
+    readMessageCounts = {};
+
 
     $("app")
         .classList
-        .add("hidden");
+        .add(
+            "hidden"
+        );
 
     $("authScreen")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
+
+
+    $("loginInput").value = "";
+    $("passwordInput").value = "";
 }
 
 
@@ -1804,12 +2004,18 @@ function logout() {
 
 function connectSocket() {
 
+    if (!currentUser) {
+        return;
+    }
+
+
     try {
 
         const protocol =
             location.protocol === "https:"
                 ? "wss:"
                 : "ws:";
+
 
         socket =
             new WebSocket(
@@ -1818,19 +2024,23 @@ function connectSocket() {
                 location.host
             );
 
+
         socket.onopen =
             () => {
 
                 socket.send(
                     JSON.stringify({
+
                         type:
                             "auth",
 
                         login:
                             currentUser.login
+
                     })
                 );
             };
+
 
         socket.onmessage =
             event => {
@@ -1849,22 +2059,35 @@ function connectSocket() {
                 } catch {}
             };
 
+
         socket.onclose =
             () => {
 
-                setTimeout(
-                    () => {
+                socket = null;
 
-                        if (
-                            currentUser &&
-                            !socket
-                        ) {
-                            connectSocket();
-                        }
+                /*
+                    Если пользователь всё ещё
+                    авторизован — пробуем
+                    подключиться снова.
+                */
 
-                    },
-                    3000
-                );
+                if (currentUser) {
+
+                    setTimeout(
+                        () => {
+
+                            if (
+                                currentUser &&
+                                !socket
+                            ) {
+
+                                connectSocket();
+                            }
+
+                        },
+                        3000
+                    );
+                }
             };
 
     } catch {}
@@ -1887,12 +2110,74 @@ function sendSocket(data) {
 
 function handleSocketMessage(data) {
 
+
+    /*
+        Новое сообщение.
+
+        Сервер отправляет его получателю
+        через WebSocket.
+    */
+
+    if (
+        data.type ===
+        "new-message"
+    ) {
+
+        const message =
+            data.message;
+
+
+        if (!message) {
+            return;
+        }
+
+
+        /*
+            Если сейчас открыт именно этот чат,
+            сообщение уже видно пользователю.
+        */
+
+        if (
+            currentChat &&
+            (
+                message.from ===
+                currentChat
+            )
+        ) {
+
+            loadMessages(
+                false
+            );
+
+            markChatAsRead(
+                message.from
+            );
+
+        } else {
+
+            /*
+                Иначе просто обновляем
+                список чатов.
+
+                Сервер сам сообщит,
+                сколько сообщений всего.
+            */
+
+            loadChats();
+        }
+
+
+        return;
+    }
+
+
     if (
         data.type ===
         "incoming-call"
     ) {
 
-        incomingCall = data;
+        incomingCall =
+            data;
 
         $("incomingCallText")
             .textContent =
@@ -1904,7 +2189,9 @@ function handleSocketMessage(data) {
 
         $("incomingCallModal")
             .classList
-            .remove("hidden");
+            .remove(
+                "hidden"
+            );
 
         return;
     }
@@ -1939,7 +2226,9 @@ function handleSocketMessage(data) {
                         data.candidate
                     )
                 )
-                .catch(() => {});
+                .catch(
+                    () => {}
+                );
         }
 
         return;
@@ -1988,12 +2277,14 @@ async function searchUsers() {
     const box =
         $("searchResults");
 
+
     if (!query) {
 
         box.innerHTML = "";
 
         return;
     }
+
 
     try {
 
@@ -2009,10 +2300,13 @@ async function searchUsers() {
                 )
             );
 
+
         const users =
             await response.json();
 
+
         box.innerHTML = "";
+
 
         users.forEach(
             user => {
@@ -2025,10 +2319,12 @@ async function searchUsers() {
                 item.className =
                     "person";
 
+
                 item.innerHTML =
                     personHTML(
                         user
                     );
+
 
                 item.onclick =
                     () => {
@@ -2036,26 +2332,56 @@ async function searchUsers() {
                         openChat(
                             user.login
                         );
+
+                        $("searchInput")
+                            .value = "";
+
+                        $("searchResults")
+                            .innerHTML = "";
                     };
 
-                box.appendChild(item);
+
+                box.appendChild(
+                    item
+                );
             }
         );
+
+
+        if (!users.length) {
+
+            box.innerHTML =
+                `
+                <div
+                    style="
+                        color:var(--muted);
+                        padding:12px;
+                        text-align:center;
+                    "
+                >
+                    Пользователь не найден
+                </div>
+                `;
+        }
 
     } catch {}
 }
 
 
 /* =========================================================
-   FRIENDS + CHATS
+   PEOPLE
 ========================================================= */
 
-function personHTML(user, count = 0) {
+function personHTML(
+    user,
+    count = 0
+) {
 
     const avatar =
         user.photo
             ? `<img src="${escapeHTML(user.photo)}">`
             : "👤";
+
 
     return `
         <div class="avatar">
@@ -2092,6 +2418,10 @@ function personHTML(user, count = 0) {
 }
 
 
+/* =========================================================
+   FRIENDS
+========================================================= */
+
 async function loadFriends() {
 
     try {
@@ -2104,8 +2434,10 @@ async function loadFriends() {
                 )
             );
 
+
         friends =
             await response.json();
+
 
         renderFriends();
 
@@ -2113,7 +2445,16 @@ async function loadFriends() {
 }
 
 
+/* =========================================================
+   CHATS
+========================================================= */
+
 async function loadChats() {
+
+    if (!currentUser) {
+        return;
+    }
+
 
     try {
 
@@ -2125,12 +2466,43 @@ async function loadChats() {
                 )
             );
 
+
+        if (!response.ok) {
+            return;
+        }
+
+
         chats =
             await response.json();
+
 
         renderChats();
 
     } catch {}
+}
+
+
+function getUnreadCount(chat) {
+
+    const totalIncoming =
+        Number(
+            chat.messageCount || 0
+        );
+
+
+    const readCount =
+        Number(
+            readMessageCounts[
+                chat.login
+            ] || 0
+        );
+
+
+    return Math.max(
+        0,
+        totalIncoming -
+        readCount
+    );
 }
 
 
@@ -2139,9 +2511,55 @@ function renderChats() {
     const box =
         $("friends");
 
+
     box.innerHTML = "";
 
+
     if (!chats.length) {
+
+        /*
+            Если переписок пока нет,
+            показываем друзей.
+        */
+
+        if (friends.length) {
+
+            friends.forEach(
+                user => {
+
+                    const item =
+                        document.createElement(
+                            "div"
+                        );
+
+                    item.className =
+                        "person";
+
+
+                    item.innerHTML =
+                        personHTML(
+                            user
+                        );
+
+
+                    item.onclick =
+                        () => {
+
+                            openChat(
+                                user.login
+                            );
+                        };
+
+
+                    box.appendChild(
+                        item
+                    );
+                }
+            );
+
+            return;
+        }
+
 
         box.innerHTML =
             `
@@ -2159,6 +2577,7 @@ function renderChats() {
         return;
     }
 
+
     chats.forEach(
         chat => {
 
@@ -2167,23 +2586,34 @@ function renderChats() {
                     "div"
                 );
 
+
             item.className =
                 "person";
+
 
             if (
                 chat.login ===
                 currentChat
             ) {
+
                 item.classList.add(
                     "active"
                 );
             }
 
+
+            const unread =
+                getUnreadCount(
+                    chat
+                );
+
+
             item.innerHTML =
                 personHTML(
                     chat.user,
-                    chat.messageCount
+                    unread
                 );
+
 
             item.onclick =
                 () => {
@@ -2193,7 +2623,10 @@ function renderChats() {
                     );
                 };
 
-            box.appendChild(item);
+
+            box.appendChild(
+                item
+            );
         }
     );
 }
@@ -2201,51 +2634,78 @@ function renderChats() {
 
 function renderFriends() {
 
-    /*
-        Если есть чаты — показываем именно
-        историю чатов.
+    renderChats();
+}
 
-        Люди без переписки остаются доступными
-        через поиск.
-    */
 
-    if (chats.length) {
-        renderChats();
+/* =========================================================
+   MARK CHAT AS READ
+========================================================= */
+
+async function markChatAsRead(
+    login
+) {
+
+    if (
+        !login ||
+        !currentUser
+    ) {
         return;
     }
 
-    const box =
-        $("friends");
 
-    box.innerHTML = "";
+    try {
 
-    friends.forEach(
-        user => {
+        const response =
+            await fetch(
+                "/messages?user1=" +
+                encodeURIComponent(
+                    currentUser.login
+                ) +
+                "&user2=" +
+                encodeURIComponent(
+                    login
+                )
+            );
 
-            const item =
-                document.createElement(
-                    "div"
-                );
 
-            item.className =
-                "person";
-
-            item.innerHTML =
-                personHTML(
-                    user
-                );
-
-            item.onclick =
-                () => {
-
-                    openChat(
-                        user.login
-                    );
-                };
-
-            box.appendChild(item);
+        if (!response.ok) {
+            return;
         }
-    );
+
+
+        const messages =
+            await response.json();
+
+
+        /*
+            Считаем только сообщения,
+            которые отправил собеседник.
+        */
+
+        const incomingCount =
+            messages.filter(
+                message =>
+                    message.from ===
+                    login
+            ).length;
+
+
+        /*
+            Теперь все эти сообщения
+            считаются прочитанными.
+        */
+
+        readMessageCounts[login] =
+            incomingCount;
+
+
+        saveReadMessageCounts();
+
+
+        renderChats();
+
+    } catch {}
 }
 
 
@@ -2253,21 +2713,32 @@ function renderFriends() {
    OPEN CHAT
 ========================================================= */
 
-async function openChat(login) {
+async function openChat(
+    login
+) {
 
     currentChat =
         login;
 
+
     openMobileChatView();
 
+
     if (chatTimer) {
-        clearInterval(chatTimer);
+
+        clearInterval(
+            chatTimer
+        );
+
+        chatTimer = null;
     }
+
 
     const user =
         await getUser(
             login
         );
+
 
     if (user) {
 
@@ -2276,13 +2747,16 @@ async function openChat(login) {
             user.name ||
             user.login;
 
+
         $("chatStatus")
             .textContent =
             "@" +
             user.login;
 
+
         const avatar =
             $("chatAvatar");
+
 
         avatar.innerHTML =
             user.photo
@@ -2290,9 +2764,24 @@ async function openChat(login) {
                 : "👤";
     }
 
+
+    /*
+        Сначала загружаем сообщения.
+    */
+
     await loadMessages(
         true
     );
+
+
+    /*
+        А затем отмечаем чат прочитанным.
+    */
+
+    await markChatAsRead(
+        login
+    );
+
 
     chatTimer =
         setInterval(
@@ -2313,7 +2802,28 @@ async function openChat(login) {
             1500
         );
 
+
     renderChats();
+
+
+    /*
+        Фокус на поле сообщения.
+    */
+
+    setTimeout(
+        () => {
+
+            if (
+                $("messageInput")
+            ) {
+
+                $("messageInput")
+                    .focus();
+            }
+
+        },
+        100
+    );
 }
 
 
@@ -2321,7 +2831,9 @@ async function openChat(login) {
    GET USER
 ========================================================= */
 
-async function getUser(login) {
+async function getUser(
+    login
+) {
 
     try {
 
@@ -2333,16 +2845,20 @@ async function getUser(login) {
                 )
             );
 
+
         const data =
             await response.json();
+
 
         if (
             data.success
         ) {
+
             return data.user;
         }
 
     } catch {}
+
 
     return null;
 }
@@ -2356,18 +2872,24 @@ async function loadMessages(
     forceScroll = false
 ) {
 
-    if (!currentChat) {
+    if (
+        !currentChat ||
+        !currentUser
+    ) {
         return;
     }
 
+
     const box =
         $("messages");
+
 
     const wasNearBottom =
         box.scrollHeight -
         box.scrollTop -
         box.clientHeight <
         100;
+
 
     try {
 
@@ -2383,10 +2905,18 @@ async function loadMessages(
                 )
             );
 
+
+        if (!response.ok) {
+            return;
+        }
+
+
         const messages =
             await response.json();
 
+
         box.innerHTML = "";
+
 
         if (!messages.length) {
 
@@ -2401,6 +2931,7 @@ async function loadMessages(
             return;
         }
 
+
         messages.forEach(
             message => {
 
@@ -2409,9 +2940,11 @@ async function loadMessages(
                         "div"
                     );
 
+
                 const mine =
                     message.from ===
                     currentUser.login;
+
 
                 row.className =
                     "message-row" +
@@ -2421,10 +2954,12 @@ async function loadMessages(
                             : ""
                     );
 
+
                 const bubble =
                     document.createElement(
                         "div"
                     );
+
 
                 bubble.className =
                     "message" +
@@ -2434,6 +2969,7 @@ async function loadMessages(
                             : ""
                     );
 
+
                 const time =
                     new Date(
                         message.time
@@ -2441,10 +2977,14 @@ async function loadMessages(
                         .toLocaleTimeString(
                             [],
                             {
-                                hour: "2-digit",
-                                minute: "2-digit"
+                                hour:
+                                    "2-digit",
+
+                                minute:
+                                    "2-digit"
                             }
                         );
+
 
                 bubble.innerHTML =
                     `
@@ -2459,15 +2999,24 @@ async function loadMessages(
                     </div>
                     `;
 
+
                 row.appendChild(
                     bubble
                 );
+
 
                 box.appendChild(
                     row
                 );
             }
         );
+
+
+        /*
+            Не кидаем пользователя
+            вниз при каждом обновлении,
+            если он читает старые сообщения.
+        */
 
         if (
             forceScroll ||
@@ -2478,26 +3027,36 @@ async function loadMessages(
                 box.scrollHeight;
         }
 
+
     } catch {}
 }
 
+
+/* =========================================================
+   SEND MESSAGE
+========================================================= */
 
 async function sendMessage() {
 
     const input =
         $("messageInput");
 
+
     const text =
         input.value.trim();
 
+
     if (
         !text ||
-        !currentChat
+        !currentChat ||
+        !currentUser
     ) {
         return;
     }
 
+
     input.value = "";
+
 
     try {
 
@@ -2521,14 +3080,17 @@ async function sendMessage() {
                             to:
                                 currentChat,
 
-                            text
+                            text:
+                                text
 
                         })
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (
             data.success
@@ -2539,7 +3101,24 @@ async function sendMessage() {
             );
 
             await loadChats();
+
+
+            /*
+                Наше отправленное сообщение
+                не должно создавать
+                непрочитанный счётчик.
+            */
+
+            if (
+                currentChat
+            ) {
+
+                await markChatAsRead(
+                    currentChat
+                );
+            }
         }
+
 
     } catch {}
 }
@@ -2556,31 +3135,41 @@ async function openProfile() {
             currentUser.login
         );
 
+
     if (!user) {
         return;
     }
 
+
     $("profileName").value =
         user.name || "";
+
 
     $("profileAbout").value =
         user.about || "";
 
+
     $("profilePhoto").value =
         user.photo || "";
+
 
     $("messageStyle").value =
         user.messageStyle ||
         "classic";
 
+
     currentPhoto =
         user.photo || "";
 
+
     updateProfilePreview();
+
 
     $("profileModal")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
 }
 
 
@@ -2588,6 +3177,7 @@ function updateProfilePreview() {
 
     const box =
         $("profilePreview");
+
 
     if (currentPhoto) {
 
@@ -2615,6 +3205,7 @@ $("profilePhoto")
 
             currentPhoto =
                 event.target.value;
+
 
             updateProfilePreview();
         }
@@ -2662,8 +3253,10 @@ async function saveProfile() {
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (
             data.success
@@ -2672,16 +3265,33 @@ async function saveProfile() {
             currentUser =
                 data.user;
 
+
+            /*
+                Обновляем сохранённый
+                профиль тоже.
+            */
+
+            localStorage.setItem(
+                "vibeUser",
+                JSON.stringify(
+                    currentUser
+                )
+            );
+
+
             closeModal(
                 "profileModal"
             );
 
+
             loadChats();
             loadFriends();
+
 
             if (
                 currentChat
             ) {
+
                 openChat(
                     currentChat
                 );
@@ -2700,7 +3310,10 @@ async function openChannels() {
 
     $("channelsModal")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
+
 
     await loadChannels();
 }
@@ -2715,13 +3328,17 @@ async function loadChannels() {
                 "/channels"
             );
 
+
         const channels =
             await response.json();
+
 
         const box =
             $("channelsList");
 
+
         box.innerHTML = "";
+
 
         if (!channels.length) {
 
@@ -2741,6 +3358,7 @@ async function loadChannels() {
             return;
         }
 
+
         channels.forEach(
             channel => {
 
@@ -2749,8 +3367,10 @@ async function loadChannels() {
                         "div"
                     );
 
+
                 item.className =
                     "channel-item";
+
 
                 item.innerHTML =
                     `
@@ -2780,6 +3400,7 @@ async function loadChannels() {
                     </div>
                     `;
 
+
                 item.onclick =
                     () => {
 
@@ -2787,6 +3408,7 @@ async function loadChannels() {
                             channel
                         );
                     };
+
 
                 box.appendChild(
                     item
@@ -2806,9 +3428,12 @@ function openCreateChannel() {
     $("channelDescriptionInput")
         .value = "";
 
+
     $("createChannelModal")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
 }
 
 
@@ -2819,10 +3444,12 @@ async function createChannel() {
             .value
             .trim();
 
+
     const description =
         $("channelDescriptionInput")
             .value
             .trim();
+
 
     if (!name) {
 
@@ -2832,6 +3459,7 @@ async function createChannel() {
 
         return;
     }
+
 
     try {
 
@@ -2860,8 +3488,10 @@ async function createChannel() {
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (!data.success) {
 
@@ -2872,9 +3502,11 @@ async function createChannel() {
             return;
         }
 
+
         closeModal(
             "createChannelModal"
         );
+
 
         await loadChannels();
 
@@ -2887,19 +3519,26 @@ async function createChannel() {
 }
 
 
-async function openChannel(channel) {
+async function openChannel(
+    channel
+) {
 
     currentChannel =
         channel;
+
 
     $("channelTitle")
         .textContent =
         "📢 " +
         channel.name;
 
+
     $("channelModal")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
+
 
     if (
         channel.owner ===
@@ -2908,14 +3547,19 @@ async function openChannel(channel) {
 
         $("channelOwnerTools")
             .classList
-            .remove("hidden");
+            .remove(
+                "hidden"
+            );
 
     } else {
 
         $("channelOwnerTools")
             .classList
-            .add("hidden");
+            .add(
+                "hidden"
+            );
     }
+
 
     await loadChannelPosts();
 }
@@ -2927,6 +3571,7 @@ async function loadChannelPosts() {
         return;
     }
 
+
     try {
 
         const response =
@@ -2937,13 +3582,17 @@ async function loadChannelPosts() {
                 )
             );
 
+
         const posts =
             await response.json();
+
 
         const box =
             $("channelPosts");
 
+
         box.innerHTML = "";
+
 
         if (!posts.length) {
 
@@ -2963,6 +3612,7 @@ async function loadChannelPosts() {
             return;
         }
 
+
         posts.forEach(
             post => {
 
@@ -2971,20 +3621,23 @@ async function loadChannelPosts() {
                         "div"
                     );
 
+
                 item.className =
                     "channel-post";
 
+
                 let mediaHTML = "";
+
 
                 if (
                     post.media
                 ) {
 
                     if (
-                        post.mediaType
-                            .startsWith(
-                                "image"
-                            )
+                        post.mediaType &&
+                        post.mediaType.startsWith(
+                            "image"
+                        )
                     ) {
 
                         mediaHTML =
@@ -2997,10 +3650,10 @@ async function loadChannelPosts() {
                             `;
 
                     } else if (
-                        post.mediaType
-                            .startsWith(
-                                "video"
-                            )
+                        post.mediaType &&
+                        post.mediaType.startsWith(
+                            "video"
+                        )
                     ) {
 
                         mediaHTML =
@@ -3015,6 +3668,7 @@ async function loadChannelPosts() {
                             `;
                     }
                 }
+
 
                 item.innerHTML =
                     `
@@ -3039,14 +3693,17 @@ async function loadChannelPosts() {
                     </div>
                     `;
 
+
                 box.appendChild(
                     item
                 );
             }
         );
 
+
         box.scrollTop =
             box.scrollHeight;
+
 
     } catch {}
 }
@@ -3058,14 +3715,17 @@ async function publishChannelPost() {
         return;
     }
 
+
     const text =
         $("channelPostInput")
             .value
             .trim();
 
+
     const file =
         $("channelMediaInput")
             .files[0];
+
 
     if (
         !text &&
@@ -3079,8 +3739,10 @@ async function publishChannelPost() {
         return;
     }
 
+
     let media = null;
     let mediaType = "";
+
 
     if (file) {
 
@@ -3100,10 +3762,6 @@ async function publishChannelPost() {
             return;
         }
 
-        /*
-            Ограничиваем размер одного
-            файла примерно 20 MB.
-        */
 
         if (
             file.size >
@@ -3117,14 +3775,17 @@ async function publishChannelPost() {
             return;
         }
 
+
         media =
             await fileToDataURL(
                 file
             );
 
+
         mediaType =
             file.type;
     }
+
 
     try {
 
@@ -3158,8 +3819,10 @@ async function publishChannelPost() {
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (!data.success) {
 
@@ -3170,11 +3833,14 @@ async function publishChannelPost() {
             return;
         }
 
+
         $("channelPostInput")
             .value = "";
 
+
         $("channelMediaInput")
             .value = "";
+
 
         await loadChannelPosts();
 
@@ -3192,18 +3858,25 @@ async function publishChannelPost() {
 function fileToDataURL(file) {
 
     return new Promise(
-        (resolve, reject) => {
+        (
+            resolve,
+            reject
+        ) => {
 
             const reader =
                 new FileReader();
 
+
             reader.onload =
-                () => resolve(
-                    reader.result
-                );
+                () =>
+                    resolve(
+                        reader.result
+                    );
+
 
             reader.onerror =
                 reject;
+
 
             reader.readAsDataURL(
                 file
@@ -3220,15 +3893,19 @@ function fileToDataURL(file) {
 const rtcConfig = {
 
     iceServers: [
+
         {
             urls:
                 "stun:stun.l.google.com:19302"
         }
+
     ]
 };
 
 
-async function startCall(video) {
+async function startCall(
+    video
+) {
 
     if (!currentChat) {
 
@@ -3239,27 +3916,34 @@ async function startCall(video) {
         return;
     }
 
+
     activeCallUser =
         currentChat;
+
 
     activeCallVideo =
         video;
 
+
     try {
 
         localStream =
-            await navigator.mediaDevices
+            await navigator
+                .mediaDevices
                 .getUserMedia({
 
                     audio: true,
 
-                    video: video
-                        ? true
-                        : false
+                    video:
+                        video
+                            ? true
+                            : false
                 });
+
 
         peerConnection =
             createPeerConnection();
+
 
         localStream
             .getTracks()
@@ -3274,14 +3958,17 @@ async function startCall(video) {
                 }
             );
 
+
         const offer =
             await peerConnection
                 .createOffer();
+
 
         await peerConnection
             .setLocalDescription(
                 offer
             );
+
 
         sendSocket({
 
@@ -3304,7 +3991,9 @@ async function startCall(video) {
             photo:
                 currentUser.photo ||
                 ""
+
         });
+
 
         showCallUI();
 
@@ -3326,6 +4015,7 @@ function createPeerConnection() {
             rtcConfig
         );
 
+
     pc.onicecandidate =
         event => {
 
@@ -3343,9 +4033,11 @@ function createPeerConnection() {
 
                     candidate:
                         event.candidate
+
                 });
             }
         };
+
 
     pc.ontrack =
         event => {
@@ -3361,6 +4053,7 @@ function createPeerConnection() {
             }
         };
 
+
     return pc;
 }
 
@@ -3371,9 +4064,13 @@ function showCallUI() {
         .textContent =
         activeCallUser;
 
+
     $("callScreen")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
+
 
     if (localStream) {
 
@@ -3381,6 +4078,7 @@ function showCallUI() {
             .srcObject =
             localStream;
     }
+
 
     $("localVideo")
         .style
@@ -3397,11 +4095,14 @@ async function acceptIncomingCall() {
         return;
     }
 
+
     activeCallUser =
         incomingCall.from;
 
+
     activeCallVideo =
         !!incomingCall.video;
+
 
     try {
 
@@ -3409,8 +4110,10 @@ async function acceptIncomingCall() {
             "incomingCallModal"
         );
 
+
         localStream =
-            await navigator.mediaDevices
+            await navigator
+                .mediaDevices
                 .getUserMedia({
 
                     audio: true,
@@ -3419,8 +4122,10 @@ async function acceptIncomingCall() {
                         activeCallVideo
                 });
 
+
         peerConnection =
             createPeerConnection();
+
 
         localStream
             .getTracks()
@@ -3435,6 +4140,7 @@ async function acceptIncomingCall() {
                 }
             );
 
+
         await peerConnection
             .setRemoteDescription(
                 new RTCSessionDescription(
@@ -3442,14 +4148,17 @@ async function acceptIncomingCall() {
                 )
             );
 
+
         const answer =
             await peerConnection
                 .createAnswer();
+
 
         await peerConnection
             .setLocalDescription(
                 answer
             );
+
 
         sendSocket({
 
@@ -3462,9 +4171,12 @@ async function acceptIncomingCall() {
             answer:
                 peerConnection
                     .localDescription
+
         });
 
+
         showCallUI();
+
 
         incomingCall = null;
 
@@ -3485,6 +4197,7 @@ function rejectIncomingCall() {
         return;
     }
 
+
     sendSocket({
 
         type:
@@ -3494,8 +4207,10 @@ function rejectIncomingCall() {
             incomingCall.from
     });
 
+
     incomingCall =
         null;
+
 
     closeModal(
         "incomingCallModal"
@@ -3503,13 +4218,14 @@ function rejectIncomingCall() {
 }
 
 
-async function handleAnswer(answer) {
+async function handleAnswer(
+    answer
+) {
 
-    if (
-        !peerConnection
-    ) {
+    if (!peerConnection) {
         return;
     }
+
 
     try {
 
@@ -3530,9 +4246,11 @@ function toggleMicrophone() {
         return;
     }
 
+
     const tracks =
         localStream
             .getAudioTracks();
+
 
     tracks.forEach(
         track => {
@@ -3540,10 +4258,12 @@ function toggleMicrophone() {
             track.enabled =
                 !track.enabled;
 
+
             microphoneEnabled =
                 track.enabled;
         }
     );
+
 
     $("micButton")
         .textContent =
@@ -3559,9 +4279,11 @@ function toggleCamera() {
         return;
     }
 
+
     const tracks =
         localStream
             .getVideoTracks();
+
 
     tracks.forEach(
         track => {
@@ -3569,10 +4291,12 @@ function toggleCamera() {
             track.enabled =
                 !track.enabled;
 
+
             cameraEnabled =
                 track.enabled;
         }
     );
+
 
     $("cameraButton")
         .textContent =
@@ -3595,8 +4319,10 @@ function hangupCall() {
 
             to:
                 activeCallUser
+
         });
     }
+
 
     endCallUI();
 }
@@ -3615,32 +4341,43 @@ function endCallUI() {
                     track.stop()
             );
 
+
         localStream = null;
     }
+
 
     if (
         peerConnection
     ) {
 
         try {
+
             peerConnection.close();
+
         } catch {}
+
 
         peerConnection =
             null;
     }
 
+
     $("remoteVideo")
         .srcObject =
         null;
+
 
     $("localVideo")
         .srcObject =
         null;
 
+
     $("callScreen")
         .classList
-        .add("hidden");
+        .add(
+            "hidden"
+        );
+
 
     activeCallUser = "";
     incomingCall = null;
@@ -3651,11 +4388,15 @@ function endCallUI() {
    MODALS
 ========================================================= */
 
-function closeModal(id) {
+function closeModal(
+    id
+) {
 
     $(id)
         .classList
-        .add("hidden");
+        .add(
+            "hidden"
+        );
 }
 
 
@@ -3663,7 +4404,9 @@ function closeModal(id) {
    ESCAPE HTML
 ========================================================= */
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
     return String(
         value ?? ""
