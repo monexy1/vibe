@@ -1,111 +1,87 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
-const { WebSocketServer } = require("ws");
+const crypto = require("crypto");
+const WebSocket = require("ws");
 
 const PORT = process.env.PORT || 3000;
-const HOST = "0.0.0.0";
+
+const DATA_DIR = __dirname;
+
+const USERS_FILE = path.join(DATA_DIR, "users.json");
+const MESSAGES_FILE = path.join(DATA_DIR, "messages.json");
+const CHANNELS_FILE = path.join(DATA_DIR, "channels.json");
+const CHANNEL_POSTS_FILE = path.join(DATA_DIR, "channel-posts.json");
 
 
 /* =========================================================
-   FILES
+   FILE HELPERS
 ========================================================= */
 
-const usersFile =
-    path.join(
-        __dirname,
-        "users.json"
-    );
+function ensureFile(file, defaultValue = []) {
 
-const messagesFile =
-    path.join(
-        __dirname,
-        "messages.json"
-    );
+    if (!fs.existsSync(file)) {
 
-const channelsFile =
-    path.join(
-        __dirname,
-        "channels.json"
-    );
-
-const channelPostsFile =
-    path.join(
-        __dirname,
-        "channel-posts.json"
-    );
-
-
-/* =========================================================
-   CREATE FILES
-========================================================= */
-
-if (!fs.existsSync(usersFile)) {
-
-    fs.writeFileSync(
-        usersFile,
-        "[]",
-        "utf8"
-    );
-}
-
-
-if (!fs.existsSync(messagesFile)) {
-
-    fs.writeFileSync(
-        messagesFile,
-        "[]",
-        "utf8"
-    );
-}
-
-
-if (!fs.existsSync(channelsFile)) {
-
-    fs.writeFileSync(
-        channelsFile,
-        "[]",
-        "utf8"
-    );
-}
-
-
-if (!fs.existsSync(channelPostsFile)) {
-
-    fs.writeFileSync(
-        channelPostsFile,
-        "[]",
-        "utf8"
-    );
-}
-
-
-/* =========================================================
-   JSON HELPERS
-========================================================= */
-
-function readJSON(file) {
-
-    try {
-
-        return JSON.parse(
-            fs.readFileSync(
-                file,
-                "utf8"
-            )
+        fs.writeFileSync(
+            file,
+            JSON.stringify(
+                defaultValue,
+                null,
+                2
+            ),
+            "utf8"
         );
-
-    } catch {
-
-        return [];
     }
 }
 
 
-function saveJSON(
-    file,
-    data
-) {
+ensureFile(
+    USERS_FILE,
+    []
+);
+
+ensureFile(
+    MESSAGES_FILE,
+    []
+);
+
+ensureFile(
+    CHANNELS_FILE,
+    []
+);
+
+ensureFile(
+    CHANNEL_POSTS_FILE,
+    []
+);
+
+
+function readJSON(file, fallback = []) {
+
+    try {
+
+        const data =
+            fs.readFileSync(
+                file,
+                "utf8"
+            );
+
+        return JSON.parse(data);
+
+    } catch (error) {
+
+        console.error(
+            "Ошибка чтения:",
+            file,
+            error
+        );
+
+        return fallback;
+    }
+}
+
+
+function saveJSON(file, data) {
 
     fs.writeFileSync(
         file,
@@ -122,7 +98,8 @@ function saveJSON(
 function readUsers() {
 
     return readJSON(
-        usersFile
+        USERS_FILE,
+        []
     );
 }
 
@@ -130,7 +107,7 @@ function readUsers() {
 function saveUsers(users) {
 
     saveJSON(
-        usersFile,
+        USERS_FILE,
         users
     );
 }
@@ -139,7 +116,8 @@ function saveUsers(users) {
 function readMessages() {
 
     return readJSON(
-        messagesFile
+        MESSAGES_FILE,
+        []
     );
 }
 
@@ -147,7 +125,7 @@ function readMessages() {
 function saveMessages(messages) {
 
     saveJSON(
-        messagesFile,
+        MESSAGES_FILE,
         messages
     );
 }
@@ -155,8 +133,14 @@ function saveMessages(messages) {
 
 function readChannels() {
 
-    return readJSON(
-        channelsFile
+    const channels =
+        readJSON(
+            CHANNELS_FILE,
+            []
+        );
+
+    return channels.map(
+        normalizeChannel
     );
 }
 
@@ -164,7 +148,7 @@ function readChannels() {
 function saveChannels(channels) {
 
     saveJSON(
-        channelsFile,
+        CHANNELS_FILE,
         channels
     );
 }
@@ -173,7 +157,8 @@ function saveChannels(channels) {
 function readChannelPosts() {
 
     return readJSON(
-        channelPostsFile
+        CHANNEL_POSTS_FILE,
+        []
     );
 }
 
@@ -181,33 +166,25 @@ function readChannelPosts() {
 function saveChannelPosts(posts) {
 
     saveJSON(
-        channelPostsFile,
+        CHANNEL_POSTS_FILE,
         posts
     );
 }
 
 
 /* =========================================================
-   USERS
+   NORMALIZATION
 ========================================================= */
 
 function normalizeUser(user) {
 
-    if (
-        !Array.isArray(
-            user.friends
-        )
-    ) {
+    if (!Array.isArray(user.friends)) {
 
         user.friends = [];
     }
 
 
-    if (
-        !user.profile ||
-        typeof user.profile !==
-        "object"
-    ) {
+    if (!user.profile) {
 
         user.profile = {};
     }
@@ -218,7 +195,8 @@ function normalizeUser(user) {
         "string"
     ) {
 
-        user.profile.name = "";
+        user.profile.name =
+            user.login || "";
     }
 
 
@@ -254,14 +232,88 @@ function normalizeUser(user) {
 }
 
 
-function publicUser(
-    user,
-    currentLogin = ""
-) {
+function normalizeChannel(channel) {
 
-    normalizeUser(
-        user
-    );
+    if (
+        !Array.isArray(
+            channel.subscribers
+        )
+    ) {
+
+        channel.subscribers = [];
+    }
+
+
+    if (
+        typeof channel.name !==
+        "string"
+    ) {
+
+        channel.name = "Канал";
+    }
+
+
+    if (
+        typeof channel.description !==
+        "string"
+    ) {
+
+        channel.description = "";
+    }
+
+
+    if (
+        typeof channel.photo !==
+        "string"
+    ) {
+
+        channel.photo = "";
+    }
+
+
+    if (!channel.settings) {
+
+        channel.settings = {};
+    }
+
+
+    if (
+        typeof channel.settings.comments !==
+        "boolean"
+    ) {
+
+        channel.settings.comments = false;
+    }
+
+
+    if (
+        typeof channel.settings.notifications !==
+        "boolean"
+    ) {
+
+        channel.settings.notifications = true;
+    }
+
+
+    return channel;
+}
+
+
+/* =========================================================
+   PUBLIC USER
+========================================================= */
+
+function publicUser(user) {
+
+    if (!user) {
+        return null;
+    }
+
+
+    user =
+        normalizeUser(
+            user
+        );
 
 
     return {
@@ -283,33 +335,9 @@ function publicUser(
 
         messageStyle:
             user.profile.messageStyle ||
-            "classic",
+            "classic"
 
-        isFriend:
-            user.friends.includes(
-                currentLogin
-            )
     };
-}
-
-
-/* =========================================================
-   CHANNELS
-========================================================= */
-
-function normalizeChannel(channel) {
-
-    if (
-        !Array.isArray(
-            channel.subscribers
-        )
-    ) {
-
-        channel.subscribers = [];
-    }
-
-
-    return channel;
 }
 
 
@@ -317,7 +345,54 @@ function normalizeChannel(channel) {
    HTTP HELPERS
 ========================================================= */
 
-function getBody(req) {
+function sendJSON(
+    response,
+    status,
+    data
+) {
+
+    response.writeHead(
+        status,
+        {
+            "Content-Type":
+                "application/json; charset=utf-8",
+
+            "Cache-Control":
+                "no-store"
+        }
+    );
+
+
+    response.end(
+        JSON.stringify(
+            data
+        )
+    );
+}
+
+
+function sendHTML(
+    response,
+    status,
+    html
+) {
+
+    response.writeHead(
+        status,
+        {
+            "Content-Type":
+                "text/html; charset=utf-8"
+        }
+    );
+
+
+    response.end(
+        html
+    );
+}
+
+
+function getBody(request) {
 
     return new Promise(
         (
@@ -327,59 +402,64 @@ function getBody(req) {
 
             let body = "";
 
+            let size = 0;
 
-            req.on(
+            const MAX_SIZE =
+                20 *
+                1024 *
+                1024;
+
+
+            request.on(
                 "data",
                 chunk => {
 
-                    body += chunk;
+                    size +=
+                        chunk.length;
 
 
                     if (
-                        Buffer.byteLength(
-                            body,
-                            "utf8"
-                        ) >
-                        12 * 1024 * 1024
+                        size >
+                        MAX_SIZE
                     ) {
 
                         reject(
                             new Error(
-                                "Request too large"
+                                "REQUEST_TOO_LARGE"
                             )
                         );
 
-                        req.destroy();
-                    }
-                }
-            );
-
-
-            req.on(
-                "end",
-                () => {
-
-                    if (!body) {
-
-                        resolve({});
+                        request.destroy();
 
                         return;
                     }
 
 
+                    body +=
+                        chunk.toString();
+                }
+            );
+
+
+            request.on(
+                "end",
+                () => {
+
                     try {
 
                         resolve(
-                            JSON.parse(
-                                body
-                            )
+                            body
+                                ? JSON.parse(
+                                    body
+                                )
+                                : {}
                         );
 
                     } catch {
 
                         reject(
                             new Error(
-                                "Invalid JSON"
+                                "INVALID_JSON"
                             )
                         );
                     }
@@ -387,7 +467,7 @@ function getBody(req) {
             );
 
 
-            req.on(
+            request.on(
                 "error",
                 reject
             );
@@ -396,180 +476,21 @@ function getBody(req) {
 }
 
 
-function sendJSON(
-    res,
-    data,
-    statusCode = 200
-) {
-
-    res.writeHead(
-        statusCode,
-        {
-            "Content-Type":
-                "application/json; charset=utf-8",
-
-            "Access-Control-Allow-Origin":
-                "*",
-
-            "Access-Control-Allow-Methods":
-                "GET, POST, OPTIONS",
-
-            "Access-Control-Allow-Headers":
-                "Content-Type"
-        }
-    );
-
-
-    res.end(
-        JSON.stringify(
-            data
-        )
-    );
-}
-
-
-function sendHTML(
-    res,
-    fileName
-) {
-
-    const filePath =
-        path.join(
-            __dirname,
-            fileName
-        );
-
-
-    if (
-        !fs.existsSync(
-            filePath
-        )
-    ) {
-
-        res.writeHead(
-            404,
-            {
-                "Content-Type":
-                    "text/plain; charset=utf-8"
-            }
-        );
-
-        res.end(
-            "Страница не найдена"
-        );
-
-        return;
-    }
-
-
-    const html =
-        fs.readFileSync(
-            filePath,
-            "utf8"
-        );
-
-
-    res.writeHead(
-        200,
-        {
-            "Content-Type":
-                "text/html; charset=utf-8"
-        }
-    );
-
-
-    res.end(
-        html
-    );
-}
-
-
 /* =========================================================
-   WEBSOCKET
-========================================================= */
-
-const onlineUsers =
-    new Map();
-
-
-function sendToUser(
-    login,
-    data
-) {
-
-    const client =
-        onlineUsers.get(
-            login
-        );
-
-
-    if (
-        !client ||
-        client.readyState !== 1
-    ) {
-
-        return false;
-    }
-
-
-    try {
-
-        client.send(
-            JSON.stringify(
-                data
-            )
-        );
-
-        return true;
-
-    } catch {
-
-        return false;
-    }
-}
-
-
-/* =========================================================
-   HTTP SERVER
+   SERVER
 ========================================================= */
 
 const server =
     http.createServer(
         async (
-            req,
-            res
+            request,
+            response
         ) => {
-
-            if (
-                req.method ===
-                "OPTIONS"
-            ) {
-
-                res.writeHead(
-                    204,
-                    {
-                        "Access-Control-Allow-Origin":
-                            "*",
-
-                        "Access-Control-Allow-Methods":
-                            "GET, POST, OPTIONS",
-
-                        "Access-Control-Allow-Headers":
-                            "Content-Type"
-                    }
-                );
-
-                res.end();
-
-                return;
-            }
-
 
             const url =
                 new URL(
-                    req.url,
-                    "http://localhost:" +
-                    PORT
+                    request.url,
+                    `http://${request.headers.host || "localhost"}`
                 );
 
 
@@ -577,38 +498,70 @@ const server =
                 url.pathname;
 
 
-            /* =================================================
-               MAIN PAGE
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/"
-            ) {
-
-                sendHTML(
-                    res,
-                    "index.html"
-                );
-
-                return;
-            }
+            try {
 
 
-            /* =================================================
-               REGISTER
-            ================================================= */
+                /* =================================================
+                   INDEX
+                ================================================= */
 
-            if (
-                req.method === "POST" &&
-                pathname === "/register"
-            ) {
+                if (
+                    request.method === "GET" &&
+                    pathname === "/"
+                ) {
 
-                try {
+                    const file =
+                        path.join(
+                            __dirname,
+                            "index.html"
+                        );
+
+
+                    if (
+                        !fs.existsSync(
+                            file
+                        )
+                    ) {
+
+                        sendHTML(
+                            response,
+                            404,
+                            "index.html не найден"
+                        );
+
+                        return;
+                    }
+
+
+                    const html =
+                        fs.readFileSync(
+                            file,
+                            "utf8"
+                        );
+
+
+                    sendHTML(
+                        response,
+                        200,
+                        html
+                    );
+
+                    return;
+                }
+
+
+                /* =================================================
+                   REGISTER
+                ================================================= */
+
+                if (
+                    request.method === "POST" &&
+                    pathname === "/register"
+                ) {
 
                     const body =
                         await getBody(
-                            req
+                            request
                         );
 
 
@@ -624,8 +577,7 @@ const server =
                         String(
                             body.password ||
                             ""
-                        )
-                            .trim();
+                        );
 
 
                     if (
@@ -634,13 +586,35 @@ const server =
                     ) {
 
                         sendJSON(
-                            res,
+                            response,
+                            400,
                             {
                                 success:
                                     false,
 
                                 message:
-                                    "Заполни логин и пароль"
+                                    "Заполните все поля"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        login.length <
+                        3
+                    ) {
+
+                        sendJSON(
+                            response,
+                            400,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Логин должен содержать минимум 3 символа"
                             }
                         );
 
@@ -652,31 +626,24 @@ const server =
                         readUsers();
 
 
-                    users.forEach(
-                        normalizeUser
-                    );
-
-
-                    const exists =
+                    if (
                         users.some(
                             user =>
                                 user.login
                                     .toLowerCase() ===
-                                login
-                                    .toLowerCase()
-                        );
-
-
-                    if (exists) {
+                                login.toLowerCase()
+                        )
+                    ) {
 
                         sendJSON(
-                            res,
+                            response,
+                            400,
                             {
                                 success:
                                     false,
 
                                 message:
-                                    "Такой пользователь уже существует"
+                                    "Такой логин уже существует"
                             }
                         );
 
@@ -684,7 +651,7 @@ const server =
                     }
 
 
-                    const newUser = {
+                    const user = {
 
                         login,
 
@@ -694,11 +661,14 @@ const server =
 
                         profile: {
 
-                            name: "",
+                            name:
+                                login,
 
-                            about: "",
+                            about:
+                                "",
 
-                            photo: "",
+                            photo:
+                                "",
 
                             messageStyle:
                                 "classic"
@@ -707,7 +677,7 @@ const server =
 
 
                     users.push(
-                        newUser
+                        user
                     );
 
 
@@ -716,70 +686,37 @@ const server =
                     );
 
 
-                    /*
-                        ВАЖНО:
-
-                        Теперь после регистрации
-                        сервер сразу отдаёт
-                        пользователя клиенту.
-                    */
-
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
 
-                            message:
-                                "Аккаунт создан",
-
                             user:
                                 publicUser(
-                                    newUser
+                                    user
                                 )
                         }
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка регистрации"
-                        },
-                        500
-                    );
+                    return;
                 }
 
 
-                return;
-            }
+                /* =================================================
+                   LOGIN
+                ================================================= */
 
-
-            /* =================================================
-               LOGIN
-            ================================================= */
-
-            if (
-                req.method === "POST" &&
-                pathname === "/login"
-            ) {
-
-                try {
+                if (
+                    request.method === "POST" &&
+                    pathname === "/login"
+                ) {
 
                     const body =
                         await getBody(
-                            req
+                            request
                         );
 
 
@@ -795,17 +732,11 @@ const server =
                         String(
                             body.password ||
                             ""
-                        )
-                            .trim();
+                        );
 
 
                     const users =
                         readUsers();
-
-
-                    users.forEach(
-                        normalizeUser
-                    );
 
 
                     const user =
@@ -818,15 +749,11 @@ const server =
                         );
 
 
-                    saveUsers(
-                        users
-                    );
-
-
                     if (!user) {
 
                         sendJSON(
-                            res,
+                            response,
+                            401,
                             {
                                 success:
                                     false,
@@ -840,8 +767,19 @@ const server =
                     }
 
 
+                    normalizeUser(
+                        user
+                    );
+
+
+                    saveUsers(
+                        users
+                    );
+
+
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
@@ -854,264 +792,98 @@ const server =
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка входа"
-                        },
-                        500
-                    );
+                    return;
                 }
 
 
-                return;
-            }
+                /* =================================================
+                   USERS
+                ================================================= */
 
+                if (
+                    request.method === "GET" &&
+                    pathname === "/users"
+                ) {
 
-            /* =================================================
-               SEARCH USERS
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/users"
-            ) {
-
-                const current =
-                    url.searchParams.get(
-                        "current"
-                    ) || "";
-
-
-                const query =
-                    (
+                    const current =
                         url.searchParams.get(
-                            "q"
-                        ) || ""
-                    )
-                        .trim()
-                        .toLowerCase();
+                            "current"
+                        ) || "";
 
 
-                const users =
-                    readUsers();
-
-
-                users.forEach(
-                    normalizeUser
-                );
-
-
-                const result =
-                    users
-
-                        .filter(
-                            user =>
-                                user.login !==
-                                current
+                    const q =
+                        (
+                            url.searchParams.get(
+                                "q"
+                            ) || ""
                         )
-
-                        .filter(
-                            user => {
-
-                                if (!query) {
-                                    return true;
-                                }
+                            .trim()
+                            .toLowerCase();
 
 
-                                const login =
-                                    user.login
-                                        .toLowerCase();
+                    const users =
+                        readUsers();
 
 
-                                const name =
-                                    user.profile.name
-                                        .toLowerCase();
-
-
-                                const about =
-                                    user.profile.about
-                                        .toLowerCase();
-
-
-                                return (
-                                    login.includes(
-                                        query
-                                    ) ||
-
-                                    name.includes(
-                                        query
-                                    ) ||
-
-                                    about.includes(
-                                        query
-                                    )
-                                );
-                            }
-                        )
-
-                        .map(
-                            user =>
-                                publicUser(
-                                    user,
+                    const result =
+                        users
+                            .filter(
+                                user =>
+                                    user.login !==
                                     current
-                                )
-                        );
+                            )
+                            .filter(
+                                user => {
+
+                                    if (!q) {
+                                        return true;
+                                    }
 
 
-                saveUsers(
-                    users
-                );
+                                    const name =
+                                        user.profile?.name ||
+                                        user.login;
 
 
-                sendJSON(
-                    res,
-                    result
-                );
+                                    return (
+                                        user.login
+                                            .toLowerCase()
+                                            .includes(q) ||
 
-                return;
-            }
+                                        name
+                                            .toLowerCase()
+                                            .includes(q)
+                                    );
+                                }
+                            )
+                            .map(
+                                publicUser
+                            );
 
-
-            /* =================================================
-               PROFILE GET
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/profile"
-            ) {
-
-                const login =
-                    url.searchParams.get(
-                        "login"
-                    ) || "";
-
-
-                const users =
-                    readUsers();
-
-
-                const user =
-                    users.find(
-                        item =>
-                            item.login ===
-                            login
-                    );
-
-
-                if (!user) {
 
                     sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Пользователь не найден"
-                        },
-                        404
+                        response,
+                        200,
+                        result
                     );
+
 
                     return;
                 }
 
 
-                normalizeUser(
-                    user
-                );
+                /* =================================================
+                   PROFILE GET
+                ================================================= */
 
-
-                sendJSON(
-                    res,
-                    {
-                        success:
-                            true,
-
-                        user:
-                            publicUser(
-                                user
-                            )
-                    }
-                );
-
-
-                return;
-            }
-
-
-            /* =================================================
-               PROFILE SAVE
-            ================================================= */
-
-            if (
-                req.method === "POST" &&
-                pathname === "/profile"
-            ) {
-
-                try {
-
-                    const body =
-                        await getBody(
-                            req
-                        );
-
+                if (
+                    request.method === "GET" &&
+                    pathname === "/profile"
+                ) {
 
                     const login =
-                        String(
-                            body.login ||
-                            ""
-                        )
-                            .trim();
-
-
-                    const name =
-                        String(
-                            body.name ||
-                            ""
-                        )
-                            .trim()
-                            .slice(
-                                0,
-                                40
-                            );
-
-
-                    const about =
-                        String(
-                            body.about ||
-                            ""
-                        )
-                            .trim()
-                            .slice(
-                                0,
-                                200
-                            );
-
-
-                    const photo =
-                        String(
-                            body.photo ||
-                            ""
-                        );
-
-
-                    const messageStyle =
-                        String(
-                            body.messageStyle ||
-                            "classic"
+                        url.searchParams.get(
+                            "login"
                         );
 
 
@@ -1130,15 +902,97 @@ const server =
                     if (!user) {
 
                         sendJSON(
-                            res,
+                            response,
+                            404,
                             {
                                 success:
                                     false,
 
                                 message:
                                     "Пользователь не найден"
-                            },
-                            404
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    normalizeUser(
+                        user
+                    );
+
+
+                    saveUsers(
+                        users
+                    );
+
+
+                    sendJSON(
+                        response,
+                        200,
+                        {
+                            success:
+                                true,
+
+                            user:
+                                publicUser(
+                                    user
+                                )
+                        }
+                    );
+
+
+                    return;
+                }
+
+
+                /* =================================================
+                   PROFILE UPDATE
+                ================================================= */
+
+                if (
+                    request.method === "POST" &&
+                    pathname === "/profile"
+                ) {
+
+                    const body =
+                        await getBody(
+                            request
+                        );
+
+
+                    const login =
+                        String(
+                            body.login ||
+                            ""
+                        )
+                            .trim();
+
+
+                    const users =
+                        readUsers();
+
+
+                    const user =
+                        users.find(
+                            item =>
+                                item.login ===
+                                login
+                        );
+
+
+                    if (!user) {
+
+                        sendJSON(
+                            response,
+                            404,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Пользователь не найден"
+                            }
                         );
 
                         return;
@@ -1151,48 +1005,44 @@ const server =
 
 
                     user.profile.name =
-                        name;
+                        String(
+                            body.name ??
+                            user.profile.name
+                        )
+                            .trim()
+                            .slice(
+                                0,
+                                100
+                            );
 
 
                     user.profile.about =
-                        about;
-
-
-                    if (
-                        photo === "" ||
-                        photo.startsWith(
-                            "data:image/"
-                        ) ||
-                        photo.startsWith(
-                            "http://"
-                        ) ||
-                        photo.startsWith(
-                            "https://"
+                        String(
+                            body.about ??
+                            user.profile.about
                         )
-                    ) {
-
-                        user.profile.photo =
-                            photo;
-                    }
-
-
-                    const allowedStyles =
-                        [
-                            "classic",
-                            "square",
-                            "neon"
-                        ];
+                            .slice(
+                                0,
+                                1000
+                            );
 
 
-                    if (
-                        allowedStyles.includes(
-                            messageStyle
+                    user.profile.photo =
+                        String(
+                            body.photo ??
+                            user.profile.photo
                         )
-                    ) {
+                            .slice(
+                                0,
+                                5_000_000
+                            );
 
-                        user.profile.messageStyle =
-                            messageStyle;
-                    }
+
+                    user.profile.messageStyle =
+                        String(
+                            body.messageStyle ??
+                            user.profile.messageStyle
+                        );
 
 
                     saveUsers(
@@ -1201,13 +1051,11 @@ const server =
 
 
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
-
-                            message:
-                                "Профиль сохранён",
 
                             user:
                                 publicUser(
@@ -1217,180 +1065,43 @@ const server =
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка сохранения профиля"
-                        },
-                        500
-                    );
-                }
-
-
-                return;
-            }
-
-
-            /* =================================================
-               FRIENDS GET
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/friends"
-            ) {
-
-                const login =
-                    url.searchParams.get(
-                        "login"
-                    ) || "";
-
-
-                const users =
-                    readUsers();
-
-
-                const current =
-                    users.find(
-                        user =>
-                            user.login ===
-                            login
-                    );
-
-
-                if (!current) {
-
-                    sendJSON(
-                        res,
-                        []
-                    );
-
                     return;
                 }
 
 
-                normalizeUser(
-                    current
-                );
+                /* =================================================
+                   FRIENDS
+                ================================================= */
 
+                if (
+                    request.method === "GET" &&
+                    pathname === "/friends"
+                ) {
 
-                const result =
-                    users
-
-                        .filter(
-                            user =>
-                                current.friends
-                                    .includes(
-                                        user.login
-                                    )
-                        )
-
-                        .map(
-                            user =>
-                                publicUser(
-                                    user,
-                                    login
-                                )
+                    const login =
+                        url.searchParams.get(
+                            "login"
                         );
-
-
-                sendJSON(
-                    res,
-                    result
-                );
-
-                return;
-            }
-
-
-            /* =================================================
-               FRIENDS ACTION
-            ================================================= */
-
-            if (
-                req.method === "POST" &&
-                pathname === "/friends"
-            ) {
-
-                try {
-
-                    const body =
-                        await getBody(
-                            req
-                        );
-
-
-                    const from =
-                        String(
-                            body.from ||
-                            ""
-                        )
-                            .trim();
-
-
-                    const to =
-                        String(
-                            body.to ||
-                            ""
-                        )
-                            .trim();
-
-
-                    const action =
-                        String(
-                            body.action ||
-                            ""
-                        )
-                            .trim();
 
 
                     const users =
                         readUsers();
 
 
-                    const userA =
+                    const user =
                         users.find(
-                            user =>
-                                user.login ===
-                                from
+                            item =>
+                                item.login ===
+                                login
                         );
 
 
-                    const userB =
-                        users.find(
-                            user =>
-                                user.login ===
-                                to
-                        );
-
-
-                    if (
-                        !userA ||
-                        !userB ||
-                        from === to
-                    ) {
+                    if (!user) {
 
                         sendJSON(
-                            res,
-                            {
-                                success:
-                                    false,
-
-                                message:
-                                    "Пользователь не найден"
-                            },
-                            404
+                            response,
+                            404,
+                            []
                         );
 
                         return;
@@ -1398,11 +1109,109 @@ const server =
 
 
                     normalizeUser(
-                        userA
+                        user
                     );
 
+
+                    const result =
+                        user.friends
+                            .map(
+                                friendLogin =>
+                                    users.find(
+                                        item =>
+                                            item.login ===
+                                            friendLogin
+                                    )
+                            )
+                            .filter(Boolean)
+                            .map(
+                                publicUser
+                            );
+
+
+                    sendJSON(
+                        response,
+                        200,
+                        result
+                    );
+
+
+                    return;
+                }
+
+
+                if (
+                    request.method === "POST" &&
+                    pathname === "/friends"
+                ) {
+
+                    const body =
+                        await getBody(
+                            request
+                        );
+
+
+                    const login =
+                        String(
+                            body.login ||
+                            ""
+                        ).trim();
+
+
+                    const friend =
+                        String(
+                            body.friend ||
+                            ""
+                        ).trim();
+
+
+                    const action =
+                        body.action;
+
+
+                    const users =
+                        readUsers();
+
+
+                    const user =
+                        users.find(
+                            item =>
+                                item.login ===
+                                login
+                        );
+
+
+                    const friendUser =
+                        users.find(
+                            item =>
+                                item.login ===
+                                friend
+                        );
+
+
+                    if (
+                        !user ||
+                        !friendUser
+                    ) {
+
+                        sendJSON(
+                            response,
+                            404,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Пользователь не найден"
+                            }
+                        );
+
+                        return;
+                    }
+
+
                     normalizeUser(
-                        userB
+                        user
                     );
 
 
@@ -1412,30 +1221,14 @@ const server =
                     ) {
 
                         if (
-                            !userA.friends
-                                .includes(
-                                    to
-                                )
+                            !user.friends.includes(
+                                friend
+                            )
                         ) {
 
-                            userA.friends
-                                .push(
-                                    to
-                                );
-                        }
-
-
-                        if (
-                            !userB.friends
-                                .includes(
-                                    from
-                                )
-                        ) {
-
-                            userB.friends
-                                .push(
-                                    from
-                                );
+                            user.friends.push(
+                                friend
+                            );
                         }
 
                     } else if (
@@ -1443,36 +1236,12 @@ const server =
                         "remove"
                     ) {
 
-                        userA.friends =
-                            userA.friends.filter(
-                                login =>
-                                    login !==
-                                    to
+                        user.friends =
+                            user.friends.filter(
+                                item =>
+                                    item !==
+                                    friend
                             );
-
-
-                        userB.friends =
-                            userB.friends.filter(
-                                login =>
-                                    login !==
-                                    from
-                            );
-
-                    } else {
-
-                        sendJSON(
-                            res,
-                            {
-                                success:
-                                    false,
-
-                                message:
-                                    "Неизвестное действие"
-                            },
-                            400
-                        );
-
-                        return;
                     }
 
 
@@ -1482,7 +1251,8 @@ const server =
 
 
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true
@@ -1490,192 +1260,148 @@ const server =
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка работы с друзьями"
-                        },
-                        500
-                    );
-                }
-
-
-                return;
-            }
-
-
-            /* =================================================
-               CHATS
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/chats"
-            ) {
-
-                const login =
-                    url.searchParams.get(
-                        "login"
-                    ) || "";
-
-
-                if (!login) {
-
-                    sendJSON(
-                        res,
-                        []
-                    );
-
                     return;
                 }
 
 
-                const users =
-                    readUsers();
+                /* =================================================
+                   CHATS
+                ================================================= */
+
+                if (
+                    request.method === "GET" &&
+                    pathname === "/chats"
+                ) {
+
+                    const login =
+                        url.searchParams.get(
+                            "login"
+                        );
 
 
-                users.forEach(
-                    normalizeUser
-                );
+                    const messages =
+                        readMessages();
 
 
-                const messages =
-                    readMessages();
+                    const users =
+                        readUsers();
 
 
-                const chatLogins =
-                    new Set();
+                    const map =
+                        new Map();
 
 
-                messages.forEach(
-                    message => {
+                    messages.forEach(
+                        message => {
 
-                        if (
-                            message.from ===
-                            login
-                        ) {
+                            if (
+                                message.from !==
+                                login &&
+                                message.to !==
+                                login
+                            ) {
 
-                            chatLogins.add(
-                                message.to
-                            );
-                        }
-
-
-                        if (
-                            message.to ===
-                            login
-                        ) {
-
-                            chatLogins.add(
-                                message.from
-                            );
-                        }
-                    }
-                );
-
-
-                const result =
-                    Array.from(
-                        chatLogins
-                    )
-                        .map(
-                            otherLogin => {
-
-                                const user =
-                                    users.find(
-                                        item =>
-                                            item.login ===
-                                            otherLogin
-                                    );
-
-
-                                if (!user) {
-                                    return null;
-                                }
-
-
-                                const conversation =
-                                    messages.filter(
-                                        message =>
-                                            (
-                                                message.from ===
-                                                    login &&
-                                                message.to ===
-                                                    otherLogin
-                                            ) ||
-                                            (
-                                                message.from ===
-                                                    otherLogin &&
-                                                message.to ===
-                                                    login
-                                            )
-                                    );
-
-
-                                const messageCount =
-                                    conversation.filter(
-                                        message =>
-                                            message.from ===
-                                            otherLogin
-                                    ).length;
-
-
-                                const lastMessage =
-                                    conversation[
-                                        conversation.length - 1
-                                    ];
-
-
-                                return {
-
-                                    login:
-                                        otherLogin,
-
-                                    user:
-                                        publicUser(
-                                            user,
-                                            login
-                                        ),
-
-                                    messageCount,
-
-                                    totalMessages:
-                                        conversation.length,
-
-                                    lastMessage:
-                                        lastMessage
-                                            ? lastMessage.text
-                                            : "",
-
-                                    lastTime:
-                                        lastMessage
-                                            ? lastMessage.time
-                                            : ""
-
-                                };
+                                return;
                             }
-                        )
-                        .filter(
-                            Boolean
-                        )
-                        .sort(
-                            (
-                                a,
-                                b
-                            ) => {
 
-                                return (
+
+                            const other =
+                                message.from ===
+                                    login
+                                        ? message.to
+                                        : message.from;
+
+
+                            if (
+                                !map.has(
+                                    other
+                                )
+                            ) {
+
+                                map.set(
+                                    other,
+                                    {
+                                        login:
+                                            other,
+
+                                        messageCount:
+                                            0,
+
+                                        lastTime:
+                                            message.time
+                                    }
+                                );
+                            }
+
+
+                            const item =
+                                map.get(
+                                    other
+                                );
+
+
+                            if (
+                                message.from ===
+                                other
+                            ) {
+
+                                item.messageCount++;
+                            }
+
+
+                            if (
+                                new Date(
+                                    message.time
+                                ) >
+                                new Date(
+                                    item.lastTime ||
+                                    0
+                                )
+                            ) {
+
+                                item.lastTime =
+                                    message.time;
+                            }
+                        }
+                    );
+
+
+                    const result =
+                        Array.from(
+                            map.values()
+                        )
+                            .map(
+                                item => {
+
+                                    const user =
+                                        users.find(
+                                            u =>
+                                                u.login ===
+                                                item.login
+                                        );
+
+
+                                    return {
+
+                                        ...item,
+
+                                        user:
+                                            publicUser(
+                                                user
+                                            )
+
+                                    };
+                                }
+                            )
+                            .filter(
+                                item =>
+                                    item.user
+                            )
+                            .sort(
+                                (
+                                    a,
+                                    b
+                                ) =>
                                     new Date(
                                         b.lastTime ||
                                         0
@@ -1684,39 +1410,86 @@ const server =
                                         a.lastTime ||
                                         0
                                     )
-                                );
-                            }
+                            );
+
+
+                    sendJSON(
+                        response,
+                        200,
+                        result
+                    );
+
+
+                    return;
+                }
+
+
+                /* =================================================
+                   MESSAGES
+                ================================================= */
+
+                if (
+                    request.method === "GET" &&
+                    pathname === "/messages"
+                ) {
+
+                    const user1 =
+                        url.searchParams.get(
+                            "user1"
                         );
 
 
-                saveUsers(
-                    users
-                );
+                    const user2 =
+                        url.searchParams.get(
+                            "user2"
+                        );
 
 
-                sendJSON(
-                    res,
-                    result
-                );
-
-                return;
-            }
+                    const messages =
+                        readMessages();
 
 
-            /* =================================================
-               SEND MESSAGE
-            ================================================= */
+                    const result =
+                        messages.filter(
+                            message =>
+                                (
+                                    message.from ===
+                                        user1 &&
+                                    message.to ===
+                                        user2
+                                ) ||
+                                (
+                                    message.from ===
+                                        user2 &&
+                                    message.to ===
+                                        user1
+                                )
+                        );
 
-            if (
-                req.method === "POST" &&
-                pathname === "/send-message"
-            ) {
 
-                try {
+                    sendJSON(
+                        response,
+                        200,
+                        result
+                    );
+
+
+                    return;
+                }
+
+
+                /* =================================================
+                   SEND MESSAGE
+                ================================================= */
+
+                if (
+                    request.method === "POST" &&
+                    pathname === "/send-message"
+                ) {
 
                     const body =
                         await getBody(
-                            req
+                            request
                         );
 
 
@@ -1724,16 +1497,14 @@ const server =
                         String(
                             body.from ||
                             ""
-                        )
-                            .trim();
+                        ).trim();
 
 
                     const to =
                         String(
                             body.to ||
                             ""
-                        )
-                            .trim();
+                        ).trim();
 
 
                     const text =
@@ -1741,7 +1512,11 @@ const server =
                             body.text ||
                             ""
                         )
-                            .trim();
+                            .trim()
+                            .slice(
+                                0,
+                                10000
+                            );
 
 
                     if (
@@ -1751,13 +1526,14 @@ const server =
                     ) {
 
                         sendJSON(
-                            res,
+                            response,
+                            400,
                             {
                                 success:
                                     false,
 
                                 message:
-                                    "Недостаточно данных"
+                                    "Неверные данные"
                             }
                         );
 
@@ -1769,16 +1545,16 @@ const server =
                         readUsers();
 
 
-                    const senderExists =
-                        users.some(
+                    const fromUser =
+                        users.find(
                             user =>
                                 user.login ===
                                 from
                         );
 
 
-                    const receiverExists =
-                        users.some(
+                    const toUser =
+                        users.find(
                             user =>
                                 user.login ===
                                 to
@@ -1786,12 +1562,13 @@ const server =
 
 
                     if (
-                        !senderExists ||
-                        !receiverExists
+                        !fromUser ||
+                        !toUser
                     ) {
 
                         sendJSON(
-                            res,
+                            response,
+                            404,
                             {
                                 success:
                                     false,
@@ -1849,7 +1626,8 @@ const server =
 
 
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
@@ -1859,184 +1637,96 @@ const server =
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка отправки сообщения"
-                        },
-                        500
-                    );
+                    return;
                 }
 
 
-                return;
-            }
+                /* =================================================
+                   CHANNELS GET
+                ================================================= */
+
+                if (
+                    request.method === "GET" &&
+                    pathname === "/channels"
+                ) {
+
+                    const login =
+                        url.searchParams.get(
+                            "login"
+                        ) || "";
 
 
-            /* =================================================
-               GET MESSAGES
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/messages"
-            ) {
-
-                const user1 =
-                    url.searchParams.get(
-                        "user1"
-                    ) || "";
+                    const channels =
+                        readChannels();
 
 
-                const user2 =
-                    url.searchParams.get(
-                        "user2"
-                    ) || "";
+                    const posts =
+                        readChannelPosts();
 
 
-                const messages =
-                    readMessages();
+                    const result =
+                        channels.map(
+                            channel => {
+
+                                const channelPosts =
+                                    posts.filter(
+                                        post =>
+                                            post.channelId ===
+                                            channel.id
+                                    );
 
 
-                const result =
-                    messages.filter(
-                        message =>
-                            (
-                                message.from ===
-                                    user1 &&
-                                message.to ===
-                                    user2
-                            ) ||
-                            (
-                                message.from ===
-                                    user2 &&
-                                message.to ===
-                                    user1
-                            )
+                                const lastPost =
+                                    channelPosts[
+                                        channelPosts.length - 1
+                                    ];
+
+
+                                return {
+
+                                    ...channel,
+
+                                    subscribed:
+                                        channel.subscribers
+                                            .includes(
+                                                login
+                                            ),
+
+                                    postCount:
+                                        channelPosts.length,
+
+                                    lastTime:
+                                        lastPost
+                                            ? lastPost.time
+                                            : channel.createdAt
+                                };
+                            }
+                        );
+
+
+                    sendJSON(
+                        response,
+                        200,
+                        result
                     );
 
 
-                sendJSON(
-                    res,
-                    result
-                );
-
-                return;
-            }
+                    return;
+                }
 
 
-            /* =================================================
-               CHANNELS GET
-            ================================================= */
+                /* =================================================
+                   CREATE CHANNEL
+                ================================================= */
 
-            if (
-                req.method === "GET" &&
-                pathname === "/channels"
-            ) {
-
-                const login =
-                    url.searchParams.get(
-                        "login"
-                    ) || "";
-
-
-                const channels =
-                    readChannels();
-
-
-                const posts =
-                    readChannelPosts();
-
-
-                const users =
-                    readUsers();
-
-
-                channels.forEach(
-                    normalizeChannel
-                );
-
-
-                const result =
-                    channels.map(
-                        channel => {
-
-                            const channelPosts =
-                                posts.filter(
-                                    post =>
-                                        post.channelId ===
-                                        channel.id
-                                );
-
-
-                            const lastPost =
-                                channelPosts[
-                                    channelPosts.length - 1
-                                ];
-
-
-                            return {
-
-                                ...channel,
-
-                                subscribed:
-                                    channel.subscribers
-                                        .includes(
-                                            login
-                                        ),
-
-                                postCount:
-                                    channelPosts.length,
-
-                                lastTime:
-                                    lastPost
-                                        ? lastPost.time
-                                        : channel.createdAt
-
-                            };
-                        }
-                    );
-
-
-                saveChannels(
-                    channels
-                );
-
-
-                sendJSON(
-                    res,
-                    result
-                );
-
-                return;
-            }
-
-
-            /* =================================================
-               CHANNEL CREATE
-            ================================================= */
-
-            if (
-                req.method === "POST" &&
-                pathname === "/channels"
-            ) {
-
-                try {
+                if (
+                    request.method === "POST" &&
+                    pathname === "/channels"
+                ) {
 
                     const body =
                         await getBody(
-                            req
+                            request
                         );
 
 
@@ -2044,8 +1734,7 @@ const server =
                         String(
                             body.owner ||
                             ""
-                        )
-                            .trim();
+                        ).trim();
 
 
                     const name =
@@ -2056,7 +1745,7 @@ const server =
                             .trim()
                             .slice(
                                 0,
-                                60
+                                100
                             );
 
 
@@ -2068,17 +1757,26 @@ const server =
                             .trim()
                             .slice(
                                 0,
-                                300
+                                1000
                             );
 
 
-                    if (
-                        !owner ||
-                        !name
-                    ) {
+                    const photo =
+                        String(
+                            body.photo ||
+                            ""
+                        )
+                            .slice(
+                                0,
+                                5_000_000
+                            );
+
+
+                    if (!owner || !name) {
 
                         sendJSON(
-                            res,
+                            response,
+                            400,
                             {
                                 success:
                                     false,
@@ -2096,24 +1794,25 @@ const server =
                         readUsers();
 
 
-                    const userExists =
-                        users.some(
+                    const ownerUser =
+                        users.find(
                             user =>
                                 user.login ===
                                 owner
                         );
 
 
-                    if (!userExists) {
+                    if (!ownerUser) {
 
                         sendJSON(
-                            res,
+                            response,
+                            404,
                             {
                                 success:
                                     false,
 
                                 message:
-                                    "Пользователь не найден"
+                                    "Владелец не найден"
                             }
                         );
 
@@ -2131,23 +1830,34 @@ const server =
                             "channel_" +
                             Date.now() +
                             "_" +
-                            Math.random()
-                                .toString(
-                                    36
+                            crypto
+                                .randomBytes(
+                                    4
                                 )
-                                .slice(
-                                    2,
-                                    8
+                                .toString(
+                                    "hex"
                                 ),
 
                         name,
 
                         description,
 
+                        photo,
+
                         owner,
 
-                        subscribers:
-                            [owner],
+                        subscribers: [
+                            owner
+                        ],
+
+                        settings: {
+
+                            comments:
+                                false,
+
+                            notifications:
+                                true
+                        },
 
                         createdAt:
                             new Date()
@@ -2166,7 +1876,8 @@ const server =
 
 
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
@@ -2176,45 +1887,22 @@ const server =
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка создания канала"
-                        },
-                        500
-                    );
+                    return;
                 }
 
 
-                return;
-            }
+                /* =================================================
+                   CHANNEL UPDATE
+                ================================================= */
 
-
-            /* =================================================
-               CHANNEL SUBSCRIPTION
-            ================================================= */
-
-            if (
-                req.method === "POST" &&
-                pathname === "/channel-subscription"
-            ) {
-
-                try {
+                if (
+                    request.method === "POST" &&
+                    pathname === "/channel-update"
+                ) {
 
                     const body =
                         await getBody(
-                            req
+                            request
                         );
 
 
@@ -2222,54 +1910,14 @@ const server =
                         String(
                             body.channelId ||
                             ""
-                        )
-                            .trim();
+                        ).trim();
 
 
-                    const login =
+                    const owner =
                         String(
-                            body.login ||
+                            body.owner ||
                             ""
-                        )
-                            .trim();
-
-
-                    const action =
-                        String(
-                            body.action ||
-                            ""
-                        )
-                            .trim();
-
-
-                    const users =
-                        readUsers();
-
-
-                    const userExists =
-                        users.some(
-                            user =>
-                                user.login ===
-                                login
-                        );
-
-
-                    if (!userExists) {
-
-                        sendJSON(
-                            res,
-                            {
-                                success:
-                                    false,
-
-                                message:
-                                    "Пользователь не найден"
-                            },
-                            404
-                        );
-
-                        return;
-                    }
+                        ).trim();
 
 
                     const channels =
@@ -2287,24 +1935,227 @@ const server =
                     if (!channel) {
 
                         sendJSON(
-                            res,
+                            response,
+                            404,
                             {
                                 success:
                                     false,
 
                                 message:
                                     "Канал не найден"
-                            },
-                            404
+                            }
                         );
 
                         return;
                     }
 
 
-                    normalizeChannel(
-                        channel
+                    if (
+                        channel.owner !==
+                        owner
+                    ) {
+
+                        sendJSON(
+                            response,
+                            403,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Изменять канал может только владелец"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    const name =
+                        String(
+                            body.name ??
+                            channel.name
+                        )
+                            .trim()
+                            .slice(
+                                0,
+                                100
+                            );
+
+
+                    const description =
+                        String(
+                            body.description ??
+                            channel.description
+                        )
+                            .trim()
+                            .slice(
+                                0,
+                                1000
+                            );
+
+
+                    const photo =
+                        String(
+                            body.photo ??
+                            channel.photo
+                        )
+                            .slice(
+                                0,
+                                5_000_000
+                            );
+
+
+                    if (!name) {
+
+                        sendJSON(
+                            response,
+                            400,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Название канала не может быть пустым"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    channel.name =
+                        name;
+
+                    channel.description =
+                        description;
+
+                    channel.photo =
+                        photo;
+
+
+                    if (!channel.settings) {
+
+                        channel.settings =
+                            {};
+                    }
+
+
+                    channel.settings.comments =
+                        !!(
+                            body.comments ??
+                            channel.settings.comments
+                        );
+
+
+                    channel.settings.notifications =
+                        body.notifications ===
+                        undefined
+                            ? (
+                                channel.settings
+                                    .notifications !==
+                                false
+                            )
+                            : !!body.notifications;
+
+
+                    saveChannels(
+                        channels
                     );
+
+
+                    sendJSON(
+                        response,
+                        200,
+                        {
+                            success:
+                                true,
+
+                            channel
+                        }
+                    );
+
+
+                    return;
+                }
+
+
+                /* =================================================
+                   CHANNEL SUBSCRIPTION
+                ================================================= */
+
+                if (
+                    request.method === "POST" &&
+                    pathname === "/channel-subscription"
+                ) {
+
+                    const body =
+                        await getBody(
+                            request
+                        );
+
+
+                    const channelId =
+                        String(
+                            body.channelId ||
+                            ""
+                        ).trim();
+
+
+                    const login =
+                        String(
+                            body.login ||
+                            ""
+                        ).trim();
+
+
+                    const action =
+                        body.action;
+
+
+                    const channels =
+                        readChannels();
+
+
+                    const users =
+                        readUsers();
+
+
+                    const channel =
+                        channels.find(
+                            item =>
+                                item.id ===
+                                channelId
+                        );
+
+
+                    const user =
+                        users.find(
+                            item =>
+                                item.login ===
+                                login
+                        );
+
+
+                    if (
+                        !channel ||
+                        !user
+                    ) {
+
+                        sendJSON(
+                            response,
+                            404,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Канал или пользователь не найден"
+                            }
+                        );
+
+                        return;
+                    }
 
 
                     if (
@@ -2330,25 +2181,20 @@ const server =
                         "unsubscribe"
                     ) {
 
-                        /*
-                            Создатель канала
-                            не может отписаться
-                            от собственного канала.
-                        */
-
                         if (
                             channel.owner ===
                             login
                         ) {
 
                             sendJSON(
-                                res,
+                                response,
+                                400,
                                 {
                                     success:
                                         false,
 
                                     message:
-                                        "Создатель не может отписаться от своего канала"
+                                        "Владелец не может отписаться от своего канала"
                                 }
                             );
 
@@ -2357,27 +2203,12 @@ const server =
 
 
                         channel.subscribers =
-                            channel.subscribers.filter(
-                                item =>
-                                    item !==
-                                    login
-                            );
-
-                    } else {
-
-                        sendJSON(
-                            res,
-                            {
-                                success:
-                                    false,
-
-                                message:
-                                    "Неизвестное действие"
-                            },
-                            400
-                        );
-
-                        return;
+                            channel.subscribers
+                                .filter(
+                                    item =>
+                                        item !==
+                                        login
+                                );
                     }
 
 
@@ -2387,137 +2218,98 @@ const server =
 
 
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
 
-                            subscribed:
-                                channel.subscribers
-                                    .includes(
-                                        login
-                                    )
+                            channel
                         }
                     );
 
 
-                } catch (error) {
-
-                    console.error(
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        {
-                            success:
-                                false,
-
-                            message:
-                                "Ошибка подписки"
-                        },
-                        500
-                    );
+                    return;
                 }
 
 
-                return;
-            }
+                /* =================================================
+                   CHANNEL POSTS GET
+                ================================================= */
 
+                if (
+                    request.method === "GET" &&
+                    pathname === "/channel-posts"
+                ) {
 
-            /* =================================================
-               CHANNEL POSTS GET
-            ================================================= */
-
-            if (
-                req.method === "GET" &&
-                pathname === "/channel-posts"
-            ) {
-
-                const channelId =
-                    url.searchParams.get(
-                        "channelId"
-                    ) || "";
-
-
-                const posts =
-                    readChannelPosts();
-
-
-                const users =
-                    readUsers();
-
-
-                const result =
-                    posts
-                        .filter(
-                            post =>
-                                post.channelId ===
-                                channelId
-                        )
-                        .map(
-                            post => {
-
-                                const author =
-                                    users.find(
-                                        user =>
-                                            user.login ===
-                                            post.author
-                                    );
-
-
-                                return {
-
-                                    ...post,
-
-                                    authorUser:
-                                        author
-                                            ? publicUser(
-                                                author
-                                            )
-                                            : {
-                                                login:
-                                                    post.author,
-
-                                                name:
-                                                    post.author,
-
-                                                about:
-                                                    "",
-
-                                                photo:
-                                                    ""
-                                            }
-
-                                };
-                            }
+                    const channelId =
+                        url.searchParams.get(
+                            "channelId"
                         );
 
 
-                sendJSON(
-                    res,
-                    result
-                );
-
-                return;
-            }
+                    const posts =
+                        readChannelPosts();
 
 
-            /* =================================================
-               CHANNEL POST
-            ================================================= */
+                    const users =
+                        readUsers();
 
-            if (
-                req.method === "POST" &&
-                pathname === "/channel-post"
-            ) {
 
-                try {
+                    const result =
+                        posts
+                            .filter(
+                                post =>
+                                    post.channelId ===
+                                    channelId
+                            )
+                            .map(
+                                post => {
+
+                                    const user =
+                                        users.find(
+                                            item =>
+                                                item.login ===
+                                                post.author
+                                        );
+
+
+                                    return {
+
+                                        ...post,
+
+                                        authorUser:
+                                            publicUser(
+                                                user
+                                            )
+                                    };
+                                }
+                            );
+
+
+                    sendJSON(
+                        response,
+                        200,
+                        result
+                    );
+
+
+                    return;
+                }
+
+
+                /* =================================================
+                   CHANNEL POST
+                ================================================= */
+
+                if (
+                    request.method === "POST" &&
+                    pathname === "/channel-post"
+                ) {
 
                     const body =
                         await getBody(
-                            req
+                            request
                         );
 
 
@@ -2525,16 +2317,14 @@ const server =
                         String(
                             body.channelId ||
                             ""
-                        )
-                            .trim();
+                        ).trim();
 
 
                     const author =
                         String(
                             body.author ||
                             ""
-                        )
-                            .trim();
+                        ).trim();
 
 
                     const text =
@@ -2550,7 +2340,8 @@ const server =
 
 
                     const media =
-                        body.media || null;
+                        body.media ||
+                        null;
 
 
                     const mediaType =
@@ -2558,26 +2349,6 @@ const server =
                             body.mediaType ||
                             ""
                         );
-
-
-                    if (
-                        !channelId ||
-                        !author
-                    ) {
-
-                        sendJSON(
-                            res,
-                            {
-                                success:
-                                    false,
-
-                                message:
-                                    "Недостаточно данных"
-                            }
-                        );
-
-                        return;
-                    }
 
 
                     const channels =
@@ -2595,24 +2366,19 @@ const server =
                     if (!channel) {
 
                         sendJSON(
-                            res,
+                            response,
+                            404,
                             {
                                 success:
                                     false,
 
                                 message:
                                     "Канал не найден"
-                            },
-                            404
+                            }
                         );
 
                         return;
                     }
-
-
-                    normalizeChannel(
-                        channel
-                    );
 
 
                     if (
@@ -2621,15 +2387,15 @@ const server =
                     ) {
 
                         sendJSON(
-                            res,
+                            response,
+                            403,
                             {
                                 success:
                                     false,
 
                                 message:
-                                    "Только владелец может публиковать посты"
-                            },
-                            403
+                                    "Публиковать может только владелец канала"
+                            }
                         );
 
                         return;
@@ -2642,7 +2408,8 @@ const server =
                     ) {
 
                         sendJSON(
-                            res,
+                            response,
+                            400,
                             {
                                 success:
                                     false,
@@ -2693,16 +2460,16 @@ const server =
 
 
                     /*
-                        Уведомляем всех подписчиков,
-                        которые сейчас онлайн.
+                        Обновляем всех подписчиков
+                        в реальном времени.
                     */
 
                     channel.subscribers
                         .forEach(
-                            subscriber => {
+                            login => {
 
                                 sendToUser(
-                                    subscriber,
+                                    login,
                                     {
                                         type:
                                             "new-channel-post",
@@ -2717,7 +2484,8 @@ const server =
 
 
                     sendJSON(
-                        res,
+                        response,
+                        200,
                         {
                             success:
                                 true,
@@ -2727,75 +2495,143 @@ const server =
                     );
 
 
-                } catch (error) {
+                    return;
+                }
 
-                    console.error(
-                        error
-                    );
 
+                /* =================================================
+                   404
+                ================================================= */
+
+                sendJSON(
+                    response,
+                    404,
+                    {
+                        success:
+                            false,
+
+                        message:
+                            "Маршрут не найден"
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    error
+                );
+
+
+                if (
+                    error.message ===
+                    "REQUEST_TOO_LARGE"
+                ) {
 
                     sendJSON(
-                        res,
+                        response,
+                        413,
                         {
                             success:
                                 false,
 
                             message:
-                                "Ошибка публикации"
-                        },
-                        500
+                                "Файл или запрос слишком большой"
+                        }
                     );
+
+                    return;
                 }
 
 
-                return;
+                if (
+                    error.message ===
+                    "INVALID_JSON"
+                ) {
+
+                    sendJSON(
+                        response,
+                        400,
+                        {
+                            success:
+                                false,
+
+                            message:
+                                "Некорректные данные"
+                        }
+                    );
+
+                    return;
+                }
+
+
+                sendJSON(
+                    response,
+                    500,
+                    {
+                        success:
+                            false,
+
+                        message:
+                            "Ошибка сервера"
+                    }
+                );
             }
-
-
-            /* =================================================
-               404
-            ================================================= */
-
-            res.writeHead(
-                404,
-                {
-                    "Content-Type":
-                        "text/plain; charset=utf-8"
-                }
-            );
-
-
-            res.end(
-                "Страница не найдена"
-            );
         }
     );
 
 
 /* =========================================================
-   WEBSOCKET SERVER
+   WEBSOCKET
 ========================================================= */
 
 const wss =
-    new WebSocketServer({
+    new WebSocket.Server({
         server
     });
 
 
-wss.on(
-    "connection",
-    socket => {
-
-        let authenticatedLogin =
-            "";
+const onlineUsers =
+    new Map();
 
 
-        console.log(
-            "Новое WebSocket соединение"
+function sendToUser(
+    login,
+    data
+) {
+
+    const ws =
+        onlineUsers.get(
+            login
         );
 
 
-        socket.on(
+    if (
+        ws &&
+        ws.readyState ===
+        WebSocket.OPEN
+    ) {
+
+        try {
+
+            ws.send(
+                JSON.stringify(
+                    data
+                )
+            );
+
+        } catch {}
+    }
+}
+
+
+wss.on(
+    "connection",
+    ws => {
+
+        let loggedInAs = "";
+
+
+        ws.on(
             "message",
             raw => {
 
@@ -2807,111 +2643,40 @@ wss.on(
                         );
 
 
-                    /* =========================================
-                       AUTH
-                    ========================================= */
-
                     if (
                         data.type ===
                         "auth"
                     ) {
 
-                        const login =
+                        loggedInAs =
                             String(
                                 data.login ||
                                 ""
-                            )
-                                .trim();
-
-
-                        if (!login) {
-
-                            socket.close();
-
-                            return;
-                        }
-
-
-                        const users =
-                            readUsers();
-
-
-                        const exists =
-                            users.some(
-                                user =>
-                                    user.login ===
-                                    login
-                            );
-
-
-                        if (!exists) {
-
-                            socket.close();
-
-                            return;
-                        }
-
-
-                        const oldSocket =
-                            onlineUsers.get(
-                                login
-                            );
+                            ).trim();
 
 
                         if (
-                            oldSocket &&
-                            oldSocket !== socket
+                            loggedInAs
                         ) {
 
-                            try {
+                            onlineUsers.set(
+                                loggedInAs,
+                                ws
+                            );
 
-                                oldSocket.close();
 
-                            } catch {}
+                            ws.send(
+                                JSON.stringify({
+                                    type:
+                                        "auth-ok"
+                                })
+                            );
                         }
 
 
-                        authenticatedLogin =
-                            login;
-
-
-                        onlineUsers.set(
-                            login,
-                            socket
-                        );
-
-
-                        socket.send(
-                            JSON.stringify({
-
-                                type:
-                                    "auth-ok"
-
-                            })
-                        );
-
-
-                        console.log(
-                            "Пользователь онлайн:",
-                            login
-                        );
-
-
                         return;
                     }
 
-
-                    if (
-                        !authenticatedLogin
-                    ) {
-
-                        return;
-                    }
-
-
-                    /* =========================================
-                       CALL
-                    ========================================= */
 
                     if (
                         data.type ===
@@ -2922,101 +2687,38 @@ wss.on(
                             String(
                                 data.to ||
                                 ""
-                            )
-                                .trim();
+                            ).trim();
 
 
-                        if (!to) {
-                            return;
-                        }
+                        sendToUser(
+                            to,
+                            {
+                                type:
+                                    "incoming-call",
 
+                                from:
+                                    loggedInAs,
 
-                        const users =
-                            readUsers();
+                                video:
+                                    !!data.video,
 
+                                offer:
+                                    data.offer,
 
-                        const receiver =
-                            users.find(
-                                user =>
-                                    user.login ===
-                                    to
-                            );
+                                name:
+                                    data.name ||
+                                    loggedInAs,
 
-
-                        if (!receiver) {
-
-                            socket.send(
-                                JSON.stringify({
-
-                                    type:
-                                        "call-rejected",
-
-                                    reason:
-                                        "Пользователь не найден"
-
-                                })
-                            );
-
-                            return;
-                        }
-
-
-                        const delivered =
-                            sendToUser(
-                                to,
-                                {
-
-                                    type:
-                                        "incoming-call",
-
-                                    from:
-                                        authenticatedLogin,
-
-                                    video:
-                                        !!data.video,
-
-                                    offer:
-                                        data.offer,
-
-                                    name:
-                                        String(
-                                            data.name ||
-                                            authenticatedLogin
-                                        ),
-
-                                    photo:
-                                        String(
-                                            data.photo ||
-                                            ""
-                                        )
-
-                                }
-                            );
-
-
-                        if (!delivered) {
-
-                            socket.send(
-                                JSON.stringify({
-
-                                    type:
-                                        "call-rejected",
-
-                                    reason:
-                                        "Пользователь сейчас не в сети"
-
-                                })
-                            );
-                        }
+                                photo:
+                                    data.photo ||
+                                    ""
+                            }
+                        );
 
 
                         return;
                     }
 
-
-                    /* =========================================
-                       ANSWER
-                    ========================================= */
 
                     if (
                         data.type ===
@@ -3026,26 +2728,18 @@ wss.on(
                         sendToUser(
                             data.to,
                             {
-
                                 type:
                                     "answer",
 
-                                from:
-                                    authenticatedLogin,
-
                                 answer:
                                     data.answer
-
                             }
                         );
+
 
                         return;
                     }
 
-
-                    /* =========================================
-                       ICE
-                    ========================================= */
 
                     if (
                         data.type ===
@@ -3055,26 +2749,18 @@ wss.on(
                         sendToUser(
                             data.to,
                             {
-
                                 type:
                                     "ice-candidate",
 
-                                from:
-                                    authenticatedLogin,
-
                                 candidate:
                                     data.candidate
-
                             }
                         );
+
 
                         return;
                     }
 
-
-                    /* =========================================
-                       REJECT
-                    ========================================= */
 
                     if (
                         data.type ===
@@ -3084,23 +2770,18 @@ wss.on(
                         sendToUser(
                             data.to,
                             {
-
                                 type:
                                     "call-rejected",
 
-                                from:
-                                    authenticatedLogin
-
+                                reason:
+                                    "Звонок отклонён"
                             }
                         );
+
 
                         return;
                     }
 
-
-                    /* =========================================
-                       HANGUP
-                    ========================================= */
 
                     if (
                         data.type ===
@@ -3110,24 +2791,19 @@ wss.on(
                         sendToUser(
                             data.to,
                             {
-
                                 type:
-                                    "hangup",
-
-                                from:
-                                    authenticatedLogin
-
+                                    "hangup"
                             }
                         );
+
 
                         return;
                     }
 
-
                 } catch (error) {
 
                     console.error(
-                        "WebSocket message error:",
+                        "WebSocket error:",
                         error
                     );
                 }
@@ -3135,39 +2811,21 @@ wss.on(
         );
 
 
-        socket.on(
+        ws.on(
             "close",
             () => {
 
                 if (
-                    authenticatedLogin &&
+                    loggedInAs &&
                     onlineUsers.get(
-                        authenticatedLogin
-                    ) === socket
+                        loggedInAs
+                    ) === ws
                 ) {
 
                     onlineUsers.delete(
-                        authenticatedLogin
-                    );
-
-
-                    console.log(
-                        "Пользователь офлайн:",
-                        authenticatedLogin
+                        loggedInAs
                     );
                 }
-            }
-        );
-
-
-        socket.on(
-            "error",
-            error => {
-
-                console.log(
-                    "WebSocket error:",
-                    error
-                );
             }
         );
     }
@@ -3180,16 +2838,11 @@ wss.on(
 
 server.listen(
     PORT,
-    HOST,
+    "0.0.0.0",
     () => {
 
         console.log(
-            "Vibe запущен. Порт: " +
-            PORT
-        );
-
-        console.log(
-            "WebSocket звонков готов."
+            `Vibe запущен на http://localhost:${PORT}`
         );
     }
 );

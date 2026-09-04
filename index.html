@@ -32,8 +32,6 @@ body {
     color: var(--text);
 }
 
-/* Пока Vibe проверяет сохранённый аккаунт,
-   НЕ показываем окно входа. */
 body.booting > #authScreen,
 body.booting > #app {
     display: none !important;
@@ -101,10 +99,6 @@ button {
     display: none !important;
 }
 
-/* =========================================================
-   AUTH
-========================================================= */
-
 .auth {
     width: 100%;
     height: 100dvh;
@@ -169,10 +163,6 @@ button {
     color: #f87171;
 }
 
-/* =========================================================
-   APP
-========================================================= */
-
 .app {
     width: 100%;
     height: 100dvh;
@@ -184,10 +174,6 @@ button {
     display: grid;
     grid-template-columns: 320px minmax(0, 1fr);
 }
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
 
 .sidebar {
     min-width: 0;
@@ -331,6 +317,13 @@ button {
     justify-content: center;
     color: white;
     font-size: 21px;
+    overflow: hidden;
+}
+
+.channel-sidebar-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .bottom-buttons {
@@ -347,10 +340,6 @@ button {
     background: var(--panel2);
     color: var(--text);
 }
-
-/* =========================================================
-   CHAT
-========================================================= */
 
 .chat {
     min-width: 0;
@@ -486,9 +475,52 @@ button {
     color: white;
 }
 
-/* =========================================================
-   MODALS
-========================================================= */
+.channel-post {
+    background: var(--panel2);
+    border-radius: 15px;
+    padding: 13px;
+    margin-bottom: 10px;
+}
+
+.channel-post-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.channel-post-author .avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 13px;
+}
+
+.channel-post-author-name {
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.channel-post-text {
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: 8px;
+}
+
+.channel-post img,
+.channel-post video {
+    width: 100%;
+    max-height: 420px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #000;
+}
+
+.channel-post-time {
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 7px;
+}
 
 .modal {
     position: fixed;
@@ -555,10 +587,6 @@ button {
     background: var(--accent);
 }
 
-/* =========================================================
-   CHANNELS
-========================================================= */
-
 .channels-list {
     max-height: 55vh;
     overflow-y: auto;
@@ -583,10 +611,6 @@ button {
     cursor: pointer;
 }
 
-.channel-item:hover {
-    transform: translateY(-1px);
-}
-
 .channel-icon {
     width: 45px;
     height: 45px;
@@ -598,6 +622,13 @@ button {
     background: var(--accent);
     color: white;
     font-size: 20px;
+    overflow: hidden;
+}
+
+.channel-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .channel-info {
@@ -630,81 +661,6 @@ button {
     background: var(--panel);
 }
 
-.channel-view {
-    display: flex;
-    flex-direction: column;
-    max-height: 75vh;
-}
-
-.channel-posts {
-    flex: 1;
-    min-height: 100px;
-    max-height: 55vh;
-    overflow-y: auto;
-}
-
-.channel-post {
-    background: var(--panel2);
-    border-radius: 15px;
-    padding: 13px;
-    margin-bottom: 10px;
-}
-
-.channel-post-author {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.channel-post-author .avatar {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    font-size: 13px;
-}
-
-.channel-post-author-name {
-    font-weight: 700;
-    font-size: 13px;
-}
-
-.channel-post-text {
-    white-space: pre-wrap;
-    word-break: break-word;
-    margin-bottom: 8px;
-}
-
-.channel-post img,
-.channel-post video {
-    width: 100%;
-    max-height: 420px;
-    object-fit: contain;
-    border-radius: 12px;
-    background: #000;
-}
-
-.channel-post-time {
-    color: var(--muted);
-    font-size: 11px;
-    margin-top: 7px;
-}
-
-.channel-owner-tools {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-}
-
-.channel-owner-tools input {
-    flex: 1;
-    min-width: 0;
-}
-
-/* =========================================================
-   PROFILE
-========================================================= */
-
 .profile-photo {
     width: 90px;
     height: 90px;
@@ -733,10 +689,6 @@ button {
 .profile-buttons button {
     flex: 1;
 }
-
-/* =========================================================
-   CALL
-========================================================= */
 
 .call-screen {
     position: fixed;
@@ -866,10 +818,6 @@ button {
     flex: 1;
 }
 
-/* =========================================================
-   MOBILE
-========================================================= */
-
 @media (max-width: 750px) {
 
     html,
@@ -934,14 +882,6 @@ button {
         font-size: 16px;
     }
 
-    .results {
-        max-height: 180px;
-    }
-
-    .friends {
-        display: block;
-    }
-
     .person {
         min-height: 62px;
         margin-bottom: 4px;
@@ -949,11 +889,7 @@ button {
 
     .chat-head {
         min-height: 64px;
-        padding:
-            max(8px, env(safe-area-inset-top))
-            9px
-            8px
-            9px;
+        padding: 8px 9px;
     }
 
     .mobile-back-btn {
@@ -981,11 +917,7 @@ button {
     }
 
     .composer {
-        padding:
-            8px
-            8px
-            max(8px, env(safe-area-inset-bottom))
-            8px;
+        padding: 8px;
     }
 
     .composer input {
@@ -1007,17 +939,9 @@ button {
         padding: 17px;
     }
 
-    .channel-posts {
-        max-height: 48vh;
-    }
-
     #localVideo {
         width: 110px;
         max-height: 170px;
-    }
-
-    .call-controls {
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
 }
 
@@ -1138,15 +1062,11 @@ button {
 
             <div class="bottom-buttons">
 
-                <button
-                    onclick="openChannels()"
-                >
+                <button onclick="openChannels()">
                     📢 Каналы
                 </button>
 
-                <button
-                    onclick="logout()"
-                >
+                <button onclick="logout()">
                     Выйти
                 </button>
 
@@ -1198,7 +1118,10 @@ button {
 
                 </div>
 
-                <div class="call-buttons">
+                <div
+                    id="callButtons"
+                    class="call-buttons"
+                >
 
                     <button
                         onclick="startCall(false)"
@@ -1241,9 +1164,7 @@ button {
                     onkeydown="if(event.key==='Enter') sendMessage()"
                 >
 
-                <button
-                    onclick="sendMessage()"
-                >
+                <button onclick="sendMessage()">
                     ➤
                 </button>
 
@@ -1405,6 +1326,18 @@ button {
             placeholder="Описание канала"
         ></textarea>
 
+        <input
+            id="channelPhotoInput"
+            placeholder="Ссылка на фото канала или data:image..."
+        >
+
+        <div
+            id="channelCreatePreview"
+            class="profile-photo"
+        >
+            📢
+        </div>
+
         <div class="modal-actions">
 
             <button
@@ -1428,75 +1361,93 @@ button {
 
 
 <!-- =======================================================
-     CHANNEL VIEW
+     CHANNEL PROFILE
 ======================================================= -->
 
 <div
-    id="channelModal"
+    id="channelProfileModal"
     class="modal hidden"
 >
 
     <div class="modal-card">
 
-        <div
-            id="channelTitle"
-            class="modal-title"
-        >
-            Канал
+        <div class="modal-title">
+            📢 Профиль канала
         </div>
 
         <div
-            id="channelSubscriptionStatus"
-            style="
-                color:var(--muted);
-                font-size:13px;
-                margin-bottom:12px;
-            "
-        ></div>
-
-        <button
-            id="channelSubscribeButton"
-            class="primary"
-            style="margin-bottom:12px;"
-            onclick="toggleCurrentChannelSubscription()"
+            id="channelProfilePreview"
+            class="profile-photo"
         >
-            Подписаться
-        </button>
+            📢
+        </div>
 
-        <div
-            id="channelPosts"
-            class="channel-posts"
-        ></div>
-
-        <div
-            id="channelOwnerTools"
-            class="channel-owner-tools hidden"
+        <input
+            id="channelProfileName"
+            placeholder="Название канала"
         >
 
-            <input
-                id="channelPostInput"
-                placeholder="Новый пост..."
+        <textarea
+            id="channelProfileDescription"
+            placeholder="Описание канала"
+        ></textarea>
+
+        <input
+            id="channelProfilePhoto"
+            placeholder="Ссылка на фото или data:image..."
+        >
+
+        <div
+            id="channelProfileOwnerSettings"
+            class="hidden"
+        >
+
+            <div
+                style="
+                    color:var(--muted);
+                    font-size:13px;
+                    margin-bottom:10px;
+                "
+            >
+                Настройки владельца
+            </div>
+
+            <label
+                style="
+                    display:flex;
+                    gap:8px;
+                    align-items:center;
+                    margin-bottom:10px;
+                "
             >
 
-            <input
-                id="channelMediaInput"
-                type="file"
-                accept="image/*,video/*"
-            >
+                <input
+                    id="channelNotifications"
+                    type="checkbox"
+                    style="width:auto;margin:0;"
+                >
+
+                Уведомления о публикациях
+
+            </label>
+
+        </div>
+
+        <div
+            id="channelProfileActions"
+            class="modal-actions"
+        >
 
             <button
                 class="primary"
-                onclick="publishChannelPost()"
+                id="channelProfileSaveButton"
+                onclick="saveChannelProfile()"
             >
-                Опубликовать
+                Сохранить
             </button>
 
-        </div>
-
-        <div class="modal-actions">
-
             <button
-                onclick="closeModal('channelModal')"
+                onclick="closeModal('channelProfileModal')"
             >
                 Закрыть
             </button>
@@ -1653,8 +1604,9 @@ button {
    HELPERS
 ========================================================= */
 
-const $ = id =>
-    document.getElementById(id);
+const $ =
+    id =>
+        document.getElementById(id);
 
 
 /* =========================================================
@@ -1684,7 +1636,6 @@ let activeCallVideo = false;
 let microphoneEnabled = true;
 let cameraEnabled = true;
 
-let messageTimer = null;
 let chatTimer = null;
 let callTimer = null;
 let callSeconds = 0;
@@ -1693,7 +1644,7 @@ let profileViewLogin = "";
 
 
 /* =========================================================
-   READ MESSAGE COUNTS
+   READ COUNTS
 ========================================================= */
 
 let readMessageCounts = {};
@@ -1708,7 +1659,9 @@ try {
     if (saved) {
 
         readMessageCounts =
-            JSON.parse(saved);
+            JSON.parse(
+                saved
+            );
     }
 
 } catch {
@@ -1728,10 +1681,6 @@ function saveReadMessageCounts() {
 }
 
 
-/* =========================================================
-   READ CHANNEL COUNTS
-========================================================= */
-
 let readChannelCounts = {};
 
 try {
@@ -1744,7 +1693,9 @@ try {
     if (saved) {
 
         readChannelCounts =
-            JSON.parse(saved);
+            JSON.parse(
+                saved
+            );
     }
 
 } catch {
@@ -1798,6 +1749,7 @@ function closeMobileChat() {
             "mobile-chat-open"
         );
 
+
     if (chatTimer) {
 
         clearInterval(
@@ -1841,6 +1793,7 @@ async function login() {
             .value
             .trim();
 
+
     if (
         !loginValue ||
         !password
@@ -1852,6 +1805,7 @@ async function login() {
 
         return;
     }
+
 
     try {
 
@@ -1859,7 +1813,8 @@ async function login() {
             await fetch(
                 "/login",
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -1877,8 +1832,10 @@ async function login() {
                 }
             );
 
+
         const data =
             await response.json();
+
 
         if (!data.success) {
 
@@ -1889,111 +1846,6 @@ async function login() {
             return;
         }
 
-        currentUser =
-            data.user;
-
-        localStorage.setItem(
-            "vibeLogin",
-            currentUser.login
-        );
-
-        localStorage.setItem(
-            "vibeUser",
-            JSON.stringify(
-                currentUser
-            )
-        );
-
-        $("passwordInput").value = "";
-
-        showApp();
-
-    } catch (error) {
-
-        console.error(error);
-
-        $("authMessage")
-            .textContent =
-            "Сервер не отвечает";
-    }
-}
-
-
-/*
-    Теперь после регистрации
-    сразу выполняется вход.
-*/
-
-async function register() {
-
-    const loginValue =
-        $("loginInput")
-            .value
-            .trim();
-
-    const password =
-        $("passwordInput")
-            .value
-            .trim();
-
-    if (
-        !loginValue ||
-        !password
-    ) {
-
-        $("authMessage")
-            .textContent =
-            "Заполни все поля";
-
-        return;
-    }
-
-    try {
-
-        const response =
-            await fetch(
-                "/register",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            login:
-                                loginValue,
-
-                            password:
-                                password
-
-                        })
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (!data.success) {
-
-            $("authMessage")
-                .textContent =
-                data.message;
-
-            return;
-        }
-
-
-        /*
-            Сервер теперь возвращает
-            созданного пользователя.
-
-            Поэтому сразу сохраняем
-            его и открываем Vibe.
-        */
 
         currentUser =
             data.user;
@@ -2019,9 +1871,106 @@ async function register() {
 
         showApp();
 
-    } catch (error) {
+    } catch {
 
-        console.error(error);
+        $("authMessage")
+            .textContent =
+            "Сервер не отвечает";
+    }
+}
+
+
+async function register() {
+
+    const loginValue =
+        $("loginInput")
+            .value
+            .trim();
+
+    const password =
+        $("passwordInput")
+            .value
+            .trim();
+
+
+    if (
+        !loginValue ||
+        !password
+    ) {
+
+        $("authMessage")
+            .textContent =
+            "Заполни все поля";
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/register",
+                {
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            login:
+                                loginValue,
+
+                            password:
+                                password
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            $("authMessage")
+                .textContent =
+                data.message;
+
+            return;
+        }
+
+
+        currentUser =
+            data.user;
+
+
+        localStorage.setItem(
+            "vibeLogin",
+            currentUser.login
+        );
+
+
+        localStorage.setItem(
+            "vibeUser",
+            JSON.stringify(
+                currentUser
+            )
+        );
+
+
+        $("passwordInput")
+            .value = "";
+
+
+        showApp();
+
+    } catch {
 
         $("authMessage")
             .textContent =
@@ -2057,16 +2006,16 @@ async function autoLogin() {
                 user.login
             ) {
 
-                const userFromServer =
+                const serverUser =
                     await getUser(
                         user.login
                     );
 
 
-                if (userFromServer) {
+                if (serverUser) {
 
                     currentUser =
-                        userFromServer;
+                        serverUser;
 
 
                     localStorage.setItem(
@@ -2084,19 +2033,8 @@ async function autoLogin() {
             }
         }
 
-    } catch (error) {
+    } catch {}
 
-        console.error(
-            "Ошибка восстановления:",
-            error
-        );
-    }
-
-
-    /*
-        Старый сохранённый логин
-        оставляем в поле.
-    */
 
     const savedLogin =
         localStorage.getItem(
@@ -2106,7 +2044,8 @@ async function autoLogin() {
 
     if (savedLogin) {
 
-        $("loginInput").value =
+        $("loginInput")
+            .value =
             savedLogin;
     }
 
@@ -2141,16 +2080,11 @@ function showApp() {
             "hidden"
         );
 
-    $("app")
-        .classList
-        .remove(
-            "hidden"
-        );
 
     $("app")
         .classList
         .remove(
-            "mobile-chat-open"
+            "hidden"
         );
 
 
@@ -2215,6 +2149,8 @@ function logout() {
 
     currentUser = null;
     currentChat = "";
+    currentChannel = null;
+
     chats = [];
     friends = [];
     channels = [];
@@ -2228,6 +2164,7 @@ function logout() {
         .add(
             "hidden"
         );
+
 
     $("authScreen")
         .classList
@@ -2291,13 +2228,11 @@ function connectSocket() {
 
                 socket.send(
                     JSON.stringify({
-
                         type:
                             "auth",
 
                         login:
                             currentUser.login
-
                     })
                 );
             };
@@ -2308,13 +2243,10 @@ function connectSocket() {
 
                 try {
 
-                    const data =
+                    handleSocketMessage(
                         JSON.parse(
                             event.data
-                        );
-
-                    handleSocketMessage(
-                        data
+                        )
                     );
 
                 } catch {}
@@ -2358,7 +2290,9 @@ function sendSocket(data) {
     ) {
 
         socket.send(
-            JSON.stringify(data)
+            JSON.stringify(
+                data
+            )
         );
     }
 }
@@ -2371,18 +2305,12 @@ function handleSocketMessage(data) {
         "new-message"
     ) {
 
-        const message =
-            data.message;
-
-
-        if (!message) {
-            return;
-        }
-
-
         if (
             currentChat &&
-            message.from === currentChat
+            !currentChannel &&
+            data.message &&
+            data.message.from ===
+                currentChat
         ) {
 
             loadMessages(
@@ -2390,12 +2318,41 @@ function handleSocketMessage(data) {
             );
 
             markChatAsRead(
-                message.from
+                currentChat
             );
 
         } else {
 
             loadChats();
+        }
+
+
+        return;
+    }
+
+
+    if (
+        data.type ===
+        "new-channel-post"
+    ) {
+
+        if (
+            currentChannel &&
+            data.channelId ===
+                currentChannel.id
+        ) {
+
+            loadChannelPosts(
+                false
+            );
+
+            markChannelAsRead(
+                currentChannel.id
+            );
+
+        } else {
+
+            loadChannels();
         }
 
 
@@ -2412,26 +2369,19 @@ function handleSocketMessage(data) {
             data;
 
 
-        const name =
-            data.name ||
-            data.from;
-
-
         $("incomingCallText")
             .textContent =
-            name +
+            (
+                data.name ||
+                data.from
+            ) +
             " звонит вам";
-
-
-        const photo =
-            data.photo ||
-            "";
 
 
         $("incomingCallPhoto")
             .innerHTML =
-            photo
-                ? `<img src="${escapeHTML(photo)}">`
+            data.photo
+                ? `<img src="${escapeHTML(data.photo)}">`
                 : "👤";
 
 
@@ -2491,12 +2441,10 @@ function handleSocketMessage(data) {
 
         endCallUI();
 
-
         alert(
             data.reason ||
             "Звонок отклонён"
         );
-
 
         return;
     }
@@ -2524,6 +2472,7 @@ async function searchUsers() {
         $("searchInput")
             .value
             .trim();
+
 
     const box =
         $("searchResults");
@@ -2567,6 +2516,7 @@ async function searchUsers() {
                         "div"
                     );
 
+
                 item.className =
                     "person";
 
@@ -2587,8 +2537,7 @@ async function searchUsers() {
                         $("searchInput")
                             .value = "";
 
-                        $("searchResults")
-                            .innerHTML = "";
+                        box.innerHTML = "";
                     };
 
 
@@ -2618,10 +2567,6 @@ async function searchUsers() {
     } catch {}
 }
 
-
-/* =========================================================
-   PEOPLE
-========================================================= */
 
 function personHTML(
     user,
@@ -2670,7 +2615,7 @@ function personHTML(
 
 
 /* =========================================================
-   FRIENDS
+   FRIENDS / CHATS
 ========================================================= */
 
 async function loadFriends() {
@@ -2700,10 +2645,6 @@ async function loadFriends() {
     } catch {}
 }
 
-
-/* =========================================================
-   CHATS
-========================================================= */
 
 async function loadChats() {
 
@@ -2740,24 +2681,26 @@ async function loadChats() {
 
 function getUnreadCount(chat) {
 
-    const totalIncoming =
+    const total =
         Number(
-            chat.messageCount || 0
+            chat.messageCount ||
+            0
         );
 
 
-    const readCount =
+    const read =
         Number(
             readMessageCounts[
                 chat.login
-            ] || 0
+            ] ||
+            0
         );
 
 
     return Math.max(
         0,
-        totalIncoming -
-        readCount
+        total -
+        read
     );
 }
 
@@ -2766,7 +2709,8 @@ function getChannelUnreadCount(channel) {
 
     const total =
         Number(
-            channel.postCount || 0
+            channel.postCount ||
+            0
         );
 
 
@@ -2774,13 +2718,15 @@ function getChannelUnreadCount(channel) {
         Number(
             readChannelCounts[
                 channel.id
-            ] || 0
+            ] ||
+            0
         );
 
 
     return Math.max(
         0,
-        total - read
+        total -
+        read
     );
 }
 
@@ -2808,7 +2754,6 @@ function renderChats() {
         chat => {
 
             items.push({
-
                 type:
                     "chat",
 
@@ -2816,8 +2761,8 @@ function renderChats() {
                     chat,
 
                 time:
-                    chat.lastTime || ""
-
+                    chat.lastTime ||
+                    ""
             });
         }
     );
@@ -2827,7 +2772,6 @@ function renderChats() {
         channel => {
 
             items.push({
-
                 type:
                     "channel",
 
@@ -2835,20 +2779,22 @@ function renderChats() {
                     channel,
 
                 time:
-                    channel.lastTime || ""
-
+                    channel.lastTime ||
+                    ""
             });
         }
     );
 
 
     items.sort(
-        (a, b) =>
+        (a,b) =>
             new Date(
-                b.time || 0
+                b.time ||
+                0
             ) -
             new Date(
-                a.time || 0
+                a.time ||
+                0
             )
     );
 
@@ -2865,6 +2811,7 @@ function renderChats() {
                             "div"
                         );
 
+
                     item.className =
                         "person";
 
@@ -2876,12 +2823,10 @@ function renderChats() {
 
 
                     item.onclick =
-                        () => {
-
+                        () =>
                             openChat(
                                 user.login
                             );
-                        };
 
 
                     box.appendChild(
@@ -2889,6 +2834,7 @@ function renderChats() {
                     );
                 }
             );
+
 
             return;
         }
@@ -2906,6 +2852,7 @@ function renderChats() {
                 Пока нет переписок
             </div>
             `;
+
 
         return;
     }
@@ -2935,7 +2882,8 @@ function renderChats() {
 
                 if (
                     chat.login ===
-                    currentChat
+                    currentChat &&
+                    !currentChannel
                 ) {
 
                     item.classList.add(
@@ -2944,26 +2892,20 @@ function renderChats() {
                 }
 
 
-                const unread =
-                    getUnreadCount(
-                        chat
-                    );
-
-
                 item.innerHTML =
                     personHTML(
                         chat.user,
-                        unread
+                        getUnreadCount(
+                            chat
+                        )
                     );
 
 
                 item.onclick =
-                    () => {
-
+                    () =>
                         openChat(
                             chat.login
                         );
-                    };
 
 
                 box.appendChild(
@@ -2989,10 +2931,16 @@ function renderChats() {
                 "person";
 
 
+            const icon =
+                channel.photo
+                    ? `<img src="${escapeHTML(channel.photo)}">`
+                    : "📢";
+
+
             item.innerHTML =
                 `
                 <div class="channel-sidebar-icon">
-                    📢
+                    ${icon}
                 </div>
 
                 <div class="person-info">
@@ -3026,12 +2974,10 @@ function renderChats() {
 
 
             item.onclick =
-                () => {
-
+                () =>
                     openChannel(
                         channel
                     );
-                };
 
 
             box.appendChild(
@@ -3049,7 +2995,7 @@ function renderFriends() {
 
 
 /* =========================================================
-   MARK CHAT AS READ
+   READ CHAT
 ========================================================= */
 
 async function markChatAsRead(
@@ -3088,7 +3034,7 @@ async function markChatAsRead(
             await response.json();
 
 
-        const incomingCount =
+        readMessageCounts[login] =
             messages.filter(
                 message =>
                     message.from ===
@@ -3096,12 +3042,7 @@ async function markChatAsRead(
             ).length;
 
 
-        readMessageCounts[login] =
-            incomingCount;
-
-
         saveReadMessageCounts();
-
 
         renderChats();
 
@@ -3110,15 +3051,16 @@ async function markChatAsRead(
 
 
 /* =========================================================
-   OPEN CHAT
+   OPEN NORMAL CHAT
 ========================================================= */
 
 async function openChat(
     login
 ) {
 
-    currentChat =
-        login;
+    currentChannel = null;
+
+    currentChat = login;
 
 
     openMobileChatView();
@@ -3132,6 +3074,23 @@ async function openChat(
 
         chatTimer = null;
     }
+
+
+    $("callButtons")
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    const input =
+        $("messageInput");
+
+
+    input.disabled = false;
+
+    input.placeholder =
+        "Написать сообщение...";
 
 
     const user =
@@ -3177,7 +3136,8 @@ async function openChat(
             () => {
 
                 if (
-                    currentChat
+                    currentChat &&
+                    !currentChannel
                 ) {
 
                     loadMessages(
@@ -3198,13 +3158,7 @@ async function openChat(
     setTimeout(
         () => {
 
-            if (
-                $("messageInput")
-            ) {
-
-                $("messageInput")
-                    .focus();
-            }
+            input.focus();
 
         },
         100
@@ -3212,11 +3166,15 @@ async function openChat(
 }
 
 
-/* =========================================================
-   OPEN CURRENT PROFILE
-========================================================= */
-
 function openCurrentChatProfile() {
+
+    if (currentChannel) {
+
+        openChannelProfile();
+
+        return;
+    }
+
 
     if (!currentChat) {
         return;
@@ -3230,7 +3188,7 @@ function openCurrentChatProfile() {
 
 
 /* =========================================================
-   GET USER
+   USERS
 ========================================================= */
 
 async function getUser(
@@ -3252,9 +3210,7 @@ async function getUser(
             await response.json();
 
 
-        if (
-            data.success
-        ) {
+        if (data.success) {
 
             return data.user;
         }
@@ -3276,7 +3232,8 @@ async function loadMessages(
 
     if (
         !currentChat ||
-        !currentUser
+        !currentUser ||
+        currentChannel
     ) {
         return;
     }
@@ -3428,10 +3385,24 @@ async function loadMessages(
 
 
 /* =========================================================
-   SEND MESSAGE
+   SEND MESSAGE / CHANNEL POST
 ========================================================= */
 
 async function sendMessage() {
+
+    /*
+        Если сейчас открыт канал,
+        обычная кнопка отправки превращается
+        в публикацию канала.
+    */
+
+    if (currentChannel) {
+
+        await publishChannelPostFromComposer();
+
+        return;
+    }
+
 
     const input =
         $("messageInput");
@@ -3459,7 +3430,8 @@ async function sendMessage() {
             await fetch(
                 "/send-message",
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -3475,9 +3447,7 @@ async function sendMessage() {
                             to:
                                 currentChat,
 
-                            text:
-                                text
-
+                            text
                         })
                 }
             );
@@ -3487,9 +3457,7 @@ async function sendMessage() {
             await response.json();
 
 
-        if (
-            data.success
-        ) {
+        if (data.success) {
 
             await loadMessages(
                 true
@@ -3553,21 +3521,10 @@ async function openProfile() {
         "classic";
 
 
-    $("profileName")
-        .disabled =
-        false;
-
-    $("profileAbout")
-        .disabled =
-        false;
-
-    $("profilePhoto")
-        .disabled =
-        false;
-
-    $("messageStyle")
-        .disabled =
-        false;
+    $("profileName").disabled = false;
+    $("profileAbout").disabled = false;
+    $("profilePhoto").disabled = false;
+    $("messageStyle").disabled = false;
 
 
     $("profileButtons")
@@ -3592,10 +3549,6 @@ async function openProfile() {
 }
 
 
-/*
-    Профиль другого пользователя.
-*/
-
 async function openUserProfile(
     login
 ) {
@@ -3615,14 +3568,14 @@ async function openUserProfile(
         login;
 
 
-    const isOwnProfile =
+    const own =
         login ===
         currentUser.login;
 
 
     $("profileModalTitle")
         .textContent =
-        isOwnProfile
+        own
             ? "Мой профиль"
             : "Профиль пользователя";
 
@@ -3648,24 +3601,13 @@ async function openUserProfile(
         "classic";
 
 
-    $("profileName")
-        .disabled =
-        !isOwnProfile;
-
-    $("profileAbout")
-        .disabled =
-        !isOwnProfile;
-
-    $("profilePhoto")
-        .disabled =
-        !isOwnProfile;
-
-    $("messageStyle")
-        .disabled =
-        !isOwnProfile;
+    $("profileName").disabled = !own;
+    $("profileAbout").disabled = !own;
+    $("profilePhoto").disabled = !own;
+    $("messageStyle").disabled = !own;
 
 
-    if (isOwnProfile) {
+    if (own) {
 
         $("profileButtons")
             .classList
@@ -3700,26 +3642,11 @@ async function openUserProfile(
 
 function updateProfilePreview() {
 
-    const box =
-        $("profilePreview");
-
-
-    if (currentPhoto) {
-
-        box.innerHTML =
-            `
-            <img
-                src="${escapeHTML(
-                    currentPhoto
-                )}"
-            >
-            `;
-
-    } else {
-
-        box.innerHTML =
-            "👤";
-    }
+    $("profilePreview")
+        .innerHTML =
+        currentPhoto
+            ? `<img src="${escapeHTML(currentPhoto)}">`
+            : "👤";
 }
 
 
@@ -3743,7 +3670,6 @@ async function saveProfile() {
         profileViewLogin !==
         currentUser.login
     ) {
-
         return;
     }
 
@@ -3754,7 +3680,8 @@ async function saveProfile() {
             await fetch(
                 "/profile",
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -3782,7 +3709,6 @@ async function saveProfile() {
                             messageStyle:
                                 $("messageStyle")
                                     .value
-
                         })
                 }
             );
@@ -3792,9 +3718,7 @@ async function saveProfile() {
             await response.json();
 
 
-        if (
-            data.success
-        ) {
+        if (data.success) {
 
             currentUser =
                 data.user;
@@ -3818,9 +3742,7 @@ async function saveProfile() {
             loadChannels();
 
 
-            if (
-                currentChat
-            ) {
+            if (currentChat && !currentChannel) {
 
                 openChat(
                     currentChat
@@ -3869,6 +3791,32 @@ async function loadChannels() {
 
         channels =
             await response.json();
+
+
+        /*
+            Если сейчас открыт канал,
+            обновляем его данными.
+        */
+
+        if (currentChannel) {
+
+            const updated =
+                channels.find(
+                    channel =>
+                        channel.id ===
+                        currentChannel.id
+                );
+
+
+            if (updated) {
+
+                currentChannel =
+                    updated;
+
+
+                updateChannelHeader();
+            }
+        }
 
 
         renderChannelsList();
@@ -3930,10 +3878,16 @@ function renderChannelsList() {
                 "channel-item-main";
 
 
+            const icon =
+                channel.photo
+                    ? `<img src="${escapeHTML(channel.photo)}">`
+                    : "📢";
+
+
             main.innerHTML =
                 `
                 <div class="channel-icon">
-                    📢
+                    ${icon}
                 </div>
 
                 <div class="channel-info">
@@ -3957,6 +3911,10 @@ function renderChannelsList() {
 
             main.onclick =
                 () => {
+
+                    closeModal(
+                        "channelsModal"
+                    );
 
                     openChannel(
                         channel
@@ -3991,11 +3949,11 @@ function renderChannelsList() {
 
 
             button.onclick =
-                event => {
+                async event => {
 
                     event.stopPropagation();
 
-                    toggleChannelSubscription(
+                    await toggleChannelSubscription(
                         channel
                     );
                 };
@@ -4013,10 +3971,6 @@ function renderChannelsList() {
     );
 }
 
-
-/* =========================================================
-   CHANNEL SUBSCRIPTION
-========================================================= */
 
 async function toggleChannelSubscription(
     channel
@@ -4039,7 +3993,8 @@ async function toggleChannelSubscription(
             await fetch(
                 "/channel-subscription",
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -4056,7 +4011,6 @@ async function toggleChannelSubscription(
                                 currentUser.login,
 
                             action
-
                         })
                 }
             );
@@ -4112,7 +4066,8 @@ async function toggleCurrentChannelSubscription() {
         currentChannel =
             updated;
 
-        updateChannelView();
+
+        updateChannelHeader();
     }
 }
 
@@ -4129,6 +4084,18 @@ function openCreateChannel() {
     $("channelDescriptionInput")
         .value = "";
 
+    $("channelPhotoInput")
+        .value = "";
+
+    $("channelCreatePreview")
+        .innerHTML =
+        "📢";
+
+
+    closeModal(
+        "channelsModal"
+    );
+
 
     $("createChannelModal")
         .classList
@@ -4136,6 +4103,25 @@ function openCreateChannel() {
             "hidden"
         );
 }
+
+
+$("channelPhotoInput")
+    .addEventListener(
+        "input",
+        event => {
+
+            const photo =
+                event.target.value
+                    .trim();
+
+
+            $("channelCreatePreview")
+                .innerHTML =
+                photo
+                    ? `<img src="${escapeHTML(photo)}">`
+                    : "📢";
+        }
+    );
 
 
 async function createChannel() {
@@ -4148,6 +4134,12 @@ async function createChannel() {
 
     const description =
         $("channelDescriptionInput")
+            .value
+            .trim();
+
+
+    const photo =
+        $("channelPhotoInput")
             .value
             .trim();
 
@@ -4168,7 +4160,8 @@ async function createChannel() {
             await fetch(
                 "/channels",
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -4183,8 +4176,9 @@ async function createChannel() {
 
                             name,
 
-                            description
+                            description,
 
+                            photo
                         })
                 }
             );
@@ -4211,6 +4205,14 @@ async function createChannel() {
 
         await loadChannels();
 
+
+        if (data.channel) {
+
+            openChannel(
+                data.channel
+            );
+        }
+
     } catch {
 
         alert(
@@ -4221,7 +4223,7 @@ async function createChannel() {
 
 
 /* =========================================================
-   OPEN CHANNEL
+   OPEN CHANNEL IN MAIN WINDOW
 ========================================================= */
 
 async function openChannel(
@@ -4232,30 +4234,75 @@ async function openChannel(
         channel;
 
 
-    $("channelTitle")
-        .textContent =
-        "📢 " +
-        channel.name;
+    currentChat = "";
 
 
-    updateChannelView();
+    openMobileChatView();
 
 
-    $("channelModal")
+    if (chatTimer) {
+
+        clearInterval(
+            chatTimer
+        );
+
+        chatTimer = null;
+    }
+
+
+    /*
+        Для канала звонки не нужны.
+    */
+
+    $("callButtons")
         .classList
-        .remove(
+        .add(
             "hidden"
         );
 
 
-    await loadChannelPosts();
+    $("chatAvatar")
+        .innerHTML =
+        channel.photo
+            ? `<img src="${escapeHTML(channel.photo)}">`
+            : "📢";
+
+
+    updateChannelHeader();
 
 
     /*
-        Если пользователь подписан,
-        открытие канала отмечает
-        все текущие публикации прочитанными.
+        Владелец может писать через
+        обычное поле внизу.
     */
+
+    const input =
+        $("messageInput");
+
+
+    if (
+        channel.owner ===
+        currentUser.login
+    ) {
+
+        input.disabled = false;
+
+        input.placeholder =
+            "Новая публикация...";
+
+    } else {
+
+        input.disabled = true;
+
+        input.placeholder =
+            "Только владелец может публиковать";
+    }
+
+
+    await loadChannelPosts(
+        true
+    );
+
 
     if (channel.subscribed) {
 
@@ -4266,58 +4313,281 @@ async function openChannel(
 
 
     await loadChannels();
+
+
+    renderChats();
+
+
+    setTimeout(
+        () => {
+
+            if (
+                channel.owner ===
+                currentUser.login
+            ) {
+
+                input.focus();
+            }
+
+        },
+        100
+    );
 }
 
 
-function updateChannelView() {
+function updateChannelHeader() {
 
     if (!currentChannel) {
         return;
     }
 
 
-    const subscribed =
-        !!currentChannel.subscribed;
-
-
-    $("channelSubscriptionStatus")
+    $("chatName")
         .textContent =
-        subscribed
-            ? "Вы подписаны на этот канал"
-            : "Вы не подписаны на этот канал";
+        currentChannel.name;
 
 
-    $("channelSubscribeButton")
+    $("chatStatus")
         .textContent =
-        subscribed
-            ? "Отписаться"
-            : "Подписаться";
+        currentChannel.description ||
+        "Канал Vibe";
+
+
+    $("chatAvatar")
+        .innerHTML =
+        currentChannel.photo
+            ? `<img src="${escapeHTML(currentChannel.photo)}">`
+            : "📢";
+}
+
+
+/* =========================================================
+   CHANNEL PROFILE
+========================================================= */
+
+function openChannelProfile() {
+
+    if (!currentChannel) {
+        return;
+    }
+
+
+    const own =
+        currentChannel.owner ===
+        currentUser.login;
+
+
+    $("channelProfileName")
+        .value =
+        currentChannel.name ||
+        "";
+
+
+    $("channelProfileDescription")
+        .value =
+        currentChannel.description ||
+        "";
+
+
+    $("channelProfilePhoto")
+        .value =
+        currentChannel.photo ||
+        "";
+
+
+    $("channelProfilePreview")
+        .innerHTML =
+        currentChannel.photo
+            ? `<img src="${escapeHTML(currentChannel.photo)}">`
+            : "📢";
+
+
+    $("channelProfileName")
+        .disabled =
+        !own;
+
+
+    $("channelProfileDescription")
+        .disabled =
+        !own;
+
+
+    $("channelProfilePhoto")
+        .disabled =
+        !own;
+
+
+    $("channelProfileOwnerSettings")
+        .classList
+        .toggle(
+            "hidden",
+            !own
+        );
+
+
+    $("channelProfileSaveButton")
+        .classList
+        .toggle(
+            "hidden",
+            !own
+        );
+
+
+    $("channelProfileModal")
+        .classList
+        .remove(
+            "hidden"
+        );
+}
+
+
+$("channelProfilePhoto")
+    .addEventListener(
+        "input",
+        event => {
+
+            const photo =
+                event.target.value
+                    .trim();
+
+
+            $("channelProfilePreview")
+                .innerHTML =
+                photo
+                    ? `<img src="${escapeHTML(photo)}">`
+                    : "📢";
+        }
+    );
+
+
+async function saveChannelProfile() {
+
+    if (!currentChannel) {
+        return;
+    }
 
 
     if (
-        currentChannel.owner ===
+        currentChannel.owner !==
         currentUser.login
     ) {
+        return;
+    }
 
-        $("channelOwnerTools")
-            .classList
-            .remove(
-                "hidden"
+
+    const name =
+        $("channelProfileName")
+            .value
+            .trim();
+
+
+    const description =
+        $("channelProfileDescription")
+            .value
+            .trim();
+
+
+    const photo =
+        $("channelProfilePhoto")
+            .value
+            .trim();
+
+
+    const notifications =
+        $("channelNotifications")
+            .checked;
+
+
+    if (!name) {
+
+        alert(
+            "Введите название канала"
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/channel-update",
+                {
+                    method:
+                        "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            channelId:
+                                currentChannel.id,
+
+                            owner:
+                                currentUser.login,
+
+                            name,
+
+                            description,
+
+                            photo,
+
+                            notifications
+                        })
+                }
             );
 
-    } else {
 
-        $("channelOwnerTools")
-            .classList
-            .add(
-                "hidden"
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            alert(
+                data.message
             );
+
+            return;
+        }
+
+
+        currentChannel =
+            data.channel;
+
+
+        closeModal(
+            "channelProfileModal"
+        );
+
+
+        updateChannelHeader();
+
+
+        await loadChannels();
+
+
+        await loadChannelPosts(
+            false
+        );
+
+
+    } catch {
+
+        alert(
+            "Ошибка сохранения канала"
+        );
     }
 }
 
 
 /* =========================================================
-   MARK CHANNEL AS READ
+   MARK CHANNEL READ
 ========================================================= */
 
 async function markChannelAsRead(
@@ -4344,12 +4614,13 @@ async function markChannelAsRead(
             await response.json();
 
 
-        readChannelCounts[channelId] =
+        readChannelCounts[
+            channelId
+        ] =
             posts.length;
 
 
         saveReadChannelCounts();
-
 
         renderChats();
 
@@ -4361,7 +4632,9 @@ async function markChannelAsRead(
    CHANNEL POSTS
 ========================================================= */
 
-async function loadChannelPosts() {
+async function loadChannelPosts(
+    forceScroll = true
+) {
 
     if (!currentChannel) {
         return;
@@ -4379,12 +4652,24 @@ async function loadChannelPosts() {
             );
 
 
+        if (!response.ok) {
+            return;
+        }
+
+
         const posts =
             await response.json();
 
 
         const box =
-            $("channelPosts");
+            $("messages");
+
+
+        const wasNearBottom =
+            box.scrollHeight -
+            box.scrollTop -
+            box.clientHeight <
+            100;
 
 
         box.innerHTML = "";
@@ -4394,13 +4679,7 @@ async function loadChannelPosts() {
 
             box.innerHTML =
                 `
-                <div
-                    style="
-                        color:var(--muted);
-                        text-align:center;
-                        padding:20px;
-                    "
-                >
+                <div class="empty-chat">
                     В канале пока нет публикаций
                 </div>
                 `;
@@ -4436,7 +4715,7 @@ async function loadChannelPosts() {
                     };
 
 
-                const authorAvatar =
+                const avatar =
                     author.photo
                         ? `<img src="${escapeHTML(author.photo)}">`
                         : "👤";
@@ -4445,9 +4724,7 @@ async function loadChannelPosts() {
                 let mediaHTML = "";
 
 
-                if (
-                    post.media
-                ) {
+                if (post.media) {
 
                     if (
                         post.mediaType &&
@@ -4491,7 +4768,7 @@ async function loadChannelPosts() {
                     <div class="channel-post-author">
 
                         <div class="avatar">
-                            ${authorAvatar}
+                            ${avatar}
                         </div>
 
                         <div class="channel-post-author-name">
@@ -4532,94 +4809,54 @@ async function loadChannelPosts() {
         );
 
 
-        box.scrollTop =
-            box.scrollHeight;
+        if (
+            forceScroll ||
+            wasNearBottom
+        ) {
 
+            box.scrollTop =
+                box.scrollHeight;
+        }
 
     } catch {}
 }
 
 
 /* =========================================================
-   PUBLISH CHANNEL POST
+   PUBLISH FROM MAIN COMPOSER
 ========================================================= */
 
-async function publishChannelPost() {
+async function publishChannelPostFromComposer() {
 
     if (!currentChannel) {
         return;
     }
 
 
-    const text =
-        $("channelPostInput")
-            .value
-            .trim();
-
-
-    const file =
-        $("channelMediaInput")
-            .files[0];
-
-
     if (
-        !text &&
-        !file
+        currentChannel.owner !==
+        currentUser.login
     ) {
-
-        alert(
-            "Добавь текст, фото или видео"
-        );
 
         return;
     }
 
 
-    let media = null;
-    let mediaType = "";
+    const input =
+        $("messageInput");
 
 
-    if (file) {
-
-        if (
-            !file.type.startsWith(
-                "image/"
-            ) &&
-            !file.type.startsWith(
-                "video/"
-            )
-        ) {
-
-            alert(
-                "Можно загружать только фото или видео"
-            );
-
-            return;
-        }
+    const text =
+        input.value.trim();
 
 
-        if (
-            file.size >
-            20 * 1024 * 1024
-        ) {
+    if (!text) {
 
-            alert(
-                "Файл слишком большой. Максимум 20 MB."
-            );
-
-            return;
-        }
-
-
-        media =
-            await fileToDataURL(
-                file
-            );
-
-
-        mediaType =
-            file.type;
+        return;
     }
+
+
+    input.value = "";
 
 
     try {
@@ -4628,7 +4865,8 @@ async function publishChannelPost() {
             await fetch(
                 "/channel-post",
                 {
-                    method: "POST",
+                    method:
+                        "POST",
 
                     headers: {
                         "Content-Type":
@@ -4646,10 +4884,11 @@ async function publishChannelPost() {
 
                             text,
 
-                            media,
+                            media:
+                                null,
 
-                            mediaType
-
+                            mediaType:
+                                ""
                         })
                 }
             );
@@ -4665,18 +4904,17 @@ async function publishChannelPost() {
                 data.message
             );
 
+            input.value =
+                text;
+
             return;
         }
 
 
-        $("channelPostInput")
-            .value = "";
+        await loadChannelPosts(
+            true
+        );
 
-        $("channelMediaInput")
-            .value = "";
-
-
-        await loadChannelPosts();
 
         await loadChannels();
 
@@ -4687,41 +4925,14 @@ async function publishChannelPost() {
 
     } catch {
 
+        input.value =
+            text;
+
+
         alert(
             "Ошибка публикации"
         );
     }
-}
-
-
-function fileToDataURL(file) {
-
-    return new Promise(
-        (
-            resolve,
-            reject
-        ) => {
-
-            const reader =
-                new FileReader();
-
-
-            reader.onload =
-                () =>
-                    resolve(
-                        reader.result
-                    );
-
-
-            reader.onerror =
-                reject;
-
-
-            reader.readAsDataURL(
-                file
-            );
-        }
-    );
 }
 
 
@@ -4746,10 +4957,10 @@ async function startCall(
     video
 ) {
 
-    if (!currentChat) {
+    if (!currentChat || currentChannel) {
 
         alert(
-            "Сначала откройте чат"
+            "Сначала откройте обычный чат"
         );
 
         return;
@@ -4787,12 +4998,11 @@ async function startCall(
                 .mediaDevices
                 .getUserMedia({
 
-                    audio: true,
+                    audio:
+                        true,
 
                     video:
                         video
-                            ? true
-                            : false
                 });
 
 
@@ -4850,7 +5060,6 @@ async function startCall(
             photo:
                 currentUser.photo ||
                 ""
-
         });
 
 
@@ -4858,10 +5067,7 @@ async function startCall(
             user
         );
 
-
-    } catch (error) {
-
-        console.error(error);
+    } catch {
 
         endCallUI();
 
@@ -4897,7 +5103,6 @@ function createPeerConnection() {
 
                     candidate:
                         event.candidate
-
                 });
             }
         };
@@ -4929,9 +5134,7 @@ function createPeerConnection() {
     pc.onconnectionstatechange =
         () => {
 
-            if (
-                !peerConnection
-            ) {
+            if (!peerConnection) {
                 return;
             }
 
@@ -5001,16 +5204,10 @@ function showCallUI(
             : activeCallUser;
 
 
-    const photo =
-        user
-            ? user.photo
-            : "";
-
-
     $("callProfilePhoto")
         .innerHTML =
-        photo
-            ? `<img src="${escapeHTML(photo)}">`
+        user && user.photo
+            ? `<img src="${escapeHTML(user.photo)}">`
             : "👤";
 
 
@@ -5066,6 +5263,7 @@ function showCallUI(
 
     updateCallTimerText();
 
+
     if (callTimer) {
 
         clearInterval(
@@ -5100,6 +5298,13 @@ function startCallTimer() {
 
 function updateCallTimerText() {
 
+    if (
+        callSeconds <= 0
+    ) {
+        return;
+    }
+
+
     const minutes =
         Math.floor(
             callSeconds / 60
@@ -5113,7 +5318,8 @@ function updateCallTimerText() {
 
     const seconds =
         (
-            callSeconds % 60
+            callSeconds %
+            60
         )
             .toString()
             .padStart(
@@ -5122,16 +5328,11 @@ function updateCallTimerText() {
             );
 
 
-    if (
-        callSeconds > 0
-    ) {
-
-        $("callStatus")
-            .textContent =
-            minutes +
-            ":" +
-            seconds;
-    }
+    $("callStatus")
+        .textContent =
+        minutes +
+        ":" +
+        seconds;
 }
 
 
@@ -5162,15 +5363,12 @@ async function acceptIncomingCall() {
                 .mediaDevices
                 .getUserMedia({
 
-                    audio: true,
+                    audio:
+                        true,
 
                     video:
                         activeCallVideo
                 });
-
-
-        microphoneEnabled = true;
-        cameraEnabled = true;
 
 
         peerConnection =
@@ -5180,14 +5378,12 @@ async function acceptIncomingCall() {
         localStream
             .getTracks()
             .forEach(
-                track => {
-
+                track =>
                     peerConnection
                         .addTrack(
                             track,
                             localStream
-                        );
-                }
+                        )
             );
 
 
@@ -5221,7 +5417,6 @@ async function acceptIncomingCall() {
             answer:
                 peerConnection
                     .localDescription
-
         });
 
 
@@ -5238,9 +5433,7 @@ async function acceptIncomingCall() {
 
         incomingCall = null;
 
-    } catch (error) {
-
-        console.error(error);
+    } catch {
 
         endCallUI();
 
@@ -5268,8 +5461,7 @@ function rejectIncomingCall() {
     });
 
 
-    incomingCall =
-        null;
+    incomingCall = null;
 
 
     closeModal(
@@ -5297,11 +5489,6 @@ async function handleAnswer(
             );
 
 
-        $("callStatus")
-            .textContent =
-            "Соединение установлено";
-
-
         startCallTimer();
 
     } catch {}
@@ -5315,22 +5502,18 @@ function toggleMicrophone() {
     }
 
 
-    const tracks =
-        localStream
-            .getAudioTracks();
+    localStream
+        .getAudioTracks()
+        .forEach(
+            track => {
 
+                track.enabled =
+                    !track.enabled;
 
-    tracks.forEach(
-        track => {
-
-            track.enabled =
-                !track.enabled;
-
-
-            microphoneEnabled =
-                track.enabled;
-        }
-    );
+                microphoneEnabled =
+                    track.enabled;
+            }
+        );
 
 
     $("micButton")
@@ -5348,27 +5531,18 @@ function toggleCamera() {
     }
 
 
-    const tracks =
-        localStream
-            .getVideoTracks();
+    localStream
+        .getVideoTracks()
+        .forEach(
+            track => {
 
+                track.enabled =
+                    !track.enabled;
 
-    if (!tracks.length) {
-        return;
-    }
-
-
-    tracks.forEach(
-        track => {
-
-            track.enabled =
-                !track.enabled;
-
-
-            cameraEnabled =
-                track.enabled;
-        }
-    );
+                cameraEnabled =
+                    track.enabled;
+            }
+        );
 
 
     $("cameraButton")
@@ -5381,9 +5555,7 @@ function toggleCamera() {
 
 function hangupCall() {
 
-    if (
-        activeCallUser
-    ) {
+    if (activeCallUser) {
 
         sendSocket({
 
@@ -5392,7 +5564,6 @@ function hangupCall() {
 
             to:
                 activeCallUser
-
         });
     }
 
@@ -5413,9 +5584,7 @@ function endCallUI() {
     }
 
 
-    if (
-        localStream
-    ) {
+    if (localStream) {
 
         localStream
             .getTracks()
@@ -5429,19 +5598,14 @@ function endCallUI() {
     }
 
 
-    if (
-        peerConnection
-    ) {
+    if (peerConnection) {
 
         try {
-
             peerConnection.close();
-
         } catch {}
 
 
-        peerConnection =
-            null;
+        peerConnection = null;
     }
 
 
@@ -5462,14 +5626,7 @@ function endCallUI() {
         );
 
 
-    $("callStatus")
-        .textContent =
-        "Соединение...";
-
-
     activeCallUser = "";
-    incomingCall = null;
-
     callSeconds = 0;
 }
 
@@ -5491,7 +5648,7 @@ function closeModal(
 
 
 /* =========================================================
-   ESCAPE HTML
+   ESCAPE
 ========================================================= */
 
 function escapeHTML(
