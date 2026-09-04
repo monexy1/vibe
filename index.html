@@ -32,6 +32,13 @@ body {
     color: var(--text);
 }
 
+/* Пока Vibe проверяет сохранённый аккаунт,
+   НЕ показываем окно входа. */
+body.booting > #authScreen,
+body.booting > #app {
+    display: none !important;
+}
+
 :root {
     --bg: #0b1020;
     --panel: #151b2f;
@@ -80,11 +87,6 @@ body.sunset {
     --border: rgba(255,255,255,0.08);
 }
 
-
-/* =========================================================
-   COMMON
-========================================================= */
-
 button,
 input,
 textarea {
@@ -98,7 +100,6 @@ button {
 .hidden {
     display: none !important;
 }
-
 
 /* =========================================================
    AUTH
@@ -168,7 +169,6 @@ button {
     color: #f87171;
 }
 
-
 /* =========================================================
    APP
 ========================================================= */
@@ -184,7 +184,6 @@ button {
     display: grid;
     grid-template-columns: 320px minmax(0, 1fr);
 }
-
 
 /* =========================================================
    SIDEBAR
@@ -242,12 +241,6 @@ button {
     max-height: 190px;
     overflow-y: auto;
     margin-bottom: 8px;
-}
-
-.section-title {
-    color: var(--muted);
-    font-size: 13px;
-    margin: 10px 5px;
 }
 
 .friends {
@@ -327,6 +320,19 @@ button {
     font-weight: 700;
 }
 
+.channel-sidebar-icon {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    border-radius: 13px;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 21px;
+}
+
 .bottom-buttons {
     display: flex;
     gap: 8px;
@@ -341,7 +347,6 @@ button {
     background: var(--panel2);
     color: var(--text);
 }
-
 
 /* =========================================================
    CHAT
@@ -370,6 +375,7 @@ button {
 .chat-user {
     min-width: 0;
     flex: 1;
+    cursor: pointer;
 }
 
 .chat-name {
@@ -480,7 +486,6 @@ button {
     color: white;
 }
 
-
 /* =========================================================
    MODALS
 ========================================================= */
@@ -550,7 +555,6 @@ button {
     background: var(--accent);
 }
 
-
 /* =========================================================
    CHANNELS
 ========================================================= */
@@ -568,6 +572,14 @@ button {
     margin-bottom: 7px;
     border-radius: 14px;
     background: var(--panel2);
+}
+
+.channel-item-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
     cursor: pointer;
 }
 
@@ -605,6 +617,19 @@ button {
     text-overflow: ellipsis;
 }
 
+.channel-action {
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: var(--accent);
+    color: white;
+    font-size: 12px;
+}
+
+.channel-action.subscribed {
+    background: var(--panel);
+}
+
 .channel-view {
     display: flex;
     flex-direction: column;
@@ -623,6 +648,25 @@ button {
     border-radius: 15px;
     padding: 13px;
     margin-bottom: 10px;
+}
+
+.channel-post-author {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.channel-post-author .avatar {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    font-size: 13px;
+}
+
+.channel-post-author-name {
+    font-weight: 700;
+    font-size: 13px;
 }
 
 .channel-post-text {
@@ -657,7 +701,6 @@ button {
     min-width: 0;
 }
 
-
 /* =========================================================
    PROFILE
 ========================================================= */
@@ -691,7 +734,6 @@ button {
     flex: 1;
 }
 
-
 /* =========================================================
    CALL
 ========================================================= */
@@ -700,20 +742,45 @@ button {
     position: fixed;
     inset: 0;
     z-index: 2000;
-    background: rgba(4,7,15,.96);
+    background: rgba(4,7,15,.97);
     display: flex;
     flex-direction: column;
 }
 
 .call-top {
-    padding: 20px;
+    padding: 25px 20px 10px;
     text-align: center;
     color: white;
+}
+
+.call-profile-photo {
+    width: 86px;
+    height: 86px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+}
+
+.call-profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .call-name {
     font-size: 24px;
     font-weight: 800;
+}
+
+.call-status {
+    margin-top: 6px;
+    color: #aeb8d0;
+    font-size: 14px;
 }
 
 .call-video {
@@ -741,6 +808,7 @@ button {
     border-radius: 15px;
     object-fit: cover;
     background: #111;
+    border: 2px solid rgba(255,255,255,.15);
 }
 
 .call-controls {
@@ -751,16 +819,42 @@ button {
 }
 
 .call-controls button {
-    width: 52px;
-    height: 52px;
+    width: 56px;
+    height: 56px;
     border: 0;
     border-radius: 50%;
-    background: var(--panel2);
+    background: #26304a;
     color: white;
+    font-size: 19px;
 }
 
 .call-controls .end-call {
     background: #dc2626;
+    width: 64px;
+    height: 64px;
+}
+
+.incoming-card {
+    text-align: center;
+}
+
+.incoming-profile-photo {
+    width: 85px;
+    height: 85px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 30px;
+}
+
+.incoming-profile-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .incoming-buttons {
@@ -771,7 +865,6 @@ button {
 .incoming-buttons button {
     flex: 1;
 }
-
 
 /* =========================================================
    MOBILE
@@ -922,20 +1015,24 @@ button {
         width: 110px;
         max-height: 170px;
     }
+
+    .call-controls {
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    }
 }
 
 </style>
 
 </head>
 
-<body>
+<body class="booting">
 
 
 <!-- =======================================================
      AUTH
 ======================================================= -->
 
-<div id="authScreen" class="auth">
+<div id="authScreen" class="auth hidden">
 
     <div class="auth-card">
 
@@ -1033,10 +1130,6 @@ button {
             ></div>
 
 
-            <div class="section-title">
-                Мои чаты
-            </div>
-
             <div
                 id="friends"
                 class="friends"
@@ -1077,11 +1170,17 @@ button {
                 <div
                     id="chatAvatar"
                     class="avatar"
+                    onclick="openCurrentChatProfile()"
+                    title="Открыть профиль"
+                    style="cursor:pointer;"
                 >
                     💬
                 </div>
 
-                <div class="chat-user">
+                <div
+                    class="chat-user"
+                    onclick="openCurrentChatProfile()"
+                >
 
                     <div
                         id="chatName"
@@ -1168,7 +1267,10 @@ button {
 
     <div class="modal-card">
 
-        <div class="modal-title">
+        <div
+            id="profileModalTitle"
+            class="modal-title"
+        >
             Профиль
         </div>
 
@@ -1210,7 +1312,10 @@ button {
 
         </select>
 
-        <div class="profile-buttons">
+        <div
+            id="profileButtons"
+            class="profile-buttons"
+        >
 
             <button
                 class="primary"
@@ -1341,6 +1446,24 @@ button {
         </div>
 
         <div
+            id="channelSubscriptionStatus"
+            style="
+                color:var(--muted);
+                font-size:13px;
+                margin-bottom:12px;
+            "
+        ></div>
+
+        <button
+            id="channelSubscribeButton"
+            class="primary"
+            style="margin-bottom:12px;"
+            onclick="toggleCurrentChannelSubscription()"
+        >
+            Подписаться
+        </button>
+
+        <div
             id="channelPosts"
             class="channel-posts"
         ></div>
@@ -1394,15 +1517,28 @@ button {
     class="modal hidden"
 >
 
-    <div class="modal-card">
+    <div class="modal-card incoming-card">
 
-        <div class="modal-title">
-            📞 Входящий звонок
+        <div
+            id="incomingCallPhoto"
+            class="incoming-profile-photo"
+        >
+            👤
+        </div>
+
+        <div
+            class="modal-title"
+            style="margin-bottom:8px;"
+        >
+            Входящий звонок
         </div>
 
         <div
             id="incomingCallText"
-            style="margin-bottom:18px;"
+            style="
+                margin-bottom:18px;
+                color:var(--muted);
+            "
         >
             Вам звонят
         </div>
@@ -1413,7 +1549,7 @@ button {
                 class="primary"
                 onclick="acceptIncomingCall()"
             >
-                Принять
+                📞 Принять
             </button>
 
             <button
@@ -1441,10 +1577,24 @@ button {
     <div class="call-top">
 
         <div
+            id="callProfilePhoto"
+            class="call-profile-photo"
+        >
+            👤
+        </div>
+
+        <div
             id="callName"
             class="call-name"
         >
             Звонок
+        </div>
+
+        <div
+            id="callStatus"
+            class="call-status"
+        >
+            Соединение...
         </div>
 
     </div>
@@ -1471,6 +1621,7 @@ button {
         <button
             onclick="toggleMicrophone()"
             id="micButton"
+            title="Микрофон"
         >
             🎙️
         </button>
@@ -1478,6 +1629,7 @@ button {
         <button
             onclick="toggleCamera()"
             id="cameraButton"
+            title="Камера"
         >
             📷
         </button>
@@ -1485,6 +1637,7 @@ button {
         <button
             class="end-call"
             onclick="hangupCall()"
+            title="Завершить"
         >
             ☎
         </button>
@@ -1510,8 +1663,11 @@ const $ = id =>
 
 let currentUser = null;
 let currentChat = "";
+
 let friends = [];
 let chats = [];
+let channels = [];
+
 let currentPhoto = "";
 let currentChannel = null;
 
@@ -1521,6 +1677,7 @@ let peerConnection = null;
 let localStream = null;
 
 let incomingCall = null;
+
 let activeCallUser = "";
 let activeCallVideo = false;
 
@@ -1529,38 +1686,29 @@ let cameraEnabled = true;
 
 let messageTimer = null;
 let chatTimer = null;
+let callTimer = null;
+let callSeconds = 0;
+
+let profileViewLogin = "";
 
 
-/*
-    В этом объекте храним количество сообщений,
-    которые пользователь уже прочитал.
-
-    Например:
-
-    {
-        "alex": 5,
-        "max": 2
-    }
-
-    Если Alex отправил 6 сообщений,
-    рядом с ним будет показано 1.
-*/
+/* =========================================================
+   READ MESSAGE COUNTS
+========================================================= */
 
 let readMessageCounts = {};
 
 try {
 
-    const savedReadCounts =
+    const saved =
         localStorage.getItem(
             "vibeReadCounts"
         );
 
-    if (savedReadCounts) {
+    if (saved) {
 
         readMessageCounts =
-            JSON.parse(
-                savedReadCounts
-            );
+            JSON.parse(saved);
     }
 
 } catch {
@@ -1575,6 +1723,42 @@ function saveReadMessageCounts() {
         "vibeReadCounts",
         JSON.stringify(
             readMessageCounts
+        )
+    );
+}
+
+
+/* =========================================================
+   READ CHANNEL COUNTS
+========================================================= */
+
+let readChannelCounts = {};
+
+try {
+
+    const saved =
+        localStorage.getItem(
+            "vibeChannelReadCounts"
+        );
+
+    if (saved) {
+
+        readChannelCounts =
+            JSON.parse(saved);
+    }
+
+} catch {
+
+    readChannelCounts = {};
+}
+
+
+function saveReadChannelCounts() {
+
+    localStorage.setItem(
+        "vibeChannelReadCounts",
+        JSON.stringify(
+            readChannelCounts
         )
     );
 }
@@ -1705,17 +1889,8 @@ async function login() {
             return;
         }
 
-
         currentUser =
             data.user;
-
-
-        /*
-            Главное исправление:
-
-            Сохраняем не только логин,
-            а весь объект пользователя.
-        */
 
         localStorage.setItem(
             "vibeLogin",
@@ -1729,6 +1904,7 @@ async function login() {
             )
         );
 
+        $("passwordInput").value = "";
 
         showApp();
 
@@ -1742,6 +1918,11 @@ async function login() {
     }
 }
 
+
+/*
+    Теперь после регистрации
+    сразу выполняется вход.
+*/
 
 async function register() {
 
@@ -1796,11 +1977,51 @@ async function register() {
         const data =
             await response.json();
 
-        $("authMessage")
-            .textContent =
-            data.message;
+        if (!data.success) {
 
-    } catch {
+            $("authMessage")
+                .textContent =
+                data.message;
+
+            return;
+        }
+
+
+        /*
+            Сервер теперь возвращает
+            созданного пользователя.
+
+            Поэтому сразу сохраняем
+            его и открываем Vibe.
+        */
+
+        currentUser =
+            data.user;
+
+
+        localStorage.setItem(
+            "vibeLogin",
+            currentUser.login
+        );
+
+
+        localStorage.setItem(
+            "vibeUser",
+            JSON.stringify(
+                currentUser
+            )
+        );
+
+
+        $("passwordInput")
+            .value = "";
+
+
+        showApp();
+
+    } catch (error) {
+
+        console.error(error);
 
         $("authMessage")
             .textContent =
@@ -1809,22 +2030,21 @@ async function register() {
 }
 
 
-/*
-    Автоматически восстанавливаем
-    аккаунт после F5.
-*/
+/* =========================================================
+   AUTO LOGIN
+========================================================= */
 
 async function autoLogin() {
 
-    const savedUser =
-        localStorage.getItem(
-            "vibeUser"
-        );
+    try {
+
+        const savedUser =
+            localStorage.getItem(
+                "vibeUser"
+            );
 
 
-    if (savedUser) {
-
-        try {
+        if (savedUser) {
 
             const user =
                 JSON.parse(
@@ -1836,11 +2056,6 @@ async function autoLogin() {
                 user &&
                 user.login
             ) {
-
-                /*
-                    Проверяем пользователя
-                    на сервере.
-                */
 
                 const userFromServer =
                     await getUser(
@@ -1867,25 +2082,20 @@ async function autoLogin() {
                     return;
                 }
             }
-
-        } catch (error) {
-
-            console.error(
-                "Ошибка восстановления:",
-                error
-            );
         }
 
+    } catch (error) {
 
-        localStorage.removeItem(
-            "vibeUser"
+        console.error(
+            "Ошибка восстановления:",
+            error
         );
     }
 
 
     /*
-        Если сохранён только старый логин,
-        оставляем его в поле входа.
+        Старый сохранённый логин
+        оставляем в поле.
     */
 
     const savedLogin =
@@ -1899,6 +2109,27 @@ async function autoLogin() {
         $("loginInput").value =
             savedLogin;
     }
+
+
+    $("authScreen")
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    $("app")
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+    document.body
+        .classList
+        .remove(
+            "booting"
+        );
 }
 
 
@@ -1923,6 +2154,13 @@ function showApp() {
         );
 
 
+    document.body
+        .classList
+        .remove(
+            "booting"
+        );
+
+
     connectSocket();
 
     loadFriends();
@@ -1935,11 +2173,6 @@ function showApp() {
 
 function logout() {
 
-    /*
-        Полностью удаляем сохранённый
-        аккаунт.
-    */
-
     localStorage.removeItem(
         "vibeLogin"
     );
@@ -1950,6 +2183,10 @@ function logout() {
 
     localStorage.removeItem(
         "vibeReadCounts"
+    );
+
+    localStorage.removeItem(
+        "vibeChannelReadCounts"
     );
 
 
@@ -1973,11 +2210,17 @@ function logout() {
     }
 
 
+    endCallUI();
+
+
     currentUser = null;
     currentChat = "";
     chats = [];
     friends = [];
+    channels = [];
+
     readMessageCounts = {};
+    readChannelCounts = {};
 
 
     $("app")
@@ -1995,6 +2238,12 @@ function logout() {
 
     $("loginInput").value = "";
     $("passwordInput").value = "";
+
+    document.body
+        .classList
+        .remove(
+            "booting"
+        );
 }
 
 
@@ -2005,6 +2254,18 @@ function logout() {
 function connectSocket() {
 
     if (!currentUser) {
+        return;
+    }
+
+
+    if (
+        socket &&
+        (
+            socket.readyState === 0 ||
+            socket.readyState === 1
+        )
+    ) {
+
         return;
     }
 
@@ -2065,11 +2326,6 @@ function connectSocket() {
 
                 socket = null;
 
-                /*
-                    Если пользователь всё ещё
-                    авторизован — пробуем
-                    подключиться снова.
-                */
 
                 if (currentUser) {
 
@@ -2110,14 +2366,6 @@ function sendSocket(data) {
 
 function handleSocketMessage(data) {
 
-
-    /*
-        Новое сообщение.
-
-        Сервер отправляет его получателю
-        через WebSocket.
-    */
-
     if (
         data.type ===
         "new-message"
@@ -2132,17 +2380,9 @@ function handleSocketMessage(data) {
         }
 
 
-        /*
-            Если сейчас открыт именно этот чат,
-            сообщение уже видно пользователю.
-        */
-
         if (
             currentChat &&
-            (
-                message.from ===
-                currentChat
-            )
+            message.from === currentChat
         ) {
 
             loadMessages(
@@ -2154,14 +2394,6 @@ function handleSocketMessage(data) {
             );
 
         } else {
-
-            /*
-                Иначе просто обновляем
-                список чатов.
-
-                Сервер сам сообщит,
-                сколько сообщений всего.
-            */
 
             loadChats();
         }
@@ -2179,19 +2411,36 @@ function handleSocketMessage(data) {
         incomingCall =
             data;
 
+
+        const name =
+            data.name ||
+            data.from;
+
+
         $("incomingCallText")
             .textContent =
-            (
-                data.name ||
-                data.from
-            ) +
+            name +
             " звонит вам";
+
+
+        const photo =
+            data.photo ||
+            "";
+
+
+        $("incomingCallPhoto")
+            .innerHTML =
+            photo
+                ? `<img src="${escapeHTML(photo)}">`
+                : "👤";
+
 
         $("incomingCallModal")
             .classList
             .remove(
                 "hidden"
             );
+
 
         return;
     }
@@ -2240,12 +2489,14 @@ function handleSocketMessage(data) {
         "call-rejected"
     ) {
 
+        endCallUI();
+
+
         alert(
             data.reason ||
             "Звонок отклонён"
         );
 
-        endCallUI();
 
         return;
     }
@@ -2424,6 +2675,11 @@ function personHTML(
 
 async function loadFriends() {
 
+    if (!currentUser) {
+        return;
+    }
+
+
     try {
 
         const response =
@@ -2439,7 +2695,7 @@ async function loadFriends() {
             await response.json();
 
 
-        renderFriends();
+        renderChats();
 
     } catch {}
 }
@@ -2506,6 +2762,29 @@ function getUnreadCount(chat) {
 }
 
 
+function getChannelUnreadCount(channel) {
+
+    const total =
+        Number(
+            channel.postCount || 0
+        );
+
+
+    const read =
+        Number(
+            readChannelCounts[
+                channel.id
+            ] || 0
+        );
+
+
+    return Math.max(
+        0,
+        total - read
+    );
+}
+
+
 function renderChats() {
 
     const box =
@@ -2515,12 +2794,66 @@ function renderChats() {
     box.innerHTML = "";
 
 
-    if (!chats.length) {
+    const subscribedChannels =
+        channels.filter(
+            channel =>
+                channel.subscribed
+        );
 
-        /*
-            Если переписок пока нет,
-            показываем друзей.
-        */
+
+    const items = [];
+
+
+    chats.forEach(
+        chat => {
+
+            items.push({
+
+                type:
+                    "chat",
+
+                data:
+                    chat,
+
+                time:
+                    chat.lastTime || ""
+
+            });
+        }
+    );
+
+
+    subscribedChannels.forEach(
+        channel => {
+
+            items.push({
+
+                type:
+                    "channel",
+
+                data:
+                    channel,
+
+                time:
+                    channel.lastTime || ""
+
+            });
+        }
+    );
+
+
+    items.sort(
+        (a, b) =>
+            new Date(
+                b.time || 0
+            ) -
+            new Date(
+                a.time || 0
+            )
+    );
+
+
+    if (!items.length) {
 
         if (friends.length) {
 
@@ -2570,7 +2903,7 @@ function renderChats() {
                     text-align:center;
                 "
             >
-                Пока нет чатов
+                Пока нет переписок
             </div>
             `;
 
@@ -2578,8 +2911,73 @@ function renderChats() {
     }
 
 
-    chats.forEach(
-        chat => {
+    items.forEach(
+        itemData => {
+
+            if (
+                itemData.type ===
+                "chat"
+            ) {
+
+                const chat =
+                    itemData.data;
+
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+
+                item.className =
+                    "person";
+
+
+                if (
+                    chat.login ===
+                    currentChat
+                ) {
+
+                    item.classList.add(
+                        "active"
+                    );
+                }
+
+
+                const unread =
+                    getUnreadCount(
+                        chat
+                    );
+
+
+                item.innerHTML =
+                    personHTML(
+                        chat.user,
+                        unread
+                    );
+
+
+                item.onclick =
+                    () => {
+
+                        openChat(
+                            chat.login
+                        );
+                    };
+
+
+                box.appendChild(
+                    item
+                );
+
+
+                return;
+            }
+
+
+            const channel =
+                itemData.data;
+
 
             const item =
                 document.createElement(
@@ -2591,35 +2989,47 @@ function renderChats() {
                 "person";
 
 
-            if (
-                chat.login ===
-                currentChat
-            ) {
-
-                item.classList.add(
-                    "active"
-                );
-            }
-
-
-            const unread =
-                getUnreadCount(
-                    chat
-                );
-
-
             item.innerHTML =
-                personHTML(
-                    chat.user,
-                    unread
-                );
+                `
+                <div class="channel-sidebar-icon">
+                    📢
+                </div>
+
+                <div class="person-info">
+
+                    <div class="person-name">
+                        ${escapeHTML(
+                            channel.name
+                        )}
+                    </div>
+
+                    <div class="person-login">
+                        Канал
+                    </div>
+
+                </div>
+
+                ${
+                    getChannelUnreadCount(
+                        channel
+                    ) > 0
+                        ? `
+                            <div class="chat-count">
+                                ${getChannelUnreadCount(
+                                    channel
+                                )}
+                            </div>
+                          `
+                        : ""
+                }
+                `;
 
 
             item.onclick =
                 () => {
 
-                    openChat(
-                        chat.login
+                    openChannel(
+                        channel
                     );
                 };
 
@@ -2678,11 +3088,6 @@ async function markChatAsRead(
             await response.json();
 
 
-        /*
-            Считаем только сообщения,
-            которые отправил собеседник.
-        */
-
         const incomingCount =
             messages.filter(
                 message =>
@@ -2690,11 +3095,6 @@ async function markChatAsRead(
                     login
             ).length;
 
-
-        /*
-            Теперь все эти сообщения
-            считаются прочитанными.
-        */
 
         readMessageCounts[login] =
             incomingCount;
@@ -2754,29 +3154,18 @@ async function openChat(
             user.login;
 
 
-        const avatar =
-            $("chatAvatar");
-
-
-        avatar.innerHTML =
+        $("chatAvatar")
+            .innerHTML =
             user.photo
                 ? `<img src="${escapeHTML(user.photo)}">`
                 : "👤";
     }
 
 
-    /*
-        Сначала загружаем сообщения.
-    */
-
     await loadMessages(
         true
     );
 
-
-    /*
-        А затем отмечаем чат прочитанным.
-    */
 
     await markChatAsRead(
         login
@@ -2806,10 +3195,6 @@ async function openChat(
     renderChats();
 
 
-    /*
-        Фокус на поле сообщения.
-    */
-
     setTimeout(
         () => {
 
@@ -2823,6 +3208,23 @@ async function openChat(
 
         },
         100
+    );
+}
+
+
+/* =========================================================
+   OPEN CURRENT PROFILE
+========================================================= */
+
+function openCurrentChatProfile() {
+
+    if (!currentChat) {
+        return;
+    }
+
+
+    openUserProfile(
+        currentChat
     );
 }
 
@@ -3012,12 +3414,6 @@ async function loadMessages(
         );
 
 
-        /*
-            Не кидаем пользователя
-            вниз при каждом обновлении,
-            если он читает старые сообщения.
-        */
-
         if (
             forceScroll ||
             wasNearBottom
@@ -3026,7 +3422,6 @@ async function loadMessages(
             box.scrollTop =
                 box.scrollHeight;
         }
-
 
     } catch {}
 }
@@ -3102,23 +3497,10 @@ async function sendMessage() {
 
             await loadChats();
 
-
-            /*
-                Наше отправленное сообщение
-                не должно создавать
-                непрочитанный счётчик.
-            */
-
-            if (
+            await markChatAsRead(
                 currentChat
-            ) {
-
-                await markChatAsRead(
-                    currentChat
-                );
-            }
+            );
         }
-
 
     } catch {}
 }
@@ -3129,6 +3511,10 @@ async function sendMessage() {
 ========================================================= */
 
 async function openProfile() {
+
+    profileViewLogin =
+        currentUser.login;
+
 
     const user =
         await getUser(
@@ -3141,21 +3527,160 @@ async function openProfile() {
     }
 
 
-    $("profileName").value =
+    $("profileModalTitle")
+        .textContent =
+        "Мой профиль";
+
+
+    $("profileName")
+        .value =
         user.name || "";
 
 
-    $("profileAbout").value =
+    $("profileAbout")
+        .value =
         user.about || "";
 
 
-    $("profilePhoto").value =
+    $("profilePhoto")
+        .value =
         user.photo || "";
 
 
-    $("messageStyle").value =
+    $("messageStyle")
+        .value =
         user.messageStyle ||
         "classic";
+
+
+    $("profileName")
+        .disabled =
+        false;
+
+    $("profileAbout")
+        .disabled =
+        false;
+
+    $("profilePhoto")
+        .disabled =
+        false;
+
+    $("messageStyle")
+        .disabled =
+        false;
+
+
+    $("profileButtons")
+        .classList
+        .remove(
+            "hidden"
+        );
+
+
+    currentPhoto =
+        user.photo || "";
+
+
+    updateProfilePreview();
+
+
+    $("profileModal")
+        .classList
+        .remove(
+            "hidden"
+        );
+}
+
+
+/*
+    Профиль другого пользователя.
+*/
+
+async function openUserProfile(
+    login
+) {
+
+    const user =
+        await getUser(
+            login
+        );
+
+
+    if (!user) {
+        return;
+    }
+
+
+    profileViewLogin =
+        login;
+
+
+    const isOwnProfile =
+        login ===
+        currentUser.login;
+
+
+    $("profileModalTitle")
+        .textContent =
+        isOwnProfile
+            ? "Мой профиль"
+            : "Профиль пользователя";
+
+
+    $("profileName")
+        .value =
+        user.name || "";
+
+
+    $("profileAbout")
+        .value =
+        user.about || "";
+
+
+    $("profilePhoto")
+        .value =
+        user.photo || "";
+
+
+    $("messageStyle")
+        .value =
+        user.messageStyle ||
+        "classic";
+
+
+    $("profileName")
+        .disabled =
+        !isOwnProfile;
+
+    $("profileAbout")
+        .disabled =
+        !isOwnProfile;
+
+    $("profilePhoto")
+        .disabled =
+        !isOwnProfile;
+
+    $("messageStyle")
+        .disabled =
+        !isOwnProfile;
+
+
+    if (isOwnProfile) {
+
+        $("profileButtons")
+            .classList
+            .remove(
+                "hidden"
+            );
+
+    } else {
+
+        $("profileButtons")
+            .classList
+            .add(
+                "hidden"
+            );
+    }
 
 
     currentPhoto =
@@ -3214,6 +3739,15 @@ $("profilePhoto")
 
 async function saveProfile() {
 
+    if (
+        profileViewLogin !==
+        currentUser.login
+    ) {
+
+        return;
+    }
+
+
     try {
 
         const response =
@@ -3266,11 +3800,6 @@ async function saveProfile() {
                 data.user;
 
 
-            /*
-                Обновляем сохранённый
-                профиль тоже.
-            */
-
             localStorage.setItem(
                 "vibeUser",
                 JSON.stringify(
@@ -3286,6 +3815,7 @@ async function saveProfile() {
 
             loadChats();
             loadFriends();
+            loadChannels();
 
 
             if (
@@ -3321,104 +3851,275 @@ async function openChannels() {
 
 async function loadChannels() {
 
+    if (!currentUser) {
+        return;
+    }
+
+
     try {
 
         const response =
             await fetch(
-                "/channels"
+                "/channels?login=" +
+                encodeURIComponent(
+                    currentUser.login
+                )
             );
 
 
-        const channels =
+        channels =
             await response.json();
 
 
-        const box =
-            $("channelsList");
+        renderChannelsList();
+
+        renderChats();
+
+    } catch {}
+}
 
 
-        box.innerHTML = "";
+function renderChannelsList() {
+
+    const box =
+        $("channelsList");
 
 
-        if (!channels.length) {
+    box.innerHTML = "";
 
-            box.innerHTML =
+
+    if (!channels.length) {
+
+        box.innerHTML =
+            `
+            <div
+                style="
+                    color:var(--muted);
+                    padding:15px;
+                    text-align:center;
+                "
+            >
+                Пока каналов нет
+            </div>
+            `;
+
+        return;
+    }
+
+
+    channels.forEach(
+        channel => {
+
+            const item =
+                document.createElement(
+                    "div"
+                );
+
+
+            item.className =
+                "channel-item";
+
+
+            const main =
+                document.createElement(
+                    "div"
+                );
+
+
+            main.className =
+                "channel-item-main";
+
+
+            main.innerHTML =
                 `
-                <div
-                    style="
-                        color:var(--muted);
-                        padding:15px;
-                        text-align:center;
-                    "
-                >
-                    Пока каналов нет
+                <div class="channel-icon">
+                    📢
+                </div>
+
+                <div class="channel-info">
+
+                    <div class="channel-name">
+                        ${escapeHTML(
+                            channel.name
+                        )}
+                    </div>
+
+                    <div class="channel-description">
+                        ${escapeHTML(
+                            channel.description ||
+                            "Канал Vibe"
+                        )}
+                    </div>
+
                 </div>
                 `;
+
+
+            main.onclick =
+                () => {
+
+                    openChannel(
+                        channel
+                    );
+                };
+
+
+            item.appendChild(
+                main
+            );
+
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+
+            button.className =
+                "channel-action" +
+                (
+                    channel.subscribed
+                        ? " subscribed"
+                        : ""
+                );
+
+
+            button.textContent =
+                channel.subscribed
+                    ? "Подписан"
+                    : "Подписаться";
+
+
+            button.onclick =
+                event => {
+
+                    event.stopPropagation();
+
+                    toggleChannelSubscription(
+                        channel
+                    );
+                };
+
+
+            item.appendChild(
+                button
+            );
+
+
+            box.appendChild(
+                item
+            );
+        }
+    );
+}
+
+
+/* =========================================================
+   CHANNEL SUBSCRIPTION
+========================================================= */
+
+async function toggleChannelSubscription(
+    channel
+) {
+
+    if (!currentUser) {
+        return;
+    }
+
+
+    const action =
+        channel.subscribed
+            ? "unsubscribe"
+            : "subscribe";
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/channel-subscription",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            channelId:
+                                channel.id,
+
+                            login:
+                                currentUser.login,
+
+                            action
+
+                        })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            alert(
+                data.message
+            );
 
             return;
         }
 
 
-        channels.forEach(
-            channel => {
+        await loadChannels();
 
-                const item =
-                    document.createElement(
-                        "div"
-                    );
+    } catch {
 
-
-                item.className =
-                    "channel-item";
-
-
-                item.innerHTML =
-                    `
-                    <div class="channel-icon">
-                        📢
-                    </div>
-
-                    <div class="channel-info">
-
-                        <div class="channel-name">
-                            ${escapeHTML(
-                                channel.name
-                            )}
-                        </div>
-
-                        <div class="channel-description">
-                            ${escapeHTML(
-                                channel.description ||
-                                "Канал Vibe"
-                            )}
-                        </div>
-
-                    </div>
-
-                    <div class="chat-count">
-                        ${channel.postCount || 0}
-                    </div>
-                    `;
-
-
-                item.onclick =
-                    () => {
-
-                        openChannel(
-                            channel
-                        );
-                    };
-
-
-                box.appendChild(
-                    item
-                );
-            }
+        alert(
+            "Ошибка подписки"
         );
-
-    } catch {}
+    }
 }
 
+
+async function toggleCurrentChannelSubscription() {
+
+    if (!currentChannel) {
+        return;
+    }
+
+
+    await toggleChannelSubscription(
+        currentChannel
+    );
+
+
+    const updated =
+        channels.find(
+            channel =>
+                channel.id ===
+                currentChannel.id
+        );
+
+
+    if (updated) {
+
+        currentChannel =
+            updated;
+
+        updateChannelView();
+    }
+}
+
+
+/* =========================================================
+   CREATE CHANNEL
+========================================================= */
 
 function openCreateChannel() {
 
@@ -3519,6 +4220,10 @@ async function createChannel() {
 }
 
 
+/* =========================================================
+   OPEN CHANNEL
+========================================================= */
+
 async function openChannel(
     channel
 ) {
@@ -3533,6 +4238,9 @@ async function openChannel(
         channel.name;
 
 
+    updateChannelView();
+
+
     $("channelModal")
         .classList
         .remove(
@@ -3540,8 +4248,54 @@ async function openChannel(
         );
 
 
+    await loadChannelPosts();
+
+
+    /*
+        Если пользователь подписан,
+        открытие канала отмечает
+        все текущие публикации прочитанными.
+    */
+
+    if (channel.subscribed) {
+
+        await markChannelAsRead(
+            channel.id
+        );
+    }
+
+
+    await loadChannels();
+}
+
+
+function updateChannelView() {
+
+    if (!currentChannel) {
+        return;
+    }
+
+
+    const subscribed =
+        !!currentChannel.subscribed;
+
+
+    $("channelSubscriptionStatus")
+        .textContent =
+        subscribed
+            ? "Вы подписаны на этот канал"
+            : "Вы не подписаны на этот канал";
+
+
+    $("channelSubscribeButton")
+        .textContent =
+        subscribed
+            ? "Отписаться"
+            : "Подписаться";
+
+
     if (
-        channel.owner ===
+        currentChannel.owner ===
         currentUser.login
     ) {
 
@@ -3559,11 +4313,53 @@ async function openChannel(
                 "hidden"
             );
     }
-
-
-    await loadChannelPosts();
 }
 
+
+/* =========================================================
+   MARK CHANNEL AS READ
+========================================================= */
+
+async function markChannelAsRead(
+    channelId
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                "/channel-posts?channelId=" +
+                encodeURIComponent(
+                    channelId
+                )
+            );
+
+
+        if (!response.ok) {
+            return;
+        }
+
+
+        const posts =
+            await response.json();
+
+
+        readChannelCounts[channelId] =
+            posts.length;
+
+
+        saveReadChannelCounts();
+
+
+        renderChats();
+
+    } catch {}
+}
+
+
+/* =========================================================
+   CHANNEL POSTS
+========================================================= */
 
 async function loadChannelPosts() {
 
@@ -3626,6 +4422,26 @@ async function loadChannelPosts() {
                     "channel-post";
 
 
+                const author =
+                    post.authorUser ||
+                    {
+                        login:
+                            post.author,
+
+                        name:
+                            post.author,
+
+                        photo:
+                            ""
+                    };
+
+
+                const authorAvatar =
+                    author.photo
+                        ? `<img src="${escapeHTML(author.photo)}">`
+                        : "👤";
+
+
                 let mediaHTML = "";
 
 
@@ -3672,6 +4488,21 @@ async function loadChannelPosts() {
 
                 item.innerHTML =
                     `
+                    <div class="channel-post-author">
+
+                        <div class="avatar">
+                            ${authorAvatar}
+                        </div>
+
+                        <div class="channel-post-author-name">
+                            ${escapeHTML(
+                                author.name ||
+                                author.login
+                            )}
+                        </div>
+
+                    </div>
+
                     ${
                         post.text
                             ? `
@@ -3708,6 +4539,10 @@ async function loadChannelPosts() {
     } catch {}
 }
 
+
+/* =========================================================
+   PUBLISH CHANNEL POST
+========================================================= */
 
 async function publishChannelPost() {
 
@@ -3837,7 +4672,6 @@ async function publishChannelPost() {
         $("channelPostInput")
             .value = "";
 
-
         $("channelMediaInput")
             .value = "";
 
@@ -3845,6 +4679,11 @@ async function publishChannelPost() {
         await loadChannelPosts();
 
         await loadChannels();
+
+
+        await markChannelAsRead(
+            currentChannel.id
+        );
 
     } catch {
 
@@ -3917,12 +4756,28 @@ async function startCall(
     }
 
 
+    if (peerConnection) {
+
+        alert(
+            "Звонок уже идёт"
+        );
+
+        return;
+    }
+
+
     activeCallUser =
         currentChat;
 
 
     activeCallVideo =
         video;
+
+
+    const user =
+        await getUser(
+            activeCallUser
+        );
 
 
     try {
@@ -3939,6 +4794,10 @@ async function startCall(
                             ? true
                             : false
                 });
+
+
+        microphoneEnabled = true;
+        cameraEnabled = true;
 
 
         peerConnection =
@@ -3995,11 +4854,16 @@ async function startCall(
         });
 
 
-        showCallUI();
+        showCallUI(
+            user
+        );
+
 
     } catch (error) {
 
         console.error(error);
+
+        endCallUI();
 
         alert(
             "Не удалось начать звонок"
@@ -4050,6 +4914,71 @@ function createPeerConnection() {
                 $("remoteVideo")
                     .srcObject =
                     event.streams[0];
+
+
+                $("callStatus")
+                    .textContent =
+                    "Соединение установлено";
+
+
+                startCallTimer();
+            }
+        };
+
+
+    pc.onconnectionstatechange =
+        () => {
+
+            if (
+                !peerConnection
+            ) {
+                return;
+            }
+
+
+            const state =
+                peerConnection
+                    .connectionState;
+
+
+            if (
+                state ===
+                "connected"
+            ) {
+
+                $("callStatus")
+                    .textContent =
+                    "Соединение установлено";
+
+
+                startCallTimer();
+
+            } else if (
+                state ===
+                "connecting"
+            ) {
+
+                $("callStatus")
+                    .textContent =
+                    "Соединение...";
+
+            } else if (
+                state ===
+                "disconnected"
+            ) {
+
+                $("callStatus")
+                    .textContent =
+                    "Соединение прервано";
+
+            } else if (
+                state ===
+                "failed"
+            ) {
+
+                $("callStatus")
+                    .textContent =
+                    "Ошибка соединения";
             }
         };
 
@@ -4058,11 +4987,36 @@ function createPeerConnection() {
 }
 
 
-function showCallUI() {
+function showCallUI(
+    user = null
+) {
 
     $("callName")
         .textContent =
-        activeCallUser;
+        user
+            ? (
+                user.name ||
+                user.login
+            )
+            : activeCallUser;
+
+
+    const photo =
+        user
+            ? user.photo
+            : "";
+
+
+    $("callProfilePhoto")
+        .innerHTML =
+        photo
+            ? `<img src="${escapeHTML(photo)}">`
+            : "👤";
+
+
+    $("callStatus")
+        .textContent =
+        "Ожидание соединения...";
 
 
     $("callScreen")
@@ -4086,6 +5040,98 @@ function showCallUI() {
         activeCallVideo
             ? "block"
             : "none";
+
+
+    $("remoteVideo")
+        .style
+        .display =
+        activeCallVideo
+            ? "block"
+            : "none";
+
+
+    $("micButton")
+        .textContent =
+        "🎙️";
+
+
+    $("cameraButton")
+        .textContent =
+        activeCallVideo
+            ? "📷"
+            : "🚫";
+
+
+    callSeconds = 0;
+
+    updateCallTimerText();
+
+    if (callTimer) {
+
+        clearInterval(
+            callTimer
+        );
+
+        callTimer = null;
+    }
+}
+
+
+function startCallTimer() {
+
+    if (callTimer) {
+        return;
+    }
+
+
+    callTimer =
+        setInterval(
+            () => {
+
+                callSeconds++;
+
+                updateCallTimerText();
+
+            },
+            1000
+        );
+}
+
+
+function updateCallTimerText() {
+
+    const minutes =
+        Math.floor(
+            callSeconds / 60
+        )
+            .toString()
+            .padStart(
+                2,
+                "0"
+            );
+
+
+    const seconds =
+        (
+            callSeconds % 60
+        )
+            .toString()
+            .padStart(
+                2,
+                "0"
+            );
+
+
+    if (
+        callSeconds > 0
+    ) {
+
+        $("callStatus")
+            .textContent =
+            minutes +
+            ":" +
+            seconds;
+    }
 }
 
 
@@ -4121,6 +5167,10 @@ async function acceptIncomingCall() {
                     video:
                         activeCallVideo
                 });
+
+
+        microphoneEnabled = true;
+        cameraEnabled = true;
 
 
         peerConnection =
@@ -4175,7 +5225,15 @@ async function acceptIncomingCall() {
         });
 
 
-        showCallUI();
+        const user =
+            await getUser(
+                activeCallUser
+            );
+
+
+        showCallUI(
+            user
+        );
 
 
         incomingCall = null;
@@ -4183,6 +5241,8 @@ async function acceptIncomingCall() {
     } catch (error) {
 
         console.error(error);
+
+        endCallUI();
 
         alert(
             "Не удалось принять звонок"
@@ -4236,6 +5296,14 @@ async function handleAnswer(
                 )
             );
 
+
+        $("callStatus")
+            .textContent =
+            "Соединение установлено";
+
+
+        startCallTimer();
+
     } catch {}
 }
 
@@ -4285,6 +5353,11 @@ function toggleCamera() {
             .getVideoTracks();
 
 
+    if (!tracks.length) {
+        return;
+    }
+
+
     tracks.forEach(
         track => {
 
@@ -4329,6 +5402,16 @@ function hangupCall() {
 
 
 function endCallUI() {
+
+    if (callTimer) {
+
+        clearInterval(
+            callTimer
+        );
+
+        callTimer = null;
+    }
+
 
     if (
         localStream
@@ -4379,8 +5462,15 @@ function endCallUI() {
         );
 
 
+    $("callStatus")
+        .textContent =
+        "Соединение...";
+
+
     activeCallUser = "";
     incomingCall = null;
+
+    callSeconds = 0;
 }
 
 

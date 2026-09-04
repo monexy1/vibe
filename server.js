@@ -84,9 +84,7 @@ if (!fs.existsSync(channelPostsFile)) {
    JSON HELPERS
 ========================================================= */
 
-function readJSON(
-    file
-) {
+function readJSON(file) {
 
     try {
 
@@ -129,9 +127,7 @@ function readUsers() {
 }
 
 
-function saveUsers(
-    users
-) {
+function saveUsers(users) {
 
     saveJSON(
         usersFile,
@@ -148,9 +144,7 @@ function readMessages() {
 }
 
 
-function saveMessages(
-    messages
-) {
+function saveMessages(messages) {
 
     saveJSON(
         messagesFile,
@@ -167,9 +161,7 @@ function readChannels() {
 }
 
 
-function saveChannels(
-    channels
-) {
+function saveChannels(channels) {
 
     saveJSON(
         channelsFile,
@@ -186,9 +178,7 @@ function readChannelPosts() {
 }
 
 
-function saveChannelPosts(
-    posts
-) {
+function saveChannelPosts(posts) {
 
     saveJSON(
         channelPostsFile,
@@ -201,9 +191,7 @@ function saveChannelPosts(
    USERS
 ========================================================= */
 
-function normalizeUser(
-    user
-) {
+function normalizeUser(user) {
 
     if (
         !Array.isArray(
@@ -306,12 +294,30 @@ function publicUser(
 
 
 /* =========================================================
+   CHANNELS
+========================================================= */
+
+function normalizeChannel(channel) {
+
+    if (
+        !Array.isArray(
+            channel.subscribers
+        )
+    ) {
+
+        channel.subscribers = [];
+    }
+
+
+    return channel;
+}
+
+
+/* =========================================================
    HTTP HELPERS
 ========================================================= */
 
-function getBody(
-    req
-) {
+function getBody(req) {
 
     return new Promise(
         (
@@ -572,7 +578,7 @@ const server =
 
 
             /* =================================================
-               MAIN PAGES
+               MAIN PAGE
             ================================================= */
 
             if (
@@ -678,7 +684,7 @@ const server =
                     }
 
 
-                    users.push({
+                    const newUser = {
 
                         login,
 
@@ -697,13 +703,26 @@ const server =
                             messageStyle:
                                 "classic"
                         }
-                    });
+                    };
+
+
+                    users.push(
+                        newUser
+                    );
 
 
                     saveUsers(
                         users
                     );
 
+
+                    /*
+                        ВАЖНО:
+
+                        Теперь после регистрации
+                        сервер сразу отдаёт
+                        пользователя клиенту.
+                    */
 
                     sendJSON(
                         res,
@@ -712,7 +731,12 @@ const server =
                                 true,
 
                             message:
-                                "Аккаунт создан"
+                                "Аккаунт создан",
+
+                            user:
+                                publicUser(
+                                    newUser
+                                )
                         }
                     );
 
@@ -1138,6 +1162,12 @@ const server =
                         photo === "" ||
                         photo.startsWith(
                             "data:image/"
+                        ) ||
+                        photo.startsWith(
+                            "http://"
+                        ) ||
+                        photo.startsWith(
+                            "https://"
                         )
                     ) {
 
@@ -1524,12 +1554,6 @@ const server =
                     readMessages();
 
 
-                /*
-                    Находим всех пользователей,
-                    с которыми у текущего пользователя
-                    есть хотя бы одно сообщение.
-                */
-
                 const chatLogins =
                     new Set();
 
@@ -1598,12 +1622,6 @@ const server =
                                             )
                                     );
 
-
-                                /*
-                                    Именно количество сообщений,
-                                    которые собеседник отправил
-                                    текущему пользователю.
-                                */
 
                                 const messageCount =
                                     conversation.filter(
@@ -1819,11 +1837,6 @@ const server =
                     );
 
 
-                    /*
-                        Сразу уведомляем получателя,
-                        если он онлайн.
-                    */
-
                     sendToUser(
                         to,
                         {
@@ -1932,6 +1945,12 @@ const server =
                 pathname === "/channels"
             ) {
 
+                const login =
+                    url.searchParams.get(
+                        "login"
+                    ) || "";
+
+
                 const channels =
                     readChannels();
 
@@ -1940,27 +1959,59 @@ const server =
                     readChannelPosts();
 
 
+                const users =
+                    readUsers();
+
+
+                channels.forEach(
+                    normalizeChannel
+                );
+
+
                 const result =
                     channels.map(
                         channel => {
 
-                            const postCount =
+                            const channelPosts =
                                 posts.filter(
                                     post =>
                                         post.channelId ===
                                         channel.id
-                                ).length;
+                                );
+
+
+                            const lastPost =
+                                channelPosts[
+                                    channelPosts.length - 1
+                                ];
 
 
                             return {
 
                                 ...channel,
 
-                                postCount
+                                subscribed:
+                                    channel.subscribers
+                                        .includes(
+                                            login
+                                        ),
+
+                                postCount:
+                                    channelPosts.length,
+
+                                lastTime:
+                                    lastPost
+                                        ? lastPost.time
+                                        : channel.createdAt
 
                             };
                         }
                     );
+
+
+                saveChannels(
+                    channels
+                );
 
 
                 sendJSON(
@@ -2095,6 +2146,9 @@ const server =
 
                         owner,
 
+                        subscribers:
+                            [owner],
+
                         createdAt:
                             new Date()
                                 .toISOString()
@@ -2148,6 +2202,231 @@ const server =
 
 
             /* =================================================
+               CHANNEL SUBSCRIPTION
+            ================================================= */
+
+            if (
+                req.method === "POST" &&
+                pathname === "/channel-subscription"
+            ) {
+
+                try {
+
+                    const body =
+                        await getBody(
+                            req
+                        );
+
+
+                    const channelId =
+                        String(
+                            body.channelId ||
+                            ""
+                        )
+                            .trim();
+
+
+                    const login =
+                        String(
+                            body.login ||
+                            ""
+                        )
+                            .trim();
+
+
+                    const action =
+                        String(
+                            body.action ||
+                            ""
+                        )
+                            .trim();
+
+
+                    const users =
+                        readUsers();
+
+
+                    const userExists =
+                        users.some(
+                            user =>
+                                user.login ===
+                                login
+                        );
+
+
+                    if (!userExists) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Пользователь не найден"
+                            },
+                            404
+                        );
+
+                        return;
+                    }
+
+
+                    const channels =
+                        readChannels();
+
+
+                    const channel =
+                        channels.find(
+                            item =>
+                                item.id ===
+                                channelId
+                        );
+
+
+                    if (!channel) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Канал не найден"
+                            },
+                            404
+                        );
+
+                        return;
+                    }
+
+
+                    normalizeChannel(
+                        channel
+                    );
+
+
+                    if (
+                        action ===
+                        "subscribe"
+                    ) {
+
+                        if (
+                            !channel.subscribers
+                                .includes(
+                                    login
+                                )
+                        ) {
+
+                            channel.subscribers
+                                .push(
+                                    login
+                                );
+                        }
+
+                    } else if (
+                        action ===
+                        "unsubscribe"
+                    ) {
+
+                        /*
+                            Создатель канала
+                            не может отписаться
+                            от собственного канала.
+                        */
+
+                        if (
+                            channel.owner ===
+                            login
+                        ) {
+
+                            sendJSON(
+                                res,
+                                {
+                                    success:
+                                        false,
+
+                                    message:
+                                        "Создатель не может отписаться от своего канала"
+                                }
+                            );
+
+                            return;
+                        }
+
+
+                        channel.subscribers =
+                            channel.subscribers.filter(
+                                item =>
+                                    item !==
+                                    login
+                            );
+
+                    } else {
+
+                        sendJSON(
+                            res,
+                            {
+                                success:
+                                    false,
+
+                                message:
+                                    "Неизвестное действие"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    saveChannels(
+                        channels
+                    );
+
+
+                    sendJSON(
+                        res,
+                        {
+                            success:
+                                true,
+
+                            subscribed:
+                                channel.subscribers
+                                    .includes(
+                                        login
+                                    )
+                        }
+                    );
+
+
+                } catch (error) {
+
+                    console.error(
+                        error
+                    );
+
+
+                    sendJSON(
+                        res,
+                        {
+                            success:
+                                false,
+
+                            message:
+                                "Ошибка подписки"
+                        },
+                        500
+                    );
+                }
+
+
+                return;
+            }
+
+
+            /* =================================================
                CHANNEL POSTS GET
             ================================================= */
 
@@ -2166,12 +2445,54 @@ const server =
                     readChannelPosts();
 
 
+                const users =
+                    readUsers();
+
+
                 const result =
-                    posts.filter(
-                        post =>
-                            post.channelId ===
-                            channelId
-                    );
+                    posts
+                        .filter(
+                            post =>
+                                post.channelId ===
+                                channelId
+                        )
+                        .map(
+                            post => {
+
+                                const author =
+                                    users.find(
+                                        user =>
+                                            user.login ===
+                                            post.author
+                                    );
+
+
+                                return {
+
+                                    ...post,
+
+                                    authorUser:
+                                        author
+                                            ? publicUser(
+                                                author
+                                            )
+                                            : {
+                                                login:
+                                                    post.author,
+
+                                                name:
+                                                    post.author,
+
+                                                about:
+                                                    "",
+
+                                                photo:
+                                                    ""
+                                            }
+
+                                };
+                            }
+                        );
 
 
                 sendJSON(
@@ -2289,6 +2610,11 @@ const server =
                     }
 
 
+                    normalizeChannel(
+                        channel
+                    );
+
+
                     if (
                         channel.owner !==
                         author
@@ -2364,6 +2690,30 @@ const server =
                     saveChannelPosts(
                         posts
                     );
+
+
+                    /*
+                        Уведомляем всех подписчиков,
+                        которые сейчас онлайн.
+                    */
+
+                    channel.subscribers
+                        .forEach(
+                            subscriber => {
+
+                                sendToUser(
+                                    subscriber,
+                                    {
+                                        type:
+                                            "new-channel-post",
+
+                                        channelId,
+
+                                        post
+                                    }
+                                );
+                            }
+                        );
 
 
                     sendJSON(
