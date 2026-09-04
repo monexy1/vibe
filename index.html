@@ -411,11 +411,16 @@ button {
     cursor: not-allowed;
 }
 
+.mobile-back {
+    display: none;
+}
+
 .messages {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding: 16px;
+    overscroll-behavior: contain;
 }
 
 .bubble {
@@ -465,6 +470,7 @@ button {
     padding: 9px;
     background: var(--panel);
     border-top: 1px solid var(--border);
+    flex-shrink: 0;
 }
 
 .composer input {
@@ -628,9 +634,7 @@ button {
     margin-top: 10px;
 }
 
-/* =========================
-   CALL WINDOW
-========================= */
+/* CALL */
 
 .call-modal {
     display: none;
@@ -835,14 +839,16 @@ button {
     display: none !important;
 }
 
-/* =========================
-   MOBILE
-========================= */
+
+/* =========================================================
+   MOBILE VERSION
+========================================================= */
 
 @media (max-width: 750px) {
 
     html,
     body {
+        width: 100%;
         height: 100%;
         height: 100dvh;
     }
@@ -852,6 +858,7 @@ button {
     }
 
     .auth {
+        width: calc(100% - 20px);
         margin: 25px auto;
         padding: 25px 18px;
     }
@@ -860,132 +867,221 @@ button {
         font-size: 36px;
     }
 
-    .layout {
-        display: grid;
-        grid-template-columns: 1fr;
-        grid-template-rows: 170px minmax(0, 1fr);
-        height: 100dvh;
-    }
-
-    .sidebar {
+    .app {
         width: 100%;
-        height: 170px;
-        min-height: 0;
-        padding: 8px 10px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
+        height: 100dvh;
         overflow: hidden;
     }
 
-    .side-top {
-        min-height: 36px;
+    /*
+       ВАЖНО:
+       На телефоне сначала показываем только список чатов.
+       Сам чат открывается после нажатия на человека.
+    */
+
+    .layout {
+        display: block;
+        position: relative;
+        width: 100%;
+        height: 100dvh;
+        overflow: hidden;
     }
 
-    .brand-logo,
-    .icon-btn {
-        width: 34px;
-        height: 34px;
-        min-width: 34px;
-        border-radius: 10px;
-    }
-
-    .brand h2 {
-        font-size: 17px;
-    }
-
-    .account {
-        max-width: 140px;
-        font-size: 10px;
-    }
-
-    .search {
-        margin-top: 7px;
-    }
-
-    .search input {
-        height: 36px;
-        padding: 8px 10px;
-        font-size: 13px;
-    }
-
-    .results {
-        max-height: 50px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        display: flex;
-        gap: 5px;
-    }
-
-    .results .person {
-        flex: 0 0 160px;
-        margin: 3px 0;
-    }
-
-    .section {
-        margin: 3px 3px;
-        font-size: 9px;
-    }
-
-    .friends {
-        flex: 0 0 42px;
-        display: flex;
-        gap: 6px;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scrollbar-width: thin;
-    }
-
-    .friends .person {
-        flex: 0 0 auto;
-        min-width: 135px;
-        height: 40px;
-        margin: 0;
-        padding: 4px 7px;
-    }
-
-    .friends .avatar {
-        width: 29px;
-        height: 29px;
-        min-width: 29px;
-    }
-
-    .friends .name {
-        font-size: 11px;
-    }
-
-    .friends .login {
-        font-size: 9px;
-    }
-
-    .side-bottom {
-        padding-top: 3px;
-        margin-top: 3px;
-        border-top: none;
-    }
-
-    .logout {
-        height: 28px;
-        padding: 3px 8px;
-        font-size: 10px;
+    .sidebar {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        padding: 10px;
+        border: none;
+        overflow: hidden;
+        z-index: 2;
+        background: var(--panel);
     }
 
     .chat {
+        position: absolute;
+        inset: 0;
         width: 100%;
-        height: auto;
+        height: 100%;
         min-height: 0;
+        z-index: 3;
+        transform: translateX(100%);
+        transition: transform .2s ease;
+        background: var(--bg);
     }
 
-    .chat-head {
-        min-height: 58px;
-        height: 58px;
-        padding: 7px 8px;
+    /*
+       Когда открыт чат — он полностью закрывает список.
+    */
+
+    .layout.mobile-chat-open .chat {
+        transform: translateX(0);
+    }
+
+    .layout.mobile-chat-open .sidebar {
+        visibility: hidden;
+    }
+
+    .side-top {
+        min-height: 48px;
+    }
+
+    .brand-logo {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 12px;
+    }
+
+    .brand h2 {
+        font-size: 18px;
+    }
+
+    .account {
+        max-width: 170px;
+        font-size: 10px;
+    }
+
+    .icon-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+    }
+
+    .search {
+        margin-top: 10px;
+    }
+
+    .search input {
+        width: 100%;
+        height: 44px;
+        padding: 9px 12px;
+        font-size: 16px;
+    }
+
+    /*
+       Результаты поиска идут вертикально,
+       чтобы на телефоне человек был хорошо виден.
+    */
+
+    .results {
+        width: 100%;
+        max-height: 180px;
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: block;
+    }
+
+    .results .person {
+        width: 100%;
+        min-height: 50px;
+        margin: 4px 0;
+        padding: 6px 8px;
+    }
+
+    .results .avatar {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+
+    .section {
+        margin: 16px 4px 7px;
+        font-size: 10px;
+    }
+
+    /*
+       Главный список чатов.
+    */
+
+    .friends {
+        width: 100%;
+        height: auto;
+        flex: 1;
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: block;
+        padding-bottom: 5px;
+    }
+
+    .friends .person {
+        width: 100%;
+        min-width: 0;
+        height: 60px;
+        margin: 3px 0;
+        padding: 8px;
+        border-radius: 14px;
+    }
+
+    .friends .avatar {
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        border-radius: 13px;
+    }
+
+    .friends .name {
+        font-size: 14px;
+    }
+
+    .friends .login {
+        font-size: 10px;
+        margin-top: 2px;
+    }
+
+    .side-bottom {
         flex-shrink: 0;
+        padding-top: 8px;
+        margin-top: 6px;
+    }
+
+    .logout {
+        height: 42px;
+        padding: 7px;
+        font-size: 12px;
+    }
+
+    /*
+       HEADER ЧАТА
+    */
+
+    .chat-head {
+        width: 100%;
+        min-height: 60px;
+        height: 60px;
+        flex-shrink: 0;
+        padding:
+            7px
+            8px
+            7px
+            6px;
+        gap: 7px;
+    }
+
+    .mobile-back {
+        display: grid;
+        place-items: center;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        border-radius: 11px;
+        background: var(--panel2);
+        color: var(--text);
+        font-size: 20px;
+    }
+
+    .chat-user {
+        min-width: 0;
+        gap: 8px;
     }
 
     .chat-head .avatar {
         width: 36px;
         height: 36px;
         min-width: 36px;
+        border-radius: 11px;
     }
 
     .chat-head .name {
@@ -997,78 +1093,104 @@ button {
     }
 
     .call-buttons {
-        gap: 5px;
+        gap: 4px;
+        margin-left: auto;
+        flex-shrink: 0;
     }
 
     .call-btn {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
         border-radius: 10px;
-        font-size: 17px;
+        font-size: 16px;
     }
 
+    /*
+       СООБЩЕНИЯ
+    */
+
     .messages {
-        width: 100%;
+        flex: 1;
         min-height: 0;
+        width: 100%;
         overflow-x: hidden;
         overflow-y: auto;
-        padding: 8px;
+        padding: 9px;
+        -webkit-overflow-scrolling: touch;
     }
 
     .bubble {
         max-width: 88%;
         font-size: 14px;
         padding: 9px 11px;
+        margin: 6px 0;
     }
+
+    .time {
+        font-size: 9px;
+    }
+
+    /*
+       ПОЛЕ СООБЩЕНИЯ
+    */
 
     .composer {
         width: 100%;
-        min-height: 52px;
-        padding: 6px;
+        min-height: 56px;
+        padding:
+            6px
+            6px
+            max(6px, env(safe-area-inset-bottom));
+        gap: 5px;
         flex-shrink: 0;
     }
 
     .composer input {
-        width: auto;
         min-width: 0;
-        height: 40px;
-        font-size: 13px;
+        width: auto;
+        height: 42px;
         padding: 9px 10px;
+        font-size: 16px;
     }
 
     .emoji-btn {
         width: 40px;
         min-width: 40px;
-        height: 40px;
+        height: 42px;
     }
 
     .send {
-        width: 74px;
-        min-width: 74px;
-        height: 40px;
+        width: 72px;
+        min-width: 72px;
+        height: 42px;
         padding: 4px;
         font-size: 10px;
     }
 
     .emoji-panel {
         left: 6px;
-        bottom: 58px;
-        width: 230px;
+        bottom: 62px;
+        width: 235px;
         max-width: calc(100vw - 12px);
-        max-height: 210px;
+        max-height: 220px;
         overflow-y: auto;
-        overflow-x: hidden;
     }
 
     .emoji-panel button {
-        width: 100%;
-        min-width: 0;
         height: 34px;
         padding: 0;
     }
 
+    /*
+       PROFILE
+    */
+
     .modal {
-        padding: 10px;
+        padding:
+            max(10px, env(safe-area-inset-top))
+            10px
+            max(10px, env(safe-area-inset-bottom));
     }
 
     .profile {
@@ -1079,7 +1201,15 @@ button {
         border-radius: 18px;
     }
 
-    /* CALL MOBILE */
+    .profile input,
+    .profile textarea,
+    .profile select {
+        font-size: 16px;
+    }
+
+    /*
+       CALL MOBILE
+    */
 
     .call-modal {
         padding: 0;
@@ -1094,70 +1224,111 @@ button {
     }
 
     .call-top {
-        height: 58px;
-        padding: 8px 12px;
+        height: 60px;
+        padding:
+            8px
+            12px;
+        flex-shrink: 0;
     }
 
     .call-person .avatar {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+    }
+
+    .video-area {
+        min-height: 0;
+    }
+
+    #remoteVideo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
 
     #localVideo {
         right: 10px;
         top: 10px;
-        width: 115px;
-        height: 155px;
+        width: 110px;
+        height: 145px;
         border-radius: 13px;
     }
 
+    .audio-avatar {
+        width: 105px;
+        height: 105px;
+        font-size: 42px;
+    }
+
     .call-controls {
-        min-height: 76px;
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        min-height: 82px;
+        padding:
+            10px
+            12px
+            max(12px, env(safe-area-inset-bottom));
+        gap: 12px;
+        flex-shrink: 0;
     }
 
     .control-btn {
-        width: 46px;
-        height: 46px;
+        width: 48px;
+        height: 48px;
     }
 
     .incoming-content {
         width: calc(100% - 28px);
+        max-width: 380px;
         padding: 25px 18px;
     }
 }
 
 @media (max-width: 420px) {
 
-    .layout {
-        grid-template-rows: 155px minmax(0, 1fr);
+    .sidebar {
+        padding: 8px;
     }
 
-    .sidebar {
-        height: 155px;
-        padding: 7px 8px;
+    .brand-logo {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+    }
+
+    .brand h2 {
+        font-size: 17px;
     }
 
     .account {
-        max-width: 105px;
+        max-width: 120px;
     }
 
-    .results .person {
-        flex-basis: 150px;
-    }
-
-    .friends {
-        flex-basis: 39px;
+    .icon-btn {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
     }
 
     .friends .person {
-        min-width: 128px;
+        height: 58px;
+    }
+
+    .friends .avatar {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
     }
 
     .chat-head {
-        min-height: 52px;
-        height: 52px;
+        height: 56px;
+        min-height: 56px;
+    }
+
+    .mobile-back {
+        width: 35px;
+        height: 35px;
+        min-width: 35px;
+        font-size: 18px;
     }
 
     .chat-head .avatar {
@@ -1167,18 +1338,15 @@ button {
     }
 
     .call-btn {
-        width: 35px;
-        height: 35px;
+        width: 34px;
+        height: 34px;
+        min-width: 34px;
         font-size: 15px;
     }
 
-    .composer {
-        min-height: 50px;
-    }
-
     .send {
-        width: 65px;
-        min-width: 65px;
+        width: 66px;
+        min-width: 66px;
         font-size: 9px;
     }
 }
@@ -1189,9 +1357,7 @@ button {
 
 <body>
 
-<!-- =========================
-     AUTH
-========================= -->
+<!-- AUTH -->
 
 <div class="auth" id="auth">
 
@@ -1199,9 +1365,7 @@ button {
         V
     </div>
 
-    <h1>
-        Vibe
-    </h1>
+    <h1>Vibe</h1>
 
     <p>
         Твой новый мессенджер
@@ -1235,13 +1399,11 @@ button {
 </div>
 
 
-<!-- =========================
-     APP
-========================= -->
+<!-- APP -->
 
 <div class="app" id="app">
 
-    <div class="layout">
+    <div class="layout" id="layout">
 
         <aside class="sidebar">
 
@@ -1325,6 +1487,15 @@ button {
         <main class="chat">
 
             <div class="chat-head">
+
+                <button
+                    class="mobile-back"
+                    id="mobileBack"
+                    onclick="closeMobileChat()"
+                    aria-label="Назад"
+                >
+                    ←
+                </button>
 
                 <div class="chat-user">
 
@@ -1436,9 +1607,7 @@ button {
 </div>
 
 
-<!-- =========================
-     PROFILE
-========================= -->
+<!-- PROFILE -->
 
 <div
     class="modal"
@@ -1531,9 +1700,7 @@ button {
             Тема
         </label>
 
-        <select
-            id="themeSelect"
-        >
+        <select id="themeSelect">
 
             <option value="dark">
                 🌙 Ночная
@@ -1558,9 +1725,7 @@ button {
             Стиль сообщений
         </label>
 
-        <select
-            id="styleSelect"
-        >
+        <select id="styleSelect">
 
             <option value="classic">
                 Классический
@@ -1589,9 +1754,7 @@ button {
 </div>
 
 
-<!-- =========================
-     CALL
-========================= -->
+<!-- CALL -->
 
 <div
     class="call-modal"
@@ -1702,9 +1865,7 @@ button {
 </div>
 
 
-<!-- =========================
-     INCOMING CALL
-========================= -->
+<!-- INCOMING CALL -->
 
 <div
     class="call-modal"
@@ -1720,9 +1881,7 @@ button {
             V
         </div>
 
-        <h2
-            id="incomingTitle"
-        >
+        <h2 id="incomingTitle">
             Входящий звонок
         </h2>
 
@@ -1759,30 +1918,10 @@ button {
 <script>
 
 const emojis = [
-    "😀",
-    "😂",
-    "😍",
-    "😎",
-    "😭",
-    "😡",
-    "❤️",
-    "🔥",
-    "👍",
-    "👎",
-    "🎉",
-    "💀",
-    "😢",
-    "😆",
-    "🤩",
-    "🥳",
-    "😮",
-    "🤔",
-    "🙌",
-    "💯",
-    "✨",
-    "🚀",
-    "😴",
-    "🤝"
+    "😀","😂","😍","😎","😭","😡",
+    "❤️","🔥","👍","👎","🎉","💀",
+    "😢","😆","🤩","🥳","😮","🤔",
+    "🙌","💯","✨","🚀","😴","🤝"
 ];
 
 let currentUser = "";
@@ -1790,11 +1929,6 @@ let currentChat = "";
 let friends = [];
 let currentPhoto = "";
 let timer = null;
-
-
-/* =========================
-   WEB SOCKET / CALL STATE
-========================= */
 
 let socket = null;
 
@@ -1826,7 +1960,6 @@ function $(id) {
     return document.getElementById(id);
 }
 
-
 function escapeHTML(value) {
     return String(value)
         .replaceAll("&", "&amp;")
@@ -1836,17 +1969,67 @@ function escapeHTML(value) {
         .replaceAll("'", "&#039;");
 }
 
-
 function initial(value) {
 
     const text =
-        String(value || "V")
-            .trim();
+        String(value || "V").trim();
 
     return text[0]
         ? text[0].toUpperCase()
         : "V";
 }
+
+
+/* =========================
+   MOBILE CHAT NAVIGATION
+========================= */
+
+function isMobile() {
+    return window.innerWidth <= 750;
+}
+
+function openMobileChat() {
+
+    if (!isMobile()) {
+        return;
+    }
+
+    $("layout")
+        .classList.add(
+            "mobile-chat-open"
+        );
+}
+
+function closeMobileChat() {
+
+    if (!isMobile()) {
+        return;
+    }
+
+    $("layout")
+        .classList.remove(
+            "mobile-chat-open"
+        );
+
+    $("emojiPanel")
+        .classList.remove(
+            "show"
+        );
+}
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        if (!isMobile()) {
+
+            $("layout")
+                .classList.remove(
+                    "mobile-chat-open"
+                );
+        }
+    }
+);
 
 
 /* =========================
@@ -1862,10 +2045,7 @@ function setTheme(theme) {
     );
 
     if (theme !== "dark") {
-
-        document.body.classList.add(
-            theme
-        );
+        document.body.classList.add(theme);
     }
 
     localStorage.setItem(
@@ -1873,7 +2053,6 @@ function setTheme(theme) {
         theme
     );
 }
-
 
 function getTheme() {
 
@@ -1892,14 +2071,10 @@ function getTheme() {
 async function loginAccount() {
 
     const login =
-        $("login")
-            .value
-            .trim();
+        $("login").value.trim();
 
     const password =
-        $("password")
-            .value
-            .trim();
+        $("password").value.trim();
 
     if (!login || !password) {
 
@@ -1917,12 +2092,10 @@ async function loginAccount() {
                 "/login",
                 {
                     method: "POST",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
                     body:
                         JSON.stringify({
                             login,
@@ -1936,15 +2109,11 @@ async function loginAccount() {
 
         if (!data.success) {
 
-            alert(
-                data.message
-            );
-
+            alert(data.message);
             return;
         }
 
-        currentUser =
-            login;
+        currentUser = login;
 
         localStorage.setItem(
             "vibeUser",
@@ -1968,18 +2137,13 @@ async function loginAccount() {
 
 function showApp() {
 
-    $("auth").style.display =
-        "none";
-
-    $("app").style.display =
-        "block";
+    $("auth").style.display = "none";
+    $("app").style.display = "block";
 
     $("account").textContent =
         "@" + currentUser;
 
-    setTheme(
-        getTheme()
-    );
+    setTheme(getTheme());
 
     renderEmoji();
 
@@ -2042,7 +2206,6 @@ function connectSocket() {
             );
         };
 
-
         socket.onmessage = event => {
 
             try {
@@ -2052,9 +2215,7 @@ function connectSocket() {
                         event.data
                     );
 
-                handleSocketMessage(
-                    data
-                );
+                handleSocketMessage(data);
 
             } catch (error) {
 
@@ -2064,7 +2225,6 @@ function connectSocket() {
                 );
             }
         };
-
 
         socket.onclose = () => {
 
@@ -2083,7 +2243,6 @@ function connectSocket() {
             }
         };
 
-
         socket.onerror = error => {
 
             console.log(
@@ -2100,7 +2259,6 @@ function connectSocket() {
         );
     }
 }
-
 
 function sendSocket(data) {
 
@@ -2135,7 +2293,6 @@ async function handleSocketMessage(data) {
         return;
     }
 
-
     if (data.type === "incoming-call") {
 
         if (
@@ -2164,7 +2321,6 @@ async function handleSocketMessage(data) {
         return;
     }
 
-
     if (data.type === "call-accepted") {
 
         if (!peerConnection) {
@@ -2177,7 +2333,6 @@ async function handleSocketMessage(data) {
         return;
     }
 
-
     if (data.type === "call-rejected") {
 
         alert(
@@ -2189,16 +2344,11 @@ async function handleSocketMessage(data) {
         return;
     }
 
-
     if (data.type === "offer") {
 
-        await handleOffer(
-            data
-        );
-
+        await handleOffer(data);
         return;
     }
-
 
     if (data.type === "answer") {
 
@@ -2228,7 +2378,6 @@ async function handleSocketMessage(data) {
         return;
     }
 
-
     if (data.type === "ice-candidate") {
 
         if (
@@ -2255,7 +2404,6 @@ async function handleSocketMessage(data) {
 
         return;
     }
-
 
     if (data.type === "hangup") {
 
@@ -2295,11 +2443,9 @@ async function loadFriends() {
     }
 }
 
-
 function renderFriends() {
 
-    const box =
-        $("friends");
+    const box = $("friends");
 
     box.innerHTML = "";
 
@@ -2322,62 +2468,53 @@ function renderFriends() {
         return;
     }
 
+    friends.forEach(user => {
 
-    friends.forEach(
-        user => {
+        const div =
+            document.createElement(
+                "div"
+            );
 
-            const div =
-                document.createElement(
-                    "div"
-                );
+        div.className =
+            "person clickable";
 
-            div.className =
-                "person clickable";
+        if (
+            user.login ===
+            currentChat
+        ) {
 
-            if (
-                user.login ===
-                currentChat
-            ) {
-
-                div.classList.add(
-                    "active"
-                );
-            }
-
-
-            div.innerHTML =
-                avatarHTML(user) +
-                `
-                <div class="info">
-
-                    <div class="name">
-                        ${escapeHTML(
-                            user.name ||
-                            user.login
-                        )}
-                    </div>
-
-                    <div class="login">
-                        @${escapeHTML(
-                            user.login
-                        )}
-                    </div>
-
-                </div>
-                `;
-
-
-            div.onclick =
-                () =>
-                    openChat(user);
-
-            box.appendChild(
-                div
+            div.classList.add(
+                "active"
             );
         }
-    );
-}
 
+        div.innerHTML =
+            avatarHTML(user) +
+            `
+            <div class="info">
+
+                <div class="name">
+                    ${escapeHTML(
+                        user.name ||
+                        user.login
+                    )}
+                </div>
+
+                <div class="login">
+                    @${escapeHTML(
+                        user.login
+                    )}
+                </div>
+
+            </div>
+            `;
+
+        div.onclick =
+            () => openChat(user);
+
+        box.appendChild(div);
+    });
+}
 
 function avatarHTML(user) {
 
@@ -2458,105 +2595,88 @@ async function searchUsers() {
             return;
         }
 
+        list.forEach(user => {
 
-        list.forEach(
-            user => {
+            const div =
+                document.createElement(
+                    "div"
+                );
 
-                const div =
-                    document.createElement(
-                        "div"
-                    );
+            div.className =
+                "person";
 
-                div.className =
-                    "person";
+            div.innerHTML =
+                avatarHTML(user) +
+                `
+                <div class="info">
 
-                const safeLogin =
-                    escapeHTML(
-                        user.login
-                    );
-
-
-                div.innerHTML =
-                    avatarHTML(user) +
-                    `
-                    <div class="info">
-
-                        <div class="name">
-                            ${escapeHTML(
-                                user.name ||
-                                user.login
-                            )}
-                        </div>
-
-                        <div class="login">
-                            @${safeLogin}
-                        </div>
-
+                    <div class="name">
+                        ${escapeHTML(
+                            user.name ||
+                            user.login
+                        )}
                     </div>
-                    `;
 
+                    <div class="login">
+                        @${escapeHTML(
+                            user.login
+                        )}
+                    </div>
 
-                const button =
-                    document.createElement(
-                        "button"
-                    );
+                </div>
+                `;
 
-                button.className =
-                    "friend-action";
-
-
-                if (user.isFriend) {
-
-                    button.classList.add(
-                        "remove"
-                    );
-
-                    button.textContent =
-                        "Убрать";
-
-                    button.onclick =
-                        event => {
-
-                            event.stopPropagation();
-
-                            removeFriend(
-                                user.login
-                            );
-                        };
-
-                } else {
-
-                    button.textContent =
-                        "+";
-
-                    button.onclick =
-                        event => {
-
-                            event.stopPropagation();
-
-                            addFriend(
-                                user.login
-                            );
-                        };
-                }
-
-
-                div.appendChild(
-                    button
+            const button =
+                document.createElement(
+                    "button"
                 );
 
+            button.className =
+                "friend-action";
 
-                div.onclick =
-                    () =>
-                        openChat(
-                            user
+            if (user.isFriend) {
+
+                button.classList.add(
+                    "remove"
+                );
+
+                button.textContent =
+                    "Убрать";
+
+                button.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        removeFriend(
+                            user.login
                         );
+                    };
 
-                box.appendChild(
-                    div
-                );
+            } else {
+
+                button.textContent =
+                    "+";
+
+                button.onclick =
+                    event => {
+
+                        event.stopPropagation();
+
+                        addFriend(
+                            user.login
+                        );
+                    };
             }
-        );
+
+            div.appendChild(button);
+
+            div.onclick =
+                () =>
+                    openChat(user);
+
+            box.appendChild(div);
+        });
 
     } catch {
 
@@ -2588,7 +2708,6 @@ async function addFriend(login) {
     );
 }
 
-
 async function removeFriend(login) {
 
     await friendAction(
@@ -2596,7 +2715,6 @@ async function removeFriend(login) {
         "remove"
     );
 }
-
 
 async function friendAction(
     login,
@@ -2633,10 +2751,7 @@ async function friendAction(
 
         if (!data.success) {
 
-            alert(
-                data.message
-            );
-
+            alert(data.message);
             return;
         }
 
@@ -2671,7 +2786,6 @@ function openChat(user) {
             "@" +
             user.login;
 
-
     $("chatAvatar")
         .outerHTML =
             user.photo
@@ -2695,36 +2809,43 @@ function openChat(user) {
                     </div>
                   `;
 
-
     $("audioCallButton").disabled =
         false;
 
     $("videoCallButton").disabled =
         false;
 
-
     renderFriends();
 
-    loadMessages();
+    /*
+       На телефоне открываем чат
+       на весь экран.
+    */
 
+    openMobileChat();
+
+    loadMessages(true);
 
     if (timer) {
 
-        clearInterval(
-            timer
-        );
+        clearInterval(timer);
     }
-
 
     timer =
         setInterval(
-            loadMessages,
+            () => loadMessages(false),
             1500
         );
 }
 
 
-async function loadMessages() {
+/*
+   ВАЖНО:
+   initialLoad = true — прокрутить вниз при открытии чата.
+   При обычном обновлении не мешаем человеку читать старые сообщения.
+*/
+
+async function loadMessages(initialLoad = false) {
 
     if (!currentChat) {
         return;
@@ -2750,8 +2871,26 @@ async function loadMessages() {
         const box =
             $("messages");
 
-        box.innerHTML = "";
+        /*
+           Запоминаем положение прокрутки.
+        */
 
+        const oldScrollTop =
+            box.scrollTop;
+
+        const oldScrollHeight =
+            box.scrollHeight;
+
+        const oldClientHeight =
+            box.clientHeight;
+
+        const wasNearBottom =
+            oldScrollHeight -
+            oldScrollTop -
+            oldClientHeight <
+            120;
+
+        box.innerHTML = "";
 
         if (!list.length) {
 
@@ -2765,72 +2904,90 @@ async function loadMessages() {
             return;
         }
 
-
         const style =
             localStorage.getItem(
                 "vibeStyle"
             ) || "classic";
 
+        list.forEach(message => {
 
-        list.forEach(
-            message => {
+            const div =
+                document.createElement(
+                    "div"
+                );
 
-                const div =
-                    document.createElement(
-                        "div"
-                    );
+            div.className =
+                "bubble " +
+                style;
 
-                div.className =
-                    "bubble " +
-                    style;
+            if (
+                message.from ===
+                currentUser
+            ) {
 
-
-                if (
-                    message.from ===
-                    currentUser
-                ) {
-
-                    div.classList.add(
-                        "mine"
-                    );
-                }
-
-
-                const time =
-                    new Date(
-                        message.time
-                    )
-                        .toLocaleTimeString(
-                            [],
-                            {
-                                hour:
-                                    "2-digit",
-                                minute:
-                                    "2-digit"
-                            }
-                        );
-
-
-                div.innerHTML =
-                    escapeHTML(
-                        message.text
-                    ) +
-                    `
-                    <div class="time">
-                        ${time}
-                    </div>
-                    `;
-
-
-                box.appendChild(
-                    div
+                div.classList.add(
+                    "mine"
                 );
             }
-        );
 
+            const time =
+                new Date(
+                    message.time
+                )
+                    .toLocaleTimeString(
+                        [],
+                        {
+                            hour:
+                                "2-digit",
+                            minute:
+                                "2-digit"
+                        }
+                    );
 
-        box.scrollTop =
-            box.scrollHeight;
+            div.innerHTML =
+                escapeHTML(
+                    message.text
+                ) +
+                `
+                <div class="time">
+                    ${time}
+                </div>
+                `;
+
+            box.appendChild(div);
+        });
+
+        /*
+           При первом открытии:
+           сразу показываем самые новые сообщения.
+
+           Если пользователь находится внизу:
+           тоже остаёмся внизу после нового сообщения.
+
+           Если пользователь читает старые:
+           НЕ двигаем его.
+        */
+
+        if (
+            initialLoad ||
+            wasNearBottom
+        ) {
+
+            box.scrollTop =
+                box.scrollHeight;
+
+        } else {
+
+            const newScrollHeight =
+                box.scrollHeight;
+
+            box.scrollTop =
+                oldScrollTop +
+                (
+                    newScrollHeight -
+                    oldScrollHeight
+                );
+        }
 
     } catch {
 
@@ -2856,18 +3013,15 @@ async function sendMessage() {
         return;
     }
 
-
     const input =
         $("messageInput");
 
     const text =
         input.value.trim();
 
-
     if (!text) {
         return;
     }
-
 
     try {
 
@@ -2894,24 +3048,18 @@ async function sendMessage() {
                 }
             );
 
-
         const data =
             await response.json();
 
-
         if (!data.success) {
 
-            alert(
-                data.message
-            );
-
+            alert(data.message);
             return;
         }
 
-
         input.value = "";
 
-        loadMessages();
+        loadMessages(false);
 
     } catch {
 
@@ -2920,7 +3068,6 @@ async function sendMessage() {
         );
     }
 }
-
 
 function handleEnter(event) {
 
@@ -2959,7 +3106,6 @@ function renderEmoji() {
                 .join("");
 }
 
-
 function toggleEmoji() {
 
     $("emojiPanel")
@@ -2967,7 +3113,6 @@ function toggleEmoji() {
             "show"
         );
 }
-
 
 function addEmoji(emoji) {
 
@@ -3003,57 +3148,44 @@ async function openProfile() {
         const data =
             await response.json();
 
-
         if (!data.success) {
 
-            alert(
-                data.message
-            );
-
+            alert(data.message);
             return;
         }
 
-
         const user =
             data.user;
-
 
         $("profileLogin")
             .textContent =
                 "@" +
                 user.login;
 
-
         $("profilePreviewName")
             .textContent =
                 user.name ||
                 user.login;
 
-
         $("profileName")
             .value =
                 user.name || "";
-
 
         $("profileAbout")
             .value =
                 user.about || "";
 
-
         $("themeSelect")
             .value =
                 getTheme();
-
 
         $("styleSelect")
             .value =
                 user.messageStyle ||
                 "classic";
 
-
         currentPhoto =
             user.photo || "";
-
 
         $("profileAvatar")
             .outerHTML =
@@ -3078,7 +3210,6 @@ async function openProfile() {
                         </div>
                       `;
 
-
         $("profileModal")
             .classList.add(
                 "show"
@@ -3092,7 +3223,6 @@ async function openProfile() {
     }
 }
 
-
 function closeProfile() {
 
     $("profileModal")
@@ -3100,7 +3230,6 @@ function closeProfile() {
             "show"
         );
 }
-
 
 function handlePhoto(event) {
 
@@ -3111,95 +3240,77 @@ function handlePhoto(event) {
         return;
     }
 
-
     const reader =
         new FileReader();
 
+    reader.onload = () => {
 
-    reader.onload =
-        () => {
+        const image =
+            new Image();
 
-            const image =
-                new Image();
+        image.onload = () => {
 
+            const canvas =
+                document.createElement(
+                    "canvas"
+                );
 
-            image.onload =
-                () => {
+            const max = 400;
 
-                    const canvas =
-                        document.createElement(
-                            "canvas"
-                        );
+            const scale =
+                Math.min(
+                    1,
+                    max / image.width,
+                    max / image.height
+                );
 
-                    const max =
-                        400;
+            canvas.width =
+                Math.round(
+                    image.width * scale
+                );
 
+            canvas.height =
+                Math.round(
+                    image.height * scale
+                );
 
-                    const scale =
-                        Math.min(
-                            1,
-                            max / image.width,
-                            max / image.height
-                        );
+            const context =
+                canvas.getContext(
+                    "2d"
+                );
 
+            context.drawImage(
+                image,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
 
-                    canvas.width =
-                        Math.round(
-                            image.width * scale
-                        );
+            currentPhoto =
+                canvas.toDataURL(
+                    "image/jpeg",
+                    0.8
+                );
 
-
-                    canvas.height =
-                        Math.round(
-                            image.height * scale
-                        );
-
-
-                    const context =
-                        canvas.getContext(
-                            "2d"
-                        );
-
-
-                    context.drawImage(
-                        image,
-                        0,
-                        0,
-                        canvas.width,
-                        canvas.height
-                    );
-
-
-                    currentPhoto =
-                        canvas.toDataURL(
-                            "image/jpeg",
-                            0.8
-                        );
-
-
-                    $("profileAvatar")
-                        .outerHTML =
-                            `
-                            <img
-                                class="avatar"
-                                id="profileAvatar"
-                                src="${currentPhoto}"
-                                alt=""
-                            >
-                            `;
-                };
-
-
-            image.src =
-                reader.result;
+            $("profileAvatar")
+                .outerHTML =
+                    `
+                    <img
+                        class="avatar"
+                        id="profileAvatar"
+                        src="${currentPhoto}"
+                        alt=""
+                    >
+                    `;
         };
 
+        image.src =
+            reader.result;
+    };
 
-    reader.readAsDataURL(
-        file
-    );
+    reader.readAsDataURL(file);
 }
-
 
 async function saveProfile() {
 
@@ -3208,33 +3319,25 @@ async function saveProfile() {
             .value
             .trim();
 
-
     const about =
         $("profileAbout")
             .value
             .trim();
 
-
     const theme =
         $("themeSelect")
             .value;
-
 
     const style =
         $("styleSelect")
             .value;
 
-
-    setTheme(
-        theme
-    );
-
+    setTheme(theme);
 
     localStorage.setItem(
         "vibeStyle",
         style
     );
-
 
     try {
 
@@ -3263,37 +3366,27 @@ async function saveProfile() {
                 }
             );
 
-
         const data =
             await response.json();
 
-
         if (!data.success) {
 
-            alert(
-                data.message
-            );
-
+            alert(data.message);
             return;
         }
-
 
         $("account")
             .textContent =
                 "@" +
                 currentUser;
 
-
         closeProfile();
-
 
         await loadFriends();
 
-
         if (currentChat) {
-            loadMessages();
+            loadMessages(true);
         }
-
 
         alert(
             "Профиль сохранён!"
@@ -3312,8 +3405,6 @@ async function saveProfile() {
    CALL SYSTEM
 ========================================================= */
 
-
-/* Получаем данные текущего собеседника */
 function getCurrentChatUser() {
 
     return friends.find(
@@ -3326,20 +3417,16 @@ function getCurrentChatUser() {
     };
 }
 
-
-/* Показываем входящий звонок */
 function showIncomingCall() {
 
     if (!incomingCall) {
         return;
     }
 
-
     $("incomingTitle")
         .textContent =
             incomingCall.name ||
             incomingCall.from;
-
 
     $("incomingType")
         .textContent =
@@ -3347,10 +3434,8 @@ function showIncomingCall() {
                 ? "📹 Видеозвонок"
                 : "📞 Аудиозвонок";
 
-
     const avatar =
         $("incomingAvatar");
-
 
     if (incomingCall.photo) {
 
@@ -3371,15 +3456,12 @@ function showIncomingCall() {
             );
     }
 
-
     $("incomingModal")
         .classList.add(
             "show"
         );
 }
 
-
-/* Начать звонок */
 async function startCall(video) {
 
     if (!currentChat) {
@@ -3390,7 +3472,6 @@ async function startCall(video) {
 
         return;
     }
-
 
     if (
         peerConnection ||
@@ -3404,23 +3485,17 @@ async function startCall(video) {
         return;
     }
 
-
     activeCallUser =
         currentChat;
 
     activeCallVideo =
         video;
 
-
     try {
 
-        await prepareCallMedia(
-            video
-        );
-
+        await prepareCallMedia(video);
 
         createPeerConnection();
-
 
         showCallUI(
             video,
@@ -3428,19 +3503,15 @@ async function startCall(video) {
             "Вызов..."
         );
 
-
         const offer =
             await peerConnection.createOffer();
-
 
         await peerConnection.setLocalDescription(
             offer
         );
 
-
         const user =
             getCurrentChatUser();
-
 
         sendSocket({
             type: "call",
@@ -3455,7 +3526,6 @@ async function startCall(video) {
                 user.photo || ""
         });
 
-
     } catch (error) {
 
         console.log(
@@ -3464,17 +3534,13 @@ async function startCall(video) {
         );
 
         alert(
-            getMediaErrorMessage(
-                error
-            )
+            getMediaErrorMessage(error)
         );
 
         cleanupCall();
     }
 }
 
-
-/* Медиа устройства */
 async function prepareCallMedia(video) {
 
     if (!navigator.mediaDevices) {
@@ -3484,25 +3550,18 @@ async function prepareCallMedia(video) {
         );
     }
 
-
     localStream =
         await navigator.mediaDevices.getUserMedia({
             audio: true,
             video: video
         });
 
-
-    microphoneEnabled =
-        true;
-
-    cameraEnabled =
-        video;
-
+    microphoneEnabled = true;
+    cameraEnabled = video;
 
     $("micButton")
         .textContent =
             "🎙️";
-
 
     $("cameraButton")
         .textContent =
@@ -3510,15 +3569,12 @@ async function prepareCallMedia(video) {
                 ? "📷"
                 : "🚫";
 
-
     $("cameraButton")
         .disabled =
             !video;
 
-
     const localVideo =
         $("localVideo");
-
 
     if (video) {
 
@@ -3531,8 +3587,7 @@ async function prepareCallMedia(video) {
 
     } else {
 
-        localVideo.srcObject =
-            null;
+        localVideo.srcObject = null;
 
         localVideo.classList.add(
             "hidden"
@@ -3540,37 +3595,29 @@ async function prepareCallMedia(video) {
     }
 }
 
-
-/* Создание WebRTC соединения */
 function createPeerConnection() {
 
     if (peerConnection) {
-
         peerConnection.close();
     }
-
 
     peerConnection =
         new RTCPeerConnection(
             rtcConfig
         );
 
-
     if (localStream) {
 
         localStream
             .getTracks()
-            .forEach(
-                track => {
+            .forEach(track => {
 
-                    peerConnection.addTrack(
-                        track,
-                        localStream
-                    );
-                }
-            );
+                peerConnection.addTrack(
+                    track,
+                    localStream
+                );
+            });
     }
-
 
     peerConnection.onicecandidate =
         event => {
@@ -3596,13 +3643,11 @@ function createPeerConnection() {
             }
         };
 
-
     peerConnection.ontrack =
         event => {
 
             const remoteVideo =
                 $("remoteVideo");
-
 
             if (
                 event.streams &&
@@ -3611,7 +3656,6 @@ function createPeerConnection() {
 
                 remoteVideo.srcObject =
                     event.streams[0];
-
 
                 if (activeCallVideo) {
 
@@ -3638,7 +3682,6 @@ function createPeerConnection() {
             }
         };
 
-
     peerConnection.onconnectionstatechange =
         () => {
 
@@ -3646,27 +3689,20 @@ function createPeerConnection() {
                 return;
             }
 
-
             const state =
                 peerConnection.connectionState;
-
 
             console.log(
                 "Состояние звонка:",
                 state
             );
 
-
-            if (
-                state === "connected"
-            ) {
+            if (state === "connected") {
 
                 $("callStatus")
                     .textContent =
                         "Звонок идёт";
-
             }
-
 
             if (
                 state === "failed" ||
@@ -3679,14 +3715,11 @@ function createPeerConnection() {
         };
 }
 
-
-/* Обработка offer */
 async function handleOffer(data) {
 
     if (!data.offer) {
         return;
     }
-
 
     activeCallUser =
         data.from;
@@ -3694,16 +3727,13 @@ async function handleOffer(data) {
     activeCallVideo =
         !!data.video;
 
-
     try {
 
         await prepareCallMedia(
             activeCallVideo
         );
 
-
         createPeerConnection();
-
 
         showCallUI(
             activeCallVideo,
@@ -3719,22 +3749,18 @@ async function handleOffer(data) {
             "Подключение..."
         );
 
-
         await peerConnection.setRemoteDescription(
             new RTCSessionDescription(
                 data.offer
             )
         );
 
-
         const answer =
             await peerConnection.createAnswer();
-
 
         await peerConnection.setLocalDescription(
             answer
         );
-
 
         sendSocket({
             type:
@@ -3750,7 +3776,6 @@ async function handleOffer(data) {
                 answer
         });
 
-
     } catch (error) {
 
         console.log(
@@ -3759,37 +3784,28 @@ async function handleOffer(data) {
         );
 
         alert(
-            getMediaErrorMessage(
-                error
-            )
+            getMediaErrorMessage(error)
         );
 
         cleanupCall();
     }
 }
 
-
-/* Принять входящий */
 async function acceptIncomingCall() {
 
     if (!incomingCall) {
         return;
     }
 
-
     const call =
         incomingCall;
 
-
-    incomingCall =
-        null;
-
+    incomingCall = null;
 
     $("incomingModal")
         .classList.remove(
             "show"
         );
-
 
     activeCallUser =
         call.from;
@@ -3797,16 +3813,13 @@ async function acceptIncomingCall() {
     activeCallVideo =
         call.video;
 
-
     try {
 
         await prepareCallMedia(
             call.video
         );
 
-
         createPeerConnection();
-
 
         showCallUI(
             call.video,
@@ -3822,22 +3835,18 @@ async function acceptIncomingCall() {
             "Подключение..."
         );
 
-
         await peerConnection.setRemoteDescription(
             new RTCSessionDescription(
                 call.offer
             )
         );
 
-
         const answer =
             await peerConnection.createAnswer();
-
 
         await peerConnection.setLocalDescription(
             answer
         );
-
 
         sendSocket({
             type:
@@ -3853,7 +3862,6 @@ async function acceptIncomingCall() {
                 answer
         });
 
-
     } catch (error) {
 
         console.log(
@@ -3862,23 +3870,18 @@ async function acceptIncomingCall() {
         );
 
         alert(
-            getMediaErrorMessage(
-                error
-            )
+            getMediaErrorMessage(error)
         );
 
         cleanupCall();
     }
 }
 
-
-/* Отклонить входящий */
 function rejectIncomingCall() {
 
     if (!incomingCall) {
         return;
     }
-
 
     sendSocket({
         type:
@@ -3891,10 +3894,7 @@ function rejectIncomingCall() {
             currentUser
     });
 
-
-    incomingCall =
-        null;
-
+    incomingCall = null;
 
     $("incomingModal")
         .classList.remove(
@@ -3902,8 +3902,6 @@ function rejectIncomingCall() {
         );
 }
 
-
-/* Показ окна активного звонка */
 function showCallUI(
     video,
     user,
@@ -3915,15 +3913,12 @@ function showCallUI(
             user.name ||
             user.login;
 
-
     $("callStatus")
         .textContent =
             status;
 
-
     const avatar =
         $("callAvatar");
-
 
     if (user.photo) {
 
@@ -3953,14 +3948,12 @@ function showCallUI(
             `;
     }
 
-
     $("audioAvatar")
         .textContent =
             initial(
                 user.name ||
                 user.login
             );
-
 
     if (video) {
 
@@ -3987,49 +3980,39 @@ function showCallUI(
             );
     }
 
-
     $("callModal")
         .classList.add(
             "show"
         );
 }
 
-
-/* Микрофон */
 function toggleMicrophone() {
 
     if (!localStream) {
         return;
     }
 
-
     const tracks =
         localStream.getAudioTracks();
-
 
     if (!tracks.length) {
         return;
     }
 
-
     microphoneEnabled =
         !microphoneEnabled;
 
+    tracks.forEach(track => {
 
-    tracks.forEach(
-        track => {
-            track.enabled =
-                microphoneEnabled;
-        }
-    );
-
+        track.enabled =
+            microphoneEnabled;
+    });
 
     $("micButton")
         .textContent =
             microphoneEnabled
                 ? "🎙️"
                 : "🔇";
-
 
     $("micButton")
         .classList.toggle(
@@ -4038,8 +4021,6 @@ function toggleMicrophone() {
         );
 }
 
-
-/* Камера */
 function toggleCamera() {
 
     if (
@@ -4049,34 +4030,27 @@ function toggleCamera() {
         return;
     }
 
-
     const tracks =
         localStream.getVideoTracks();
-
 
     if (!tracks.length) {
         return;
     }
 
-
     cameraEnabled =
         !cameraEnabled;
 
+    tracks.forEach(track => {
 
-    tracks.forEach(
-        track => {
-            track.enabled =
-                cameraEnabled;
-        }
-    );
-
+        track.enabled =
+            cameraEnabled;
+    });
 
     $("cameraButton")
         .textContent =
             cameraEnabled
                 ? "📷"
                 : "🚫";
-
 
     $("cameraButton")
         .classList.toggle(
@@ -4085,8 +4059,6 @@ function toggleCamera() {
         );
 }
 
-
-/* Завершить звонок */
 function endCall() {
 
     if (activeCallUser) {
@@ -4103,12 +4075,9 @@ function endCall() {
         });
     }
 
-
     closeCallUI();
 }
 
-
-/* Закрыть окно */
 function closeCallUI() {
 
     $("callModal")
@@ -4121,12 +4090,9 @@ function closeCallUI() {
             "show"
         );
 
-
     cleanupCall();
 }
 
-
-/* Полная очистка */
 function cleanupCall() {
 
     if (peerConnection) {
@@ -4143,21 +4109,17 @@ function cleanupCall() {
             null;
     }
 
-
     if (localStream) {
 
         localStream
             .getTracks()
-            .forEach(
-                track => {
-                    track.stop();
-                }
-            );
+            .forEach(track => {
+                track.stop();
+            });
 
         localStream =
             null;
     }
-
 
     $("localVideo").srcObject =
         null;
@@ -4165,29 +4127,24 @@ function cleanupCall() {
     $("remoteVideo").srcObject =
         null;
 
-
     $("localVideo")
         .classList.add(
             "hidden"
         );
-
 
     $("remoteVideo")
         .classList.add(
             "hidden"
         );
 
-
     $("audioAvatar")
         .classList.remove(
             "hidden"
         );
 
-
     $("cameraButton")
         .disabled =
             false;
-
 
     activeCallUser =
         "";
@@ -4199,14 +4156,11 @@ function cleanupCall() {
         null;
 }
 
-
-/* Ошибки микрофона/камеры */
 function getMediaErrorMessage(error) {
 
     if (!error) {
         return "Не удалось запустить звонок";
     }
-
 
     if (
         error.name ===
@@ -4220,7 +4174,6 @@ function getMediaErrorMessage(error) {
         );
     }
 
-
     if (
         error.name ===
         "NotFoundError"
@@ -4230,7 +4183,6 @@ function getMediaErrorMessage(error) {
             "Микрофон или камера не найдены."
         );
     }
-
 
     if (
         error.message ===
@@ -4242,7 +4194,6 @@ function getMediaErrorMessage(error) {
             "звонки."
         );
     }
-
 
     return (
         "Не удалось запустить звонок. " +
@@ -4259,42 +4210,37 @@ function logout() {
 
     endCall();
 
-
     if (timer) {
 
-        clearInterval(
-            timer
-        );
+        clearInterval(timer);
     }
-
 
     timer = null;
 
     currentUser = "";
     currentChat = "";
 
-
     if (socket) {
 
         socket.close();
 
-        socket =
-            null;
+        socket = null;
     }
 
+    $("layout")
+        .classList.remove(
+            "mobile-chat-open"
+        );
 
     localStorage.removeItem(
         "vibeUser"
     );
 
-
     $("app").style.display =
         "none";
 
-
     $("auth").style.display =
         "block";
-
 
     $("login").value = "";
     $("password").value = "";
@@ -4311,12 +4257,10 @@ setTheme(
 
 renderEmoji();
 
-
 const savedUser =
     localStorage.getItem(
         "vibeUser"
     );
-
 
 if (savedUser) {
 
