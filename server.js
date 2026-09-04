@@ -29,7 +29,7 @@ function ensureFile(file, defaultValue = []) {
 ensureFile(USERS_FILE, []);
 ensureFile(MESSAGES_FILE, []);
 ensureFile(CHANNELS_FILE, []);
-ensureFile(CHANNEL_POSTS_FILE);
+ensureFile(CHANNEL_POSTS_FILE, []);
 
 
 function readJSON(file) {
@@ -59,6 +59,14 @@ function normalizeUser(user) {
 
     if (!Array.isArray(user.friends)) {
         user.friends = [];
+    }
+
+    if (!Array.isArray(user.friendRequestsIncoming)) {
+        user.friendRequestsIncoming = [];
+    }
+
+    if (!Array.isArray(user.friendRequestsOutgoing)) {
+        user.friendRequestsOutgoing = [];
     }
 
     if (
@@ -162,6 +170,22 @@ function normalizeUser(user) {
         )
     ) {
         user.profile.privacy.about = "everyone";
+    }
+
+    /* Новые настройки */
+
+    if (
+        typeof user.profile.privacy.allowFriendRequests !==
+        "boolean"
+    ) {
+        user.profile.privacy.allowFriendRequests = true;
+    }
+
+    if (
+        typeof user.profile.privacy.showOnline !==
+        "boolean"
+    ) {
+        user.profile.privacy.showOnline = true;
     }
 
     return user;
@@ -341,6 +365,53 @@ function areFriends(
 
 
 /* =========================================================
+   ONLINE
+========================================================= */
+
+const onlineUsers = new Map();
+
+
+function isUserOnline(login) {
+
+    const ws =
+        onlineUsers.get(login);
+
+    return !!(
+        ws &&
+        ws.readyState === WebSocket.OPEN
+    );
+}
+
+
+function getVisibleOnline(
+    ownerLogin,
+    viewerLogin
+) {
+
+    const owner =
+        findUser(ownerLogin);
+
+    if (!owner) {
+        return false;
+    }
+
+    normalizeUser(owner);
+
+    if (ownerLogin === viewerLogin) {
+        return isUserOnline(ownerLogin);
+    }
+
+    if (
+        owner.profile.privacy.showOnline !== true
+    ) {
+        return false;
+    }
+
+    return isUserOnline(ownerLogin);
+}
+
+
+/* =========================================================
    PRIVACY
 ========================================================= */
 
@@ -409,7 +480,34 @@ function publicUser(
 
         messageStyle:
             user.profile.messageStyle ||
-            "classic"
+            "classic",
+
+        online:
+            getVisibleOnline(
+                user.login,
+                viewerLogin
+            ),
+
+        isFriend:
+            areFriends(
+                user.login,
+                viewerLogin
+            ),
+
+        hasIncomingFriendRequest:
+            user.friendRequestsIncoming.includes(
+                viewerLogin
+            ),
+
+        hasOutgoingFriendRequest:
+            user.friendRequestsOutgoing.includes(
+                viewerLogin
+            ),
+
+        privacy:
+            user.login === viewerLogin
+                ? privacy
+                : undefined
     };
 
 
@@ -831,6 +929,10 @@ const server =
 
                         friends: [],
 
+                        friendRequestsIncoming: [],
+
+                        friendRequestsOutgoing: [],
+
                         profile: {
 
                             name:
@@ -874,7 +976,13 @@ const server =
                                     "everyone",
 
                                 about:
-                                    "everyone"
+                                    "everyone",
+
+                                allowFriendRequests:
+                                    true,
+
+                                showOnline:
+                                    true
                             }
                         }
                     };
@@ -1457,6 +1565,34 @@ const server =
                                 }
                             }
                         );
+
+
+                        if (
+                            typeof body.privacy
+                                .allowFriendRequests ===
+                            "boolean"
+                        ) {
+
+                            user.profile
+                                .privacy
+                                .allowFriendRequests =
+                                body.privacy
+                                    .allowFriendRequests;
+                        }
+
+
+                        if (
+                            typeof body.privacy
+                                .showOnline ===
+                            "boolean"
+                        ) {
+
+                            user.profile
+                                .privacy
+                                .showOnline =
+                                body.privacy
+                                    .showOnline;
+                        }
                     }
 
 
@@ -1536,6 +1672,542 @@ const server =
                     sendJSON(
                         res,
                         result
+                    );
+
+                    return;
+                }
+
+
+                /* =====================================================
+                   FRIEND REQUESTS GET
+                ===================================================== */
+
+                if (
+                    req.method === "GET" &&
+                    pathname === "/friend-requests"
+                ) {
+
+                    const login =
+                        String(
+                            url.searchParams.get(
+                                "login"
+                            ) || ""
+                        ).trim();
+
+
+                    const user =
+                        findUser(login);
+
+
+                    if (!user) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Пользователь не найден"
+                            },
+                            404
+                        );
+
+                        return;
+                    }
+
+
+                    normalizeUser(user);
+
+
+                    const incoming =
+                        user.friendRequestsIncoming
+                            .map(
+                                requestLogin =>
+                                    findUser(
+                                        requestLogin
+                                    )
+                            )
+                            .filter(Boolean)
+                            .map(
+                                requestUser =>
+                                    publicUser(
+                                        requestUser,
+                                        login
+                                    )
+                            );
+
+
+                    const outgoing =
+                        user.friendRequestsOutgoing
+                            .map(
+                                requestLogin =>
+                                    findUser(
+                                        requestLogin
+                                    )
+                            )
+                            .filter(Boolean)
+                            .map(
+                                requestUser =>
+                                    publicUser(
+                                        requestUser,
+                                        login
+                                    )
+                            );
+
+
+                    sendJSON(
+                        res,
+                        {
+                            success: true,
+                            incoming,
+                            outgoing
+                        }
+                    );
+
+                    return;
+                }
+
+
+                /* =====================================================
+                   FRIEND REQUESTS UPDATE
+                ===================================================== */
+
+                if (
+                    req.method === "POST" &&
+                    pathname === "/friend-requests"
+                ) {
+
+                    const body =
+                        await getBody(req);
+
+
+                    const login =
+                        String(
+                            body.login || ""
+                        ).trim();
+
+
+                    const target =
+                        String(
+                            body.target || ""
+                        ).trim();
+
+
+                    const action =
+                        String(
+                            body.action || ""
+                        );
+
+
+                    const users =
+                        getUsers();
+
+
+                    const user =
+                        users.find(
+                            item =>
+                                item.login ===
+                                login
+                        );
+
+
+                    const targetUser =
+                        users.find(
+                            item =>
+                                item.login ===
+                                target
+                        );
+
+
+                    if (
+                        !user ||
+                        !targetUser
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Пользователь не найден"
+                            },
+                            404
+                        );
+
+                        return;
+                    }
+
+
+                    normalizeUser(user);
+                    normalizeUser(targetUser);
+
+
+                    if (
+                        login === target
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Нельзя отправить заявку самому себе"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    /* =================================================
+                       SEND
+                    ================================================= */
+
+                    if (
+                        action === "send"
+                    ) {
+
+                        if (
+                            areFriends(
+                                login,
+                                target
+                            )
+                        ) {
+
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message:
+                                        "Вы уже друзья"
+                                },
+                                400
+                            );
+
+                            return;
+                        }
+
+
+                        if (
+                            targetUser.profile
+                                .privacy
+                                .allowFriendRequests !==
+                            true
+                        ) {
+
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message:
+                                        "Этот пользователь запретил заявки в друзья"
+                                },
+                                403
+                            );
+
+                            return;
+                        }
+
+
+                        if (
+                            targetUser.friendRequestsIncoming
+                                .includes(login)
+                        ) {
+
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message:
+                                        "Заявка уже отправлена"
+                                },
+                                400
+                            );
+
+                            return;
+                        }
+
+
+                        if (
+                            user.friendRequestsIncoming
+                                .includes(target)
+                        ) {
+
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message:
+                                        "У вас уже есть входящая заявка от этого пользователя"
+                                },
+                                400
+                            );
+
+                            return;
+                        }
+
+
+                        user.friendRequestsOutgoing
+                            .push(target);
+
+
+                        targetUser.friendRequestsIncoming
+                            .push(login);
+
+
+                        saveJSON(
+                            USERS_FILE,
+                            users
+                        );
+
+
+                        sendToUser(
+                            target,
+                            {
+                                type:
+                                    "friend-request",
+                                from:
+                                    publicUser(
+                                        user,
+                                        target
+                                    )
+                            }
+                        );
+
+
+                        sendJSON(
+                            res,
+                            {
+                                success: true,
+                                message:
+                                    "Заявка отправлена"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    /* =================================================
+                       ACCEPT
+                    ================================================= */
+
+                    if (
+                        action === "accept"
+                    ) {
+
+                        if (
+                            !user.friendRequestsIncoming
+                                .includes(target)
+                        ) {
+
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message:
+                                        "Заявка не найдена"
+                                },
+                                404
+                            );
+
+                            return;
+                        }
+
+
+                        user.friendRequestsIncoming =
+                            user.friendRequestsIncoming
+                                .filter(
+                                    item =>
+                                        item !==
+                                        target
+                                );
+
+
+                        targetUser.friendRequestsOutgoing =
+                            targetUser
+                                .friendRequestsOutgoing
+                                .filter(
+                                    item =>
+                                        item !==
+                                        login
+                                );
+
+
+                        if (
+                            !user.friends.includes(
+                                target
+                            )
+                        ) {
+
+                            user.friends.push(
+                                target
+                            );
+                        }
+
+
+                        if (
+                            !targetUser.friends.includes(
+                                login
+                            )
+                        ) {
+
+                            targetUser.friends.push(
+                                login
+                            );
+                        }
+
+
+                        saveJSON(
+                            USERS_FILE,
+                            users
+                        );
+
+
+                        sendToUser(
+                            target,
+                            {
+                                type:
+                                    "friend-accepted",
+                                login
+                            }
+                        );
+
+
+                        sendJSON(
+                            res,
+                            {
+                                success: true,
+                                message:
+                                    "Заявка принята"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    /* =================================================
+                       DECLINE
+                    ================================================= */
+
+                    if (
+                        action === "decline"
+                    ) {
+
+                        user.friendRequestsIncoming =
+                            user.friendRequestsIncoming
+                                .filter(
+                                    item =>
+                                        item !==
+                                        target
+                                );
+
+
+                        targetUser.friendRequestsOutgoing =
+                            targetUser
+                                .friendRequestsOutgoing
+                                .filter(
+                                    item =>
+                                        item !==
+                                        login
+                                );
+
+
+                        saveJSON(
+                            USERS_FILE,
+                            users
+                        );
+
+
+                        sendToUser(
+                            target,
+                            {
+                                type:
+                                    "friend-declined",
+                                login
+                            }
+                        );
+
+
+                        sendJSON(
+                            res,
+                            {
+                                success: true,
+                                message:
+                                    "Заявка отклонена"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    /* =================================================
+                       CANCEL
+                    ================================================= */
+
+                    if (
+                        action === "cancel"
+                    ) {
+
+                        user.friendRequestsOutgoing =
+                            user
+                                .friendRequestsOutgoing
+                                .filter(
+                                    item =>
+                                        item !==
+                                        target
+                                );
+
+
+                        targetUser.friendRequestsIncoming =
+                            targetUser
+                                .friendRequestsIncoming
+                                .filter(
+                                    item =>
+                                        item !==
+                                        login
+                                );
+
+
+                        saveJSON(
+                            USERS_FILE,
+                            users
+                        );
+
+
+                        sendToUser(
+                            target,
+                            {
+                                type:
+                                    "friend-request-cancelled",
+                                login
+                            }
+                        );
+
+
+                        sendJSON(
+                            res,
+                            {
+                                success: true,
+                                message:
+                                    "Заявка отменена"
+                            }
+                        );
+
+                        return;
+                    }
+
+
+                    sendJSON(
+                        res,
+                        {
+                            success: false,
+                            message:
+                                "Неизвестное действие"
+                        },
+                        400
                     );
 
                     return;
@@ -1634,6 +2306,13 @@ const server =
                                 item =>
                                     item !==
                                     friendLogin
+                            );
+
+                        friend.friends =
+                            friend.friends.filter(
+                                item =>
+                                    item !==
+                                    login
                             );
                     }
 
@@ -1758,12 +2437,21 @@ const server =
                                             ),
 
                                         lastMessage:
-                                            last.text ||
-                                            "",
+                                            last.type ===
+                                            "voice"
+                                                ? "🎙 Голосовое сообщение"
+                                                : (
+                                                    last.text ||
+                                                    ""
+                                                ),
 
                                         lastTime:
                                             last.time ||
-                                            ""
+                                            "",
+
+                                        lastMessageType:
+                                            last.type ||
+                                            "text"
                                     };
                                 }
                             )
@@ -1869,15 +2557,79 @@ const server =
                         );
 
 
+                    const type =
+                        body.type === "voice"
+                            ? "voice"
+                            : "text";
+
+
                     const text =
                         String(
                             body.text || ""
                         ).trim();
 
 
+                    const audio =
+                        type === "voice" &&
+                        typeof body.audio ===
+                        "string"
+                            ? body.audio
+                            : "";
+
+
+                    const duration =
+                        type === "voice" &&
+                        Number.isFinite(
+                            Number(
+                                body.duration
+                            )
+                        )
+                            ? Number(
+                                body.duration
+                            )
+                            : 0;
+
+
                     if (
                         !from ||
-                        !to ||
+                        !to
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Не указан отправитель или получатель"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        !findUser(from) ||
+                        !findUser(to)
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Пользователь не найден"
+                            },
+                            404
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        type === "text" &&
                         !text
                     ) {
 
@@ -1887,6 +2639,25 @@ const server =
                                 success: false,
                                 message:
                                     "Пустое сообщение"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        type === "voice" &&
+                        !audio
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Голосовое сообщение пустое"
                             },
                             400
                         );
@@ -1907,7 +2678,22 @@ const server =
 
                         to,
 
-                        text,
+                        type,
+
+                        text:
+                            type === "text"
+                                ? text
+                                : "",
+
+                        audio:
+                            type === "voice"
+                                ? audio
+                                : "",
+
+                        duration:
+                            type === "voice"
+                                ? duration
+                                : 0,
 
                         time:
                             new Date()
@@ -2756,10 +3542,6 @@ const wss =
     });
 
 
-const onlineUsers =
-    new Map();
-
-
 function sendToUser(
     login,
     data
@@ -2782,6 +3564,49 @@ function sendToUser(
 }
 
 
+function broadcastOnlineStatus(
+    login,
+    online
+) {
+
+    const users =
+        getUsers();
+
+
+    users.forEach(
+        user => {
+
+            if (
+                user.login === login
+            ) {
+                return;
+            }
+
+
+            if (
+                areFriends(
+                    user.login,
+                    login
+                )
+            ) {
+
+                sendToUser(
+                    user.login,
+                    {
+                        type:
+                            "online-status",
+
+                        login,
+
+                        online
+                    }
+                );
+            }
+        }
+    );
+}
+
+
 wss.on(
     "connection",
     ws => {
@@ -2800,6 +3625,10 @@ wss.on(
                             raw.toString()
                         );
 
+
+                    /* =============================================
+                       AUTH
+                    ============================================= */
 
                     if (
                         data.type ===
@@ -2829,12 +3658,116 @@ wss.on(
                                         "auth-ok"
                                 })
                             );
+
+
+                            broadcastOnlineStatus(
+                                currentLogin,
+                                true
+                            );
                         }
 
 
                         return;
                     }
 
+
+                    /* =============================================
+                       TYPING
+                    ============================================= */
+
+                    if (
+                        data.type ===
+                        "typing"
+                    ) {
+
+                        if (
+                            !currentLogin
+                        ) {
+                            return;
+                        }
+
+
+                        const to =
+                            String(
+                                data.to || ""
+                            );
+
+
+                        if (!to) {
+                            return;
+                        }
+
+
+                        sendToUser(
+                            to,
+                            {
+                                type:
+                                    "typing",
+
+                                from:
+                                    currentLogin,
+
+                                typing:
+                                    data.typing ===
+                                    true
+                            }
+                        );
+
+
+                        return;
+                    }
+
+
+                    /* =============================================
+                       RECORDING VOICE
+                    ============================================= */
+
+                    if (
+                        data.type ===
+                        "recording-voice"
+                    ) {
+
+                        if (
+                            !currentLogin
+                        ) {
+                            return;
+                        }
+
+
+                        const to =
+                            String(
+                                data.to || ""
+                            );
+
+
+                        if (!to) {
+                            return;
+                        }
+
+
+                        sendToUser(
+                            to,
+                            {
+                                type:
+                                    "recording-voice",
+
+                                from:
+                                    currentLogin,
+
+                                recording:
+                                    data.recording ===
+                                    true
+                            }
+                        );
+
+
+                        return;
+                    }
+
+
+                    /* =============================================
+                       CALL
+                    ============================================= */
 
                     if (
                         data.type ===
@@ -2870,6 +3803,10 @@ wss.on(
                     }
 
 
+                    /* =============================================
+                       ANSWER
+                    ============================================= */
+
                     if (
                         data.type ===
                         "answer"
@@ -2889,6 +3826,10 @@ wss.on(
                         return;
                     }
 
+
+                    /* =============================================
+                       ICE
+                    ============================================= */
 
                     if (
                         data.type ===
@@ -2910,6 +3851,10 @@ wss.on(
                     }
 
 
+                    /* =============================================
+                       REJECT CALL
+                    ============================================= */
+
                     if (
                         data.type ===
                         "reject-call"
@@ -2926,6 +3871,10 @@ wss.on(
                         return;
                     }
 
+
+                    /* =============================================
+                       HANGUP
+                    ============================================= */
 
                     if (
                         data.type ===
@@ -2966,6 +3915,11 @@ wss.on(
 
                     onlineUsers.delete(
                         currentLogin
+                    );
+
+                    broadcastOnlineStatus(
+                        currentLogin,
+                        false
                     );
                 }
             }
