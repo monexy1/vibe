@@ -502,12 +502,7 @@ function publicUser(
         hasOutgoingFriendRequest:
             user.friendRequestsOutgoing.includes(
                 viewerLogin
-            ),
-
-        privacy:
-            user.login === viewerLogin
-                ? privacy
-                : undefined
+            )
     };
 
 

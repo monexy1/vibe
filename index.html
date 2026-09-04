@@ -909,158 +909,6 @@ select:focus {
 }
 
 /* =========================================================
-   FRIEND REQUESTS / ONLINE / VOICE / TYPING
-========================================================= */
-
-function updateOnlineUser(login, online) {
-    [...friends, ...chats.map(c => c.user)].forEach(user => {
-        if (user && user.login === login) user.online = !!online;
-    });
-    renderChats();
-}
-
-function getCurrentChatStatus() {
-    const chat = chats.find(c => c.login === currentChat);
-    return chat && chat.user && chat.user.online ? "онлайн" : "оффлайн";
-}
-
-function updateChatStatus() {
-    if (!currentChat || currentChannel) return;
-    const user = chats.find(c => c.login === currentChat)?.user || friends.find(u => u.login === currentChat);
-    $("chatStatus").textContent = user?.online ? "онлайн" : "оффлайн";
-    $("chatStatus").classList.remove("typing-status");
-}
-
-async function loadFriendRequests() {
-    if (!currentUser) return;
-    try {
-        const response = await fetch("/friend-requests?login=" + encodeURIComponent(currentUser.login));
-        const data = await response.json();
-        if (!data.success) return;
-        friendRequestsIncoming = data.incoming || [];
-        friendRequestsOutgoing = data.outgoing || [];
-        const badge = $("friendRequestBadge");
-        badge.textContent = friendRequestsIncoming.length;
-        badge.classList.toggle("hidden", friendRequestsIncoming.length === 0);
-        if (!$('friendRequestsModal').classList.contains('hidden')) renderFriendRequests();
-    } catch {}
-}
-
-function requestPersonHTML(user) {
-    const avatar = user.photo ? `<img src="${escapeHTML(user.photo)}">` : "👤";
-    return `<div class="avatar">${avatar}</div><div class="person-info"><div class="person-name">${escapeHTML(user.name || user.login)}</div><div class="person-login">@${escapeHTML(user.login)}</div></div>`;
-}
-
-function renderFriendRequests() {
-    const box = $("friendRequestsContent");
-    box.innerHTML = "";
-    if (!friendRequestsIncoming.length && !friendRequestsOutgoing.length) {
-        box.innerHTML = `<div style="color:var(--muted);padding:20px;text-align:center">Заявок пока нет</div>`;
-        return;
-    }
-    if (friendRequestsIncoming.length) {
-        const title = document.createElement("div"); title.className="setting-title"; title.textContent="Входящие"; box.appendChild(title);
-        friendRequestsIncoming.forEach(user => {
-            const card=document.createElement("div"); card.className="friend-request-card";
-            card.innerHTML=requestPersonHTML(user)+`<div class="friend-request-actions"><button class="accept" onclick="friendRequestAction('${escapeHTML(user.login)}','accept')">Принять</button><button onclick="friendRequestAction('${escapeHTML(user.login)}','decline')">Отклонить</button></div>`;
-            box.appendChild(card);
-        });
-    }
-    if (friendRequestsOutgoing.length) {
-        const title = document.createElement("div"); title.className="setting-title"; title.textContent="Исходящие"; box.appendChild(title);
-        friendRequestsOutgoing.forEach(user => {
-            const card=document.createElement("div"); card.className="friend-request-card";
-            card.innerHTML=requestPersonHTML(user)+`<div class="friend-request-actions"><button onclick="friendRequestAction('${escapeHTML(user.login)}','cancel')">Отменить</button></div>`;
-            box.appendChild(card);
-        });
-    }
-}
-
-async function openFriendRequests() {
-    await loadFriendRequests();
-    renderFriendRequests();
-    $("friendRequestsModal").classList.remove("hidden");
-}
-
-async function friendRequestAction(target, action) {
-    if (!currentUser) return;
-    try {
-        const response = await fetch("/friend-requests", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:currentUser.login,target,action})});
-        const data=await response.json();
-        if (!data.success) { alert(data.message || "Ошибка"); return; }
-        await loadFriendRequests(); await loadFriends(); await loadChats(); renderFriendRequests();
-    } catch { alert("Ошибка сервера"); }
-}
-
-function addFriendActionButton(container, user) {
-    if (!currentUser || !user || user.login === currentUser.login) return;
-    const wrap=document.createElement("div"); wrap.className="friend-request-actions";
-    if (user.isFriend) return;
-    if (user.hasIncomingFriendRequest) {
-        wrap.innerHTML=`<button class="accept">Принять заявку</button>`;
-        wrap.firstElementChild.onclick=e=>{e.stopPropagation();friendRequestAction(user.login,"accept")};
-    } else if (user.hasOutgoingFriendRequest) {
-        wrap.innerHTML=`<button>Заявка отправлена</button>`;
-        wrap.firstElementChild.onclick=e=>{e.stopPropagation();friendRequestAction(user.login,"cancel")};
-    } else {
-        wrap.innerHTML=`<button class="accept">Добавить в друзья</button>`;
-        wrap.firstElementChild.onclick=e=>{e.stopPropagation();friendRequestAction(user.login,"send")};
-    }
-    container.appendChild(wrap);
-}
-
-function formatVoiceDuration(seconds) {
-    const n=Math.max(0,Math.round(Number(seconds)||0));
-    return Math.floor(n/60).toString().padStart(2,"0")+":"+(n%60).toString().padStart(2,"0");
-}
-
-async function toggleVoiceRecording() {
-    if (currentChannel || !currentChat || !currentUser) return;
-    if (mediaRecorder && mediaRecorder.state === "recording") { mediaRecorder.stop(); return; }
-    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { alert("Голосовые сообщения не поддерживаются этим браузером"); return; }
-    try {
-        const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-        voiceChunks=[]; voiceRecordingStartedAt=Date.now();
-        mediaRecorder=new MediaRecorder(stream);
-        $("voiceButton").classList.add("recording-active");
-        $("voiceButton").textContent="⏹️";
-        sendSocket({type:"recording-voice",to:currentChat,recording:true});
-        mediaRecorder.ondataavailable=e=>{if(e.data.size)voiceChunks.push(e.data)};
-        mediaRecorder.onstop=async()=>{
-            stream.getTracks().forEach(t=>t.stop());
-            $("voiceButton").classList.remove("recording-active"); $("voiceButton").textContent="🎙️";
-            sendSocket({type:"recording-voice",to:currentChat,recording:false});
-            const blob=new Blob(voiceChunks,{type:mediaRecorder.mimeType||"audio/webm"});
-            const reader=new FileReader();
-            reader.onload=async()=>{ await sendVoiceMessage(reader.result,Math.round((Date.now()-voiceRecordingStartedAt)/1000)); };
-            reader.readAsDataURL(blob); mediaRecorder=null;
-        };
-        mediaRecorder.start();
-    } catch { alert("Не удалось получить доступ к микрофону"); }
-}
-
-async function sendVoiceMessage(audio,duration) {
-    const to=currentChat;
-    if (!to || !currentUser) return;
-    try {
-        const response=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from:currentUser.login,to,type:"voice",audio,duration})});
-        const data=await response.json();
-        if (data.success) { await loadMessages(true); await loadChats(); await markChatAsRead(to); }
-        else alert(data.message || "Не удалось отправить голосовое");
-    } catch { alert("Ошибка отправки голосового"); }
-}
-
-function setupTyping() {
-    const input=$("messageInput");
-    input.addEventListener("input",()=>{
-        if (!currentChat || currentChannel) return;
-        if (!typingActive) { typingActive=true; sendSocket({type:"typing",to:currentChat,typing:true}); }
-        clearTimeout(typingStopTimer);
-        typingStopTimer=setTimeout(()=>{typingActive=false;sendSocket({type:"typing",to:currentChat,typing:false});},1200);
-    });
-}
-
-/* =========================================================
    PROFILE
 ========================================================= */
 
@@ -1730,9 +1578,6 @@ function setupTyping() {
     }
 }
 
-
-.friend-request-bar{display:flex;gap:8px;margin-top:8px}.friend-request-bar button{flex:1;padding:10px;border:0;border-radius:12px;background:var(--panel2);color:var(--text);font-weight:700;cursor:pointer}.friend-request-bar button:hover{background:var(--accent);color:#fff}.online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#6b7280;margin-right:5px;vertical-align:1px}.online-dot.online{background:#22c55e}.typing-status{color:var(--accent);font-weight:700}.friend-request-list{display:flex;flex-direction:column;gap:10px}.friend-request-card{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:14px;background:var(--panel2)}.friend-request-card .person-info{flex:1}.friend-request-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.friend-request-actions button{border:0;border-radius:10px;padding:8px 10px;cursor:pointer;background:var(--panel);color:var(--text)}.friend-request-actions .accept{background:var(--accent);color:#fff}.voice-recording{color:#ef4444;font-weight:800;text-align:center;padding:5px;font-size:12px}.recording-active{background:#ef4444!important;color:#fff!important}.voice-message{display:flex;align-items:center;gap:9px;min-width:220px}.voice-message audio{max-width:220px}.request-badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#ef4444;color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center;margin-left:5px}
-
 </style>
 
 </head>
@@ -1874,8 +1719,6 @@ function setupTyping() {
 
             <div id="searchResults" class="results"></div>
 
-            <div class="friend-request-bar"><button onclick="openFriendRequests()">👥 Заявки <span id="friendRequestBadge" class="request-badge hidden">0</span></button></div>
-
             <div id="friends" class="friends"></div>
 
             <div class="bottom-buttons">
@@ -1972,8 +1815,6 @@ function setupTyping() {
                     onkeydown="if(event.key==='Enter') sendMessage()"
                 >
 
-                <button id="voiceButton" class="emoji-btn" onclick="toggleVoiceRecording()" title="Голосовое">🎙️</button>
-
                 <button
                     class="emoji-btn"
                     onclick="toggleEmojiPicker()"
@@ -1993,14 +1834,6 @@ function setupTyping() {
 
 </div>
 
-
-<!-- FRIEND REQUESTS -->
-<div id="friendRequestsModal" class="modal hidden">
-  <div class="modal-card">
-    <div class="modal-header"><div class="modal-title">👥 Заявки в друзья</div><button class="modal-close" onclick="closeModal('friendRequestsModal')">✕</button></div>
-    <div id="friendRequestsContent" class="friend-request-list"></div>
-  </div>
-</div>
 
 <!-- =========================================================
      REGISTER
@@ -3260,14 +3093,6 @@ let callSeconds = 0;
 let profileViewLogin = "";
 
 let selectedProfileBackground = "default";
-let mediaRecorder = null;
-let voiceChunks = [];
-let voiceRecordingStartedAt = 0;
-let typingStopTimer = null;
-let typingActive = false;
-let typingTimeout = null;
-let friendRequestsIncoming = [];
-let friendRequestsOutgoing = [];
 
 
 /* =========================================================
@@ -4340,7 +4165,6 @@ function showApp() {
     loadChats();
 
     loadChannels();
-    loadFriendRequests();
 }
 
 
@@ -4779,40 +4603,6 @@ function handleSocketMessage(data) {
     }
 
 
-    if (data.type === "typing") {
-        if (data.from === currentChat && !currentChannel) {
-            if (typingTimeout) clearTimeout(typingTimeout);
-            $("chatStatus").textContent = data.typing ? "печатает…" : getCurrentChatStatus();
-            $("chatStatus").classList.toggle("typing-status", !!data.typing);
-            if (data.typing) typingTimeout = setTimeout(() => { $("chatStatus").classList.remove("typing-status"); $("chatStatus").textContent = getCurrentChatStatus(); }, 2500);
-        }
-        return;
-    }
-
-    if (data.type === "recording-voice") {
-        if (data.from === currentChat && !currentChannel && data.recording) {
-            $("chatStatus").textContent = "🎙 записывает голосовое…";
-            $("chatStatus").classList.add("typing-status");
-        } else if (data.from === currentChat && !currentChannel && !data.recording) {
-            $("chatStatus").classList.remove("typing-status");
-            $("chatStatus").textContent = getCurrentChatStatus();
-        }
-        return;
-    }
-
-    if (data.type === "online-status") {
-        updateOnlineUser(data.login, data.online);
-        if (data.login === currentChat && !currentChannel) updateChatStatus();
-        return;
-    }
-
-    if (data.type === "friend-request" || data.type === "friend-accepted" || data.type === "friend-declined" || data.type === "friend-request-cancelled") {
-        loadFriendRequests();
-        loadFriends();
-        loadChats();
-        return;
-    }
-
     if (
         data.type === "incoming-call"
     ) {
@@ -4948,8 +4738,8 @@ async function searchUsers() {
                 item.className =
                     "person";
 
-                item.innerHTML = personHTML(user);
-                addFriendActionButton(item,user);
+                item.innerHTML =
+                    personHTML(user);
 
                 item.onclick = () => {
 
@@ -5000,7 +4790,10 @@ function personHTML(user,count=0) {
         <div class="person-info">
 
             <div class="person-name">
-                <span class="online-dot ${user.online ? "online" : ""}"></span>${escapeHTML(user.name || user.login)}
+                ${escapeHTML(
+                    user.name ||
+                    user.login
+                )}
             </div>
 
             <div class="person-login">
@@ -5428,7 +5221,8 @@ async function openChat(login) {
             user.name ||
             user.login;
 
-        $("chatStatus").textContent = user.online ? "онлайн" : "оффлайн";
+        $("chatStatus").textContent =
+            "@" + user.login;
 
         $("chatAvatar").innerHTML =
             user.photo
@@ -5601,27 +5395,18 @@ async function loadMessages(forceScroll=false) {
                         }
                     );
 
-                if (message.type === "voice" && message.audio) {
-                    const voice = document.createElement("div");
-                    voice.className = "voice-message";
-                    const audio = document.createElement("audio");
-                    audio.controls = true;
-                    audio.src = message.audio;
-                    voice.appendChild(audio);
-                    const dur = document.createElement("span");
-                    dur.textContent = formatVoiceDuration(message.duration);
-                    voice.appendChild(dur);
-                    bubble.appendChild(voice);
-                } else {
-                    bubble.innerHTML = `<div>${escapeHTML(message.text)}</div><div class="message-time">
-                        ${time}
-                    </div>`;
-                }
+                bubble.innerHTML =
+                    `
+                    <div>
+                        ${escapeHTML(
+                            message.text
+                        )}
+                    </div>
 
-                const messageTime = document.createElement("div");
-                messageTime.className = "message-time";
-                messageTime.textContent = new Date(message.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
-                bubble.appendChild(messageTime);
+                    <div class="message-time">
+                        ${time}
+                    </div>
+                    `;
 
                 row.appendChild(bubble);
 
@@ -5818,13 +5603,9 @@ async function openProfile() {
         "everyone";
 
     $("privacyAbout").value =
-        user.privacy?.about || extra.privacyAbout || "everyone";
-
-    $("privacyFriendRequests").value =
-        user.privacy?.allowFriendRequests === false ? "nobody" : "everyone";
-
-    $("privacyShowOnline").value =
-        user.privacy?.showOnline === false ? "false" : "true";
+        user.privacy?.about ||
+        extra.privacyAbout ||
+        "everyone";
 
 
     selectedProfileBackground =
@@ -6306,12 +6087,6 @@ async function saveProfile() {
     extra.privacyAbout =
         $("privacyAbout").value;
 
-    extra.allowFriendRequests =
-        $("privacyFriendRequests").value === "everyone";
-
-    extra.showOnline =
-        $("privacyShowOnline").value === "true";
-
     extra.theme =
         localStorage.getItem(
             "vibeTheme"
@@ -6387,13 +6162,8 @@ async function saveProfile() {
                                         .value,
 
                                 about:
-                                    $("privacyAbout").value,
-
-                                allowFriendRequests:
-                                    $("privacyFriendRequests").value === "everyone",
-
-                                showOnline:
-                                    $("privacyShowOnline").value === "true"
+                                    $("privacyAbout")
+                                        .value
                             }
                         })
                 }
@@ -8088,8 +7858,7 @@ document.addEventListener(
             "channelsModal",
             "createChannelModal",
             "channelProfileModal",
-            "incomingCallModal",
-            "friendRequestsModal"
+            "incomingCallModal"
         ];
 
         for (const id of modals) {
@@ -8161,7 +7930,7 @@ document.querySelectorAll(".modal")
 ========================================================= */
 
 initEmojiPicker();
-setupTyping();
+
 autoLogin();
 
 </script>
