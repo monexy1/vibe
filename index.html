@@ -101,7 +101,9 @@ button {
     display: none !important;
 }
 
-/* AUTH */
+/* =========================================================
+   AUTH
+========================================================= */
 
 .auth {
     width: 100%;
@@ -189,6 +191,98 @@ select:focus {
     background: var(--panel2);
 }
 
+/* =========================================================
+   PASSWORD FIELD
+========================================================= */
+
+.password-field {
+    position: relative;
+    width: 100%;
+}
+
+.password-field input {
+    padding-right: 52px !important;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 7px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.password-toggle:hover {
+    background: var(--panel);
+    color: var(--text);
+}
+
+.auth-password-field {
+    margin-bottom: 12px;
+}
+
+.auth-password-field input {
+    margin-bottom: 0 !important;
+}
+
+/* =========================================================
+   REGISTRATION BIRTHDAY
+========================================================= */
+
+.birthday-card {
+    margin: 4px 0 12px;
+    padding: 14px;
+    border-radius: 16px;
+    background: linear-gradient(
+        135deg,
+        rgba(139,92,246,.13),
+        rgba(99,102,241,.08)
+    );
+    border: 1px solid var(--border);
+}
+
+.birthday-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.birthday-card-description {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.birthday-input-wrap {
+    position: relative;
+}
+
+.birthday-input-wrap input {
+    margin-bottom: 0 !important;
+    padding-right: 48px !important;
+}
+
+.birthday-icon {
+    position: absolute;
+    right: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+/* =========================================================
+   AUTH MESSAGE
+========================================================= */
+
 .auth-message {
     min-height: 22px;
     margin-top: 12px;
@@ -196,7 +290,9 @@ select:focus {
     color: #f87171;
 }
 
-/* APP */
+/* =========================================================
+   APP
+========================================================= */
 
 .app {
     width: 100%;
@@ -231,6 +327,29 @@ select:focus {
 .brand {
     font-size: 27px;
     font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-shadow:
+        0 0 18px rgba(236,72,153,.45),
+        0 0 30px rgba(139,92,246,.4);
+}
+
+.brand::before {
+    content: "V";
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #050505;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    box-shadow:
+        0 0 12px rgba(236,72,153,.55),
+        0 0 24px rgba(139,92,246,.4);
 }
 
 .icon-btn {
@@ -388,7 +507,9 @@ select:focus {
     color: white;
 }
 
-/* CHAT */
+/* =========================================================
+   CHAT
+========================================================= */
 
 .chat {
     min-width: 0;
@@ -512,7 +633,9 @@ select:focus {
     text-align: right;
 }
 
-/* COMPOSER */
+/* =========================================================
+   COMPOSER
+========================================================= */
 
 .composer {
     position: relative;
@@ -543,6 +666,11 @@ select:focus {
     color: white;
 }
 
+.composer button:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
 .emoji-btn {
     width: 48px !important;
     background: var(--panel2) !important;
@@ -550,7 +678,9 @@ select:focus {
     font-size: 20px;
 }
 
-/* EMOJI */
+/* =========================================================
+   EMOJI
+========================================================= */
 
 .emoji-picker {
     position: absolute;
@@ -586,7 +716,9 @@ select:focus {
     background: var(--panel2);
 }
 
-/* CHANNEL */
+/* =========================================================
+   CHANNEL
+========================================================= */
 
 .channel-post {
     background: var(--panel);
@@ -638,7 +770,9 @@ select:focus {
     margin-top: 8px;
 }
 
-/* MODALS */
+/* =========================================================
+   MODALS
+========================================================= */
 
 .modal {
     position: fixed;
@@ -667,7 +801,36 @@ select:focus {
 .modal-title {
     font-size: 22px;
     font-weight: 800;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 18px;
+}
+
+.modal-header .modal-title {
+    flex: 1;
+    margin: 0;
+}
+
+.modal-close {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--panel2);
+    color: var(--text);
+    font-size: 19px;
+    transition: .18s;
+}
+
+.modal-close:hover {
+    background: #ef4444;
+    color: white;
+    transform: rotate(3deg);
 }
 
 .modal input,
@@ -745,6 +908,313 @@ select:focus {
     object-fit: cover;
 }
 
+/* =========================================================
+   PROFILE
+========================================================= */
+
+.profile-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 22px 16px;
+    margin-bottom: 14px;
+    border-radius: 18px;
+    text-align: center;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139,92,246,.24),
+            rgba(99,102,241,.12)
+        );
+    border: 1px solid var(--border);
+}
+
+.profile-hero::after {
+    content: "";
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    right: -65px;
+    top: -65px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: .08;
+    pointer-events: none;
+}
+
+.profile-display-name {
+    font-size: 21px;
+    font-weight: 900;
+    margin-top: 3px;
+}
+
+.profile-display-login {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+.profile-view-about {
+    margin-top: 12px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.profile-view-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.profile-info-card {
+    padding: 11px;
+    border-radius: 13px;
+    background: var(--panel2);
+    text-align: left;
+}
+
+.profile-info-label {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 3px;
+}
+
+.profile-info-value {
+    font-weight: 700;
+    word-break: break-word;
+}
+
+.profile-edit-section {
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+    background: var(--panel2);
+}
+
+.profile-edit-section-title {
+    font-weight: 800;
+    margin-bottom: 11px;
+}
+
+/* =========================================================
+   PROFILE BACKGROUND
+========================================================= */
+
+.background-preview {
+    height: 100px;
+    border-radius: 15px;
+    margin-bottom: 10px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(139,92,246,.9),
+            rgba(37,99,235,.75)
+        );
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+.background-preview::before,
+.profile-view-background::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(255,255,255,.25),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at 80% 80%,
+            rgba(255,255,255,.14),
+            transparent 35%
+        );
+    pointer-events: none;
+}
+
+.background-option-row {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    gap: 7px;
+    margin-bottom: 10px;
+}
+
+.background-option {
+    height: 44px;
+    border-radius: 11px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: .15s;
+}
+
+.background-option:hover {
+    transform: translateY(-1px);
+    border-color: var(--text);
+}
+
+.background-option.active {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(139,92,246,.2);
+}
+
+.bg-default {
+    background: linear-gradient(135deg,#8b5cf6,#2563eb);
+}
+
+.bg-purple {
+    background: linear-gradient(135deg,#7c3aed,#db2777);
+}
+
+.bg-blue {
+    background: linear-gradient(135deg,#0284c7,#06b6d4);
+}
+
+.bg-sunset {
+    background: linear-gradient(135deg,#f97316,#db2777);
+}
+
+.bg-green {
+    background: linear-gradient(135deg,#059669,#14b8a6);
+}
+
+.bg-black {
+    background: linear-gradient(135deg,#09090b,#27272a);
+}
+
+.bg-pink {
+    background: linear-gradient(135deg,#ec4899,#8b5cf6);
+}
+
+.bg-gold {
+    background: linear-gradient(135deg,#f59e0b,#ef4444);
+}
+
+.profile-view-background {
+    position: relative;
+    height: 105px;
+    border-radius: 18px;
+    overflow: hidden;
+    margin-bottom: -46px;
+    opacity: .9;
+    background: linear-gradient(135deg,#8b5cf6,#2563eb);
+}
+
+.profile-view-avatar-wrap {
+    position: relative;
+    z-index: 2;
+    padding-top: 47px;
+}
+
+/* =========================================================
+   SETTINGS NAVIGATION
+========================================================= */
+
+.settings-nav {
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.settings-nav button {
+    padding: 11px 8px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel2);
+    color: var(--text);
+    font-weight: 700;
+    transition: .15s;
+}
+
+.settings-nav button.active,
+.settings-nav button:hover {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.settings-page {
+    display: none;
+}
+
+.settings-page.active {
+    display: block;
+}
+
+.settings-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.settings-row-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--panel);
+    font-size: 19px;
+}
+
+.settings-row-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.settings-row-title {
+    font-weight: 800;
+}
+
+.settings-row-description {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+    margin-top: 2px;
+}
+
+.settings-action {
+    border: 0;
+    border-radius: 11px;
+    padding: 9px 12px;
+    background: var(--accent);
+    color: white;
+    white-space: nowrap;
+}
+
+.security-status {
+    padding: 12px;
+    border-radius: 13px;
+    background: rgba(34,197,94,.10);
+    border: 1px solid rgba(34,197,94,.18);
+    margin-bottom: 10px;
+    color: #86efac;
+    font-size: 13px;
+}
+
+.danger-button {
+    width: 100%;
+    border: 0;
+    border-radius: 12px;
+    padding: 12px;
+    background: rgba(239,68,68,.12);
+    color: #fca5a5;
+}
+
+.danger-button:hover {
+    background: #dc2626;
+    color: white;
+}
+
+/* =========================================================
+   CHANNEL LIST
+========================================================= */
+
 .channels-list {
     max-height: 55vh;
     overflow-y: auto;
@@ -819,7 +1289,9 @@ select:focus {
     background: var(--panel);
 }
 
-/* CALL */
+/* =========================================================
+   CALL
+========================================================= */
 
 .call-screen {
     position: fixed;
@@ -944,47 +1416,31 @@ select:focus {
     flex: 1;
 }
 
-/* VIBE POLISH */
-.brand {
-    display:flex;
-    align-items:center;
-    gap:8px;
-    text-shadow:0 0 18px rgba(236,72,153,.45), 0 0 30px rgba(139,92,246,.4);
-}
-.brand::before {
-    content:"V";
-    width:34px;
-    height:34px;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#050505;
-    color:#fff;
-    font-size:20px;
-    font-weight:900;
-    box-shadow:0 0 12px rgba(236,72,153,.55),0 0 24px rgba(139,92,246,.4);
-}
+/* =========================================================
+   FILE UPLOAD
+========================================================= */
 
 .file-upload-btn {
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:100%;
-    padding:12px;
-    margin:0 0 12px;
-    border-radius:13px;
-    background:var(--panel2);
-    color:var(--text);
-    border:1px solid var(--border);
-    cursor:pointer;
-}
-.file-upload-btn:hover {
-    border-color:var(--accent);
-    background:var(--panel2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 12px;
+    margin: 0 0 12px;
+    border-radius: 13px;
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    cursor: pointer;
 }
 
-/* MOBILE */
+.file-upload-btn:hover {
+    border-color: var(--accent);
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
 
 @media (max-width:750px) {
 
@@ -1070,7 +1526,7 @@ select:focus {
     }
 
     .bottom-buttons {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 1fr 1fr;
         gap: 6px;
     }
 
@@ -1087,23 +1543,33 @@ select:focus {
     }
 
     .modal-card {
-        width:100%;
-        max-width:none;
-        height:100dvh;
-        max-height:none;
-        overflow-y:auto;
-        border-radius:0;
-        padding:20px 14px calc(20px + env(safe-area-inset-bottom));
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+        overflow-y: auto;
+        border-radius: 0;
+        padding:
+            max(20px,env(safe-area-inset-top))
+            14px
+            calc(20px + env(safe-area-inset-bottom));
     }
 
-    #settingsModal .modal-card {
-        padding-top:max(20px, env(safe-area-inset-top));
+    .profile-view-grid {
+        grid-template-columns: 1fr;
     }
 
-    .modal-card {
-        max-height: 92dvh;
-        border-radius: 18px;
-        padding: 17px;
+    .settings-row {
+        align-items: flex-start;
+    }
+
+    .settings-action {
+        padding: 8px 9px;
+        font-size: 12px;
+    }
+
+    .background-option-row {
+        grid-template-columns: repeat(4,1fr);
     }
 
     #localVideo {
@@ -1119,7 +1585,9 @@ select:focus {
 <body class="booting">
 
 
-<!-- AUTH -->
+<!-- =========================================================
+     AUTH
+========================================================= -->
 
 <div id="authScreen" class="auth hidden">
 
@@ -1154,12 +1622,25 @@ select:focus {
             autocomplete="username"
         >
 
-        <input
-            id="passwordInput"
-            type="password"
-            placeholder="Введите пароль"
-            autocomplete="current-password"
-        >
+        <div class="password-field auth-password-field">
+
+            <input
+                id="passwordInput"
+                type="password"
+                placeholder="Введите пароль"
+                autocomplete="current-password"
+            >
+
+            <button
+                type="button"
+                class="password-toggle"
+                onclick="togglePasswordVisibility('passwordInput',this)"
+                title="Показать пароль"
+            >
+                👁️
+            </button>
+
+        </div>
 
         <button
             id="loginButton"
@@ -1188,7 +1669,9 @@ select:focus {
 </div>
 
 
-<!-- APP -->
+<!-- =========================================================
+     APP
+========================================================= -->
 
 <div id="app" class="app hidden">
 
@@ -1209,6 +1692,8 @@ select:focus {
                 <div class="brand">
                     Vibe
                 </div>
+
+                <!-- ОСТАВЛЯЕМ ТОЛЬКО ВЕРХНЮЮ КНОПКУ НАСТРОЕК -->
 
                 <button
                     class="icon-btn"
@@ -1240,10 +1725,6 @@ select:focus {
 
                 <button onclick="openChannels()">
                     📢 Каналы
-                </button>
-
-                <button onclick="openSettings()">
-                    ⚙️ Настройки
                 </button>
 
                 <button onclick="logout()">
@@ -1354,14 +1835,28 @@ select:focus {
 </div>
 
 
-<!-- REGISTER -->
+<!-- =========================================================
+     REGISTER
+========================================================= -->
 
 <div id="registerModal" class="modal hidden">
 
     <div class="modal-card">
 
-        <div id="registerTitle" class="modal-title">
-            Создание аккаунта
+        <div class="modal-header">
+
+            <div id="registerTitle" class="modal-title">
+                Создание аккаунта
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('registerModal')"
+                title="Закрыть"
+            >
+                ✕
+            </button>
+
         </div>
 
         <select id="registerLanguage">
@@ -1379,27 +1874,58 @@ select:focus {
         <input
             id="registerLogin"
             placeholder="Логин"
+            autocomplete="username"
         >
 
-        <input
-            id="registerPassword"
-            type="password"
-            placeholder="Пароль"
-        >
+        <div class="password-field">
+
+            <input
+                id="registerPassword"
+                type="password"
+                placeholder="Пароль"
+                autocomplete="new-password"
+            >
+
+            <button
+                type="button"
+                class="password-toggle"
+                onclick="togglePasswordVisibility('registerPassword',this)"
+                title="Показать пароль"
+            >
+                👁️
+            </button>
+
+        </div>
 
         <input
             id="registerName"
             placeholder="Имя"
         >
 
-        <label class="setting-label">
-            Дата рождения
-        </label>
+        <div class="birthday-card">
 
-        <input
-            id="registerBirthDate"
-            type="date"
-        >
+            <div class="birthday-card-title">
+                🎂 Дата рождения
+            </div>
+
+            <div class="birthday-card-description">
+                Необязательно. Можно указать дату позже в профиле.
+            </div>
+
+            <div class="birthday-input-wrap">
+
+                <input
+                    id="registerBirthDate"
+                    type="date"
+                >
+
+                <div class="birthday-icon">
+                    📅
+                </div>
+
+            </div>
+
+        </div>
 
         <input
             id="registerEmail"
@@ -1434,115 +1960,340 @@ select:focus {
 </div>
 
 
-<!-- PROFILE -->
+<!-- =========================================================
+     PROFILE
+========================================================= -->
 
 <div id="profileModal" class="modal hidden">
 
     <div class="modal-card">
 
-        <div id="profileModalTitle" class="modal-title">
-            Профиль
-        </div>
+        <div class="modal-header">
 
-        <div id="profilePreview" class="profile-photo">
-            👤
-        </div>
-
-        <input id="profileName" placeholder="Имя">
-
-        <textarea
-            id="profileAbout"
-            placeholder="О себе"
-        ></textarea>
-
-        <input
-            id="profilePhoto"
-            placeholder="Ссылка на фото или data:image..."
-        >
-
-        <label class="file-upload-btn">
-            📷 Выбрать фото с устройства
-            <input
-                id="profilePhotoFile"
-                type="file"
-                accept="image/*"
-                hidden
-            >
-        </label>
-
-        <label class="setting-label">
-            Дата рождения
-        </label>
-
-        <input
-            id="profileBirthDate"
-            type="date"
-        >
-
-        <input
-            id="profileEmail"
-            type="email"
-            placeholder="Email"
-        >
-
-        <select id="messageStyle">
-
-            <option value="classic">
-                Classic
-            </option>
-
-            <option value="square">
-                Square
-            </option>
-
-            <option value="neon">
-                Neon
-            </option>
-
-        </select>
-
-        <div
-            id="profilePrivacy"
-            class="setting-section"
-        >
-
-            <div class="setting-title">
-                🔒 Приватность
+            <div id="profileModalTitle" class="modal-title">
+                Профиль
             </div>
 
-            <label class="setting-label">
-                Кто видит дату рождения
-            </label>
+            <!-- X для выхода из чужого профиля -->
 
-            <select id="privacyBirthDate">
-                <option value="everyone">Все</option>
-                <option value="friends">Друзья</option>
-                <option value="nobody">Никто</option>
-            </select>
-
-            <label class="setting-label">
-                Кто видит аватар
-            </label>
-
-            <select id="privacyPhoto">
-                <option value="everyone">Все</option>
-                <option value="friends">Друзья</option>
-                <option value="nobody">Никто</option>
-            </select>
-
-            <label class="setting-label">
-                Кто видит «О себе»
-            </label>
-
-            <select id="privacyAbout">
-                <option value="everyone">Все</option>
-                <option value="friends">Друзья</option>
-                <option value="nobody">Никто</option>
-            </select>
+            <button
+                class="modal-close"
+                onclick="closeProfile()"
+                title="Закрыть профиль"
+            >
+                ✕
+            </button>
 
         </div>
 
-        <div id="profileButtons" class="modal-actions">
+        <div
+            id="profileViewContent"
+            class="hidden"
+        >
+
+            <div
+                id="profileViewBackground"
+                class="profile-view-background"
+            ></div>
+
+            <div class="profile-hero">
+
+                <div class="profile-view-avatar-wrap">
+
+                    <div
+                        id="profileViewPhoto"
+                        class="profile-photo"
+                    >
+                        👤
+                    </div>
+
+                </div>
+
+                <div
+                    id="profileViewName"
+                    class="profile-display-name"
+                ></div>
+
+                <div
+                    id="profileViewLogin"
+                    class="profile-display-login"
+                ></div>
+
+                <div
+                    id="profileViewAbout"
+                    class="profile-view-about"
+                ></div>
+
+                <div
+                    id="profileViewGrid"
+                    class="profile-view-grid"
+                ></div>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="profileEditContent"
+        >
+
+            <div
+                id="profilePreview"
+                class="profile-photo"
+            >
+                👤
+            </div>
+
+            <div class="profile-edit-section">
+
+                <div class="profile-edit-section-title">
+                    ✨ Основная информация
+                </div>
+
+                <input
+                    id="profileName"
+                    placeholder="Имя"
+                >
+
+                <textarea
+                    id="profileAbout"
+                    placeholder="О себе — необязательно"
+                ></textarea>
+
+            </div>
+
+
+            <div class="profile-edit-section">
+
+                <div class="profile-edit-section-title">
+                    🖼️ Фотография
+                </div>
+
+                <input
+                    id="profilePhoto"
+                    placeholder="Ссылка на фото или data:image..."
+                >
+
+                <label class="file-upload-btn">
+                    📷 Выбрать фото с устройства
+
+                    <input
+                        id="profilePhotoFile"
+                        type="file"
+                        accept="image/*"
+                        hidden
+                    >
+
+                </label>
+
+            </div>
+
+
+            <div class="profile-edit-section">
+
+                <div class="profile-edit-section-title">
+                    🎂 Дополнительные данные
+                </div>
+
+                <label class="setting-label">
+                    Дата рождения — необязательно
+                </label>
+
+                <input
+                    id="profileBirthDate"
+                    type="date"
+                >
+
+                <input
+                    id="profileEmail"
+                    type="email"
+                    placeholder="Email — необязательно"
+                >
+
+            </div>
+
+
+            <div class="profile-edit-section">
+
+                <div class="profile-edit-section-title">
+                    💬 Стиль сообщений
+                </div>
+
+                <select id="messageStyle">
+
+                    <option value="classic">
+                        Classic
+                    </option>
+
+                    <option value="square">
+                        Square
+                    </option>
+
+                    <option value="neon">
+                        Neon
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div
+                id="profileBackgroundSection"
+                class="profile-edit-section"
+            >
+
+                <div class="profile-edit-section-title">
+                    🎨 Фон профиля
+                </div>
+
+                <div
+                    id="profileBackgroundPreview"
+                    class="background-preview"
+                ></div>
+
+                <div class="background-option-row">
+
+                    <button
+                        type="button"
+                        class="background-option bg-default"
+                        data-background="default"
+                        onclick="selectProfileBackground('default')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-purple"
+                        data-background="purple"
+                        onclick="selectProfileBackground('purple')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-blue"
+                        data-background="blue"
+                        onclick="selectProfileBackground('blue')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-sunset"
+                        data-background="sunset"
+                        onclick="selectProfileBackground('sunset')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-green"
+                        data-background="green"
+                        onclick="selectProfileBackground('green')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-black"
+                        data-background="black"
+                        onclick="selectProfileBackground('black')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-pink"
+                        data-background="pink"
+                        onclick="selectProfileBackground('pink')"
+                    ></button>
+
+                    <button
+                        type="button"
+                        class="background-option bg-gold"
+                        data-background="gold"
+                        onclick="selectProfileBackground('gold')"
+                    ></button>
+
+                </div>
+
+            </div>
+
+
+            <div
+                id="profilePrivacy"
+                class="setting-section"
+            >
+
+                <div class="setting-title">
+                    🔒 Приватность
+                </div>
+
+                <label class="setting-label">
+                    Кто видит дату рождения
+                </label>
+
+                <select id="privacyBirthDate">
+
+                    <option value="everyone">
+                        Все
+                    </option>
+
+                    <option value="friends">
+                        Друзья
+                    </option>
+
+                    <option value="nobody">
+                        Никто
+                    </option>
+
+                </select>
+
+                <label class="setting-label">
+                    Кто видит аватар
+                </label>
+
+                <select id="privacyPhoto">
+
+                    <option value="everyone">
+                        Все
+                    </option>
+
+                    <option value="friends">
+                        Друзья
+                    </option>
+
+                    <option value="nobody">
+                        Никто
+                    </option>
+
+                </select>
+
+                <label class="setting-label">
+                    Кто видит «О себе»
+                </label>
+
+                <select id="privacyAbout">
+
+                    <option value="everyone">
+                        Все
+                    </option>
+
+                    <option value="friends">
+                        Друзья
+                    </option>
+
+                    <option value="nobody">
+                        Никто
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="profileButtons"
+            class="modal-actions"
+        >
 
             <button
                 class="primary"
@@ -1552,7 +2303,7 @@ select:focus {
             </button>
 
             <button
-                onclick="closeModal('profileModal')"
+                onclick="closeProfile()"
             >
                 Закрыть
             </button>
@@ -1564,76 +2315,283 @@ select:focus {
 </div>
 
 
-<!-- SETTINGS -->
+<!-- =========================================================
+     SETTINGS
+========================================================= -->
 
 <div id="settingsModal" class="modal hidden">
 
     <div class="modal-card">
 
-        <div class="modal-title">
-            ⚙️ <span data-i18n="settings">Настройки</span>
-        </div>
+        <div class="modal-header">
 
-        <div class="setting-section">
-
-            <div class="setting-title">
-                🌐 Язык
+            <div class="modal-title">
+                ⚙️ Настройки
             </div>
-
-            <select id="siteLanguage" onchange="changeSiteLanguage()">
-
-                <option value="ru">
-                    🇷🇺 Русский
-                </option>
-
-                <option value="en">
-                    🇬🇧 English
-                </option>
-
-            </select>
-
-        </div>
-
-        <div class="setting-section">
-
-            <div class="setting-title">
-                🎨 Тема
-            </div>
-
-            <select id="siteTheme" onchange="changeTheme()">
-
-                <option value="dark">🌙 Dark</option>
-                <option value="light">☀️ Light</option>
-                <option value="ocean">🌊 Ocean</option>
-                <option value="sunset">🌅 Sunset</option>
-
-            </select>
-
-        </div>
-
-        <div class="setting-section">
-
-            <div class="setting-title">
-                👤 Профиль
-            </div>
-
-            <div
-                id="settingsLogin"
-                style="color:var(--muted);margin-bottom:10px;"
-            ></div>
 
             <button
-                class="primary"
-                onclick="closeModal('settingsModal');openProfile();"
+                class="modal-close"
+                onclick="closeModal('settingsModal')"
+                title="Закрыть"
             >
-                Изменить профиль
+                ✕
             </button>
 
         </div>
 
+
+        <div class="settings-nav">
+
+            <button
+                id="settingsProfileTab"
+                class="active"
+                onclick="switchSettingsTab('profile')"
+            >
+                👤 Профиль
+            </button>
+
+            <button
+                id="settingsDataTab"
+                onclick="switchSettingsTab('data')"
+            >
+                🔐 Данные
+            </button>
+
+        </div>
+
+
+        <!-- PROFILE SETTINGS -->
+
+        <div
+            id="settingsProfilePage"
+            class="settings-page active"
+        >
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    👤 Профиль
+                </div>
+
+                <div class="settings-row">
+
+                    <div class="settings-row-icon">
+                        👤
+                    </div>
+
+                    <div class="settings-row-content">
+
+                        <div class="settings-row-title">
+                            Твой профиль
+                        </div>
+
+                        <div
+                            id="settingsLogin"
+                            class="settings-row-description"
+                        ></div>
+
+                    </div>
+
+                    <button
+                        class="settings-action"
+                        onclick="closeModal('settingsModal');openProfile();"
+                    >
+                        Открыть
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    🌐 Язык
+                </div>
+
+                <select
+                    id="siteLanguage"
+                    onchange="changeSiteLanguage()"
+                >
+
+                    <option value="ru">
+                        🇷🇺 Русский
+                    </option>
+
+                    <option value="en">
+                        🇬🇧 English
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    🎨 Тема приложения
+                </div>
+
+                <select
+                    id="siteTheme"
+                    onchange="changeTheme()"
+                >
+
+                    <option value="dark">
+                        🌙 Dark
+                    </option>
+
+                    <option value="light">
+                        ☀️ Light
+                    </option>
+
+                    <option value="ocean">
+                        🌊 Ocean
+                    </option>
+
+                    <option value="sunset">
+                        🌅 Sunset
+                    </option>
+
+                </select>
+
+            </div>
+
+        </div>
+
+
+        <!-- DATA / SECURITY SETTINGS -->
+
+        <div
+            id="settingsDataPage"
+            class="settings-page"
+        >
+
+            <div class="security-status">
+                🛡️ Настройки данных и безопасности
+            </div>
+
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    🔑 Пароль
+                </div>
+
+                <div class="settings-row">
+
+                    <div class="settings-row-icon">
+                        🔐
+                    </div>
+
+                    <div class="settings-row-content">
+
+                        <div class="settings-row-title">
+                            Изменить пароль
+                        </div>
+
+                        <div class="settings-row-description">
+                            Установи новый пароль для входа в Vibe.
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="primary"
+                    style="margin-top:12px;"
+                    onclick="openChangePassword()"
+                >
+                    Изменить пароль
+                </button>
+
+            </div>
+
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    🖼️ Фон профиля
+                </div>
+
+                <div class="settings-row">
+
+                    <div class="settings-row-icon">
+                        🎨
+                    </div>
+
+                    <div class="settings-row-content">
+
+                        <div class="settings-row-title">
+                            Персонализация
+                        </div>
+
+                        <div class="settings-row-description">
+                            Настрой фон, который будет отображаться в твоём профиле.
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="primary"
+                    style="margin-top:12px;"
+                    onclick="closeModal('settingsModal');openProfile();"
+                >
+                    Настроить профиль
+                </button>
+
+            </div>
+
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    💾 Локальные данные
+                </div>
+
+                <div class="settings-row">
+
+                    <div class="settings-row-icon">
+                        🧹
+                    </div>
+
+                    <div class="settings-row-content">
+
+                        <div class="settings-row-title">
+                            Счётчики непрочитанных
+                        </div>
+
+                        <div class="settings-row-description">
+                            Сбросить локальные счётчики непрочитанных сообщений и каналов.
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <button
+                    class="secondary"
+                    style="margin-top:12px;"
+                    onclick="resetReadCounters()"
+                >
+                    Сбросить счётчики
+                </button>
+
+            </div>
+
+        </div>
+
+
         <div class="modal-actions">
 
-            <button onclick="closeModal('settingsModal')">
+            <button
+                onclick="closeModal('settingsModal')"
+            >
                 Закрыть
             </button>
 
@@ -1644,14 +2602,159 @@ select:focus {
 </div>
 
 
-<!-- CHANNELS -->
+<!-- =========================================================
+     CHANGE PASSWORD
+========================================================= -->
+
+<div id="changePasswordModal" class="modal hidden">
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+
+            <div class="modal-title">
+                🔑 Новый пароль
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('changePasswordModal')"
+            >
+                ✕
+            </button>
+
+        </div>
+
+        <div class="setting-section">
+
+            <div class="setting-title">
+                🔐 Текущий пароль
+            </div>
+
+            <div class="password-field">
+
+                <input
+                    id="currentPasswordInput"
+                    type="password"
+                    placeholder="Текущий пароль"
+                >
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePasswordVisibility('currentPasswordInput',this)"
+                >
+                    👁️
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="setting-section">
+
+            <div class="setting-title">
+                ✨ Новый пароль
+            </div>
+
+            <div class="password-field">
+
+                <input
+                    id="newPasswordInput"
+                    type="password"
+                    placeholder="Новый пароль"
+                >
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePasswordVisibility('newPasswordInput',this)"
+                >
+                    👁️
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="setting-section">
+
+            <div class="setting-title">
+                🔁 Повтор нового пароля
+            </div>
+
+            <div class="password-field">
+
+                <input
+                    id="repeatPasswordInput"
+                    type="password"
+                    placeholder="Повтори новый пароль"
+                >
+
+                <button
+                    type="button"
+                    class="password-toggle"
+                    onclick="togglePasswordVisibility('repeatPasswordInput',this)"
+                >
+                    👁️
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div
+            id="changePasswordMessage"
+            class="auth-message"
+        ></div>
+
+
+        <div class="modal-actions">
+
+            <button
+                class="primary"
+                onclick="changePassword()"
+            >
+                Сохранить пароль
+            </button>
+
+            <button
+                onclick="closeModal('changePasswordModal')"
+            >
+                Отмена
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     CHANNELS
+========================================================= -->
 
 <div id="channelsModal" class="modal hidden">
 
     <div class="modal-card">
 
-        <div class="modal-title">
-            📢 Каналы
+        <div class="modal-header">
+
+            <div class="modal-title">
+                📢 Каналы
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('channelsModal')"
+            >
+                ✕
+            </button>
+
         </div>
 
         <button
@@ -1680,14 +2783,27 @@ select:focus {
 </div>
 
 
-<!-- CREATE CHANNEL -->
+<!-- =========================================================
+     CREATE CHANNEL
+========================================================= -->
 
 <div id="createChannelModal" class="modal hidden">
 
     <div class="modal-card">
 
-        <div class="modal-title">
-            Создать канал
+        <div class="modal-header">
+
+            <div class="modal-title">
+                Создать канал
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('createChannelModal')"
+            >
+                ✕
+            </button>
+
         </div>
 
         <input
@@ -1736,14 +2852,27 @@ select:focus {
 </div>
 
 
-<!-- CHANNEL PROFILE -->
+<!-- =========================================================
+     CHANNEL PROFILE
+========================================================= -->
 
 <div id="channelProfileModal" class="modal hidden">
 
     <div class="modal-card">
 
-        <div class="modal-title">
-            📢 Профиль канала
+        <div class="modal-header">
+
+            <div class="modal-title">
+                📢 Профиль канала
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('channelProfileModal')"
+            >
+                ✕
+            </button>
+
         </div>
 
         <div id="channelProfilePreview" class="profile-photo">
@@ -1811,7 +2940,9 @@ select:focus {
 </div>
 
 
-<!-- INCOMING CALL -->
+<!-- =========================================================
+     INCOMING CALL
+========================================================= -->
 
 <div id="incomingCallModal" class="modal hidden">
 
@@ -1852,7 +2983,9 @@ select:focus {
 </div>
 
 
-<!-- CALL -->
+<!-- =========================================================
+     CALL
+========================================================= -->
 
 <div id="callScreen" class="call-screen hidden">
 
@@ -1916,6 +3049,7 @@ select:focus {
 const $ = id => document.getElementById(id);
 
 function escapeHTML(value) {
+
     return String(value ?? "")
         .replaceAll("&","&amp;")
         .replaceAll("<","&lt;")
@@ -1957,6 +3091,8 @@ let callTimer = null;
 let callSeconds = 0;
 
 let profileViewLogin = "";
+
+let selectedProfileBackground = "default";
 
 
 /* =========================================================
@@ -2070,15 +3206,53 @@ function changeSiteLanguage() {
     );
 
     applyLanguage();
+
+    saveExtraProfile(
+        currentUser.login,
+        {
+            ...getExtraProfile(currentUser.login),
+            language: siteLanguage
+        }
+    );
+}
+
+
+/* =========================================================
+   PASSWORD VISIBILITY
+========================================================= */
+
+function togglePasswordVisibility(inputId, button) {
+
+    const input =
+        $(inputId);
+
+    if (!input) {
+        return;
+    }
+
+    if (input.type === "password") {
+
+        input.type = "text";
+
+        button.textContent = "🙈";
+        button.title = "Скрыть пароль";
+
+    } else {
+
+        input.type = "password";
+
+        button.textContent = "👁️";
+        button.title = "Показать пароль";
+    }
 }
 
 
 /* =========================================================
    EXTRA PROFILE DATA
-   Пока хранится локально.
 ========================================================= */
 
 function extraKey(login) {
+
     return "vibeExtraProfile_" + login;
 }
 
@@ -2110,6 +3284,104 @@ function saveExtraProfile(login,data) {
 
 
 /* =========================================================
+   PROFILE BACKGROUNDS
+========================================================= */
+
+const profileBackgrounds = {
+
+    default:
+        "linear-gradient(135deg,#8b5cf6,#2563eb)",
+
+    purple:
+        "linear-gradient(135deg,#7c3aed,#db2777)",
+
+    blue:
+        "linear-gradient(135deg,#0284c7,#06b6d4)",
+
+    sunset:
+        "linear-gradient(135deg,#f97316,#db2777)",
+
+    green:
+        "linear-gradient(135deg,#059669,#14b8a6)",
+
+    black:
+        "linear-gradient(135deg,#09090b,#27272a)",
+
+    pink:
+        "linear-gradient(135deg,#ec4899,#8b5cf6)",
+
+    gold:
+        "linear-gradient(135deg,#f59e0b,#ef4444)"
+};
+
+
+function selectProfileBackground(background) {
+
+    if (!profileBackgrounds[background]) {
+        background = "default";
+    }
+
+    selectedProfileBackground =
+        background;
+
+    updateProfileBackgroundPreview();
+
+    document
+        .querySelectorAll(".background-option")
+        .forEach(
+            button => {
+
+                button.classList.toggle(
+                    "active",
+                    button.dataset.background ===
+                    background
+                );
+            }
+        );
+}
+
+
+function updateProfileBackgroundPreview() {
+
+    const background =
+        profileBackgrounds[
+            selectedProfileBackground
+        ] ||
+        profileBackgrounds.default;
+
+    if ($("profileBackgroundPreview")) {
+
+        $("profileBackgroundPreview")
+            .style
+            .background =
+            background;
+    }
+}
+
+
+function getProfileBackground(login) {
+
+    const extra =
+        getExtraProfile(login);
+
+    return extra.background ||
+        "default";
+}
+
+
+function applyProfileBackground(element, background) {
+
+    if (!element) {
+        return;
+    }
+
+    element.style.background =
+        profileBackgrounds[background] ||
+        profileBackgrounds.default;
+}
+
+
+/* =========================================================
    THEME
 ========================================================= */
 
@@ -2137,6 +3409,7 @@ function applyTheme(theme) {
     );
 
     if ($("siteTheme")) {
+
         $("siteTheme").value =
             theme || "dark";
     }
@@ -2148,6 +3421,22 @@ function changeTheme() {
     applyTheme(
         $("siteTheme").value
     );
+
+    if (currentUser) {
+
+        const extra =
+            getExtraProfile(
+                currentUser.login
+            );
+
+        extra.theme =
+            $("siteTheme").value;
+
+        saveExtraProfile(
+            currentUser.login,
+            extra
+        );
+    }
 }
 
 
@@ -2181,6 +3470,9 @@ function initEmojiPicker() {
 
             button.className =
                 "emoji-item";
+
+            button.type =
+                "button";
 
             button.textContent =
                 emoji;
@@ -2250,6 +3542,12 @@ document.addEventListener(
    READ COUNTS
 ========================================================= */
 
+/*
+    ИСПРАВЛЕНО:
+    раньше readMessageCounts создавался
+    только внутри catch и мог работать неправильно.
+*/
+
 let readMessageCounts = {};
 
 try {
@@ -2302,6 +3600,24 @@ function saveReadChannelCounts() {
         JSON.stringify(
             readChannelCounts
         )
+    );
+}
+
+
+function resetReadCounters() {
+
+    readMessageCounts = {};
+    readChannelCounts = {};
+
+    saveReadMessageCounts();
+    saveReadChannelCounts();
+
+    renderChats();
+
+    alert(
+        siteLanguage === "ru"
+            ? "Счётчики сброшены"
+            : "Counters reset"
     );
 }
 
@@ -2401,8 +3717,8 @@ async function login() {
 
         $("authMessage").textContent =
             siteLanguage === "ru"
-                ? "Заполни все поля"
-                : "Fill in all fields";
+                ? "Заполни логин и пароль"
+                : "Fill in username and password";
 
         return;
     }
@@ -2516,17 +3832,32 @@ async function register() {
         $("registerLanguage")
             .value;
 
+    /*
+        Дата рождения теперь НЕ обязательна.
+        Имя тоже оставляем обязательным,
+        чтобы профиль не был пустым.
+    */
+
     if (
         !loginValue ||
         !password ||
-        !name ||
-        !birthDate
+        !name
     ) {
 
         $("registerMessage").textContent =
             language === "ru"
-                ? "Заполни логин, пароль, имя и дату рождения"
-                : "Fill in username, password, name and birth date";
+                ? "Заполни логин, пароль и имя"
+                : "Fill in username, password and name";
+
+        return;
+    }
+
+    if (password.length < 4) {
+
+        $("registerMessage").textContent =
+            language === "ru"
+                ? "Пароль должен содержать минимум 4 символа"
+                : "Password must contain at least 4 characters";
 
         return;
     }
@@ -2566,28 +3897,31 @@ async function register() {
         currentUser =
             data.user;
 
-        /*
-            Сервер пока принимает только
-            login/password.
+        const extra = {
 
-            Остальные данные сохраняем
-            локально до обновления server.js.
-        */
+            language,
+
+            birthDate,
+
+            email,
+
+            background:"default",
+
+            privacyBirthDate:"everyone",
+
+            privacyPhoto:"everyone",
+
+            privacyAbout:"everyone",
+
+            theme:
+                localStorage.getItem(
+                    "vibeTheme"
+                ) || "dark"
+        };
 
         saveExtraProfile(
             currentUser.login,
-            {
-                language,
-                birthDate,
-                email,
-                privacyBirthDate:"everyone",
-                privacyPhoto:"everyone",
-                privacyAbout:"everyone",
-                theme:
-                    localStorage.getItem(
-                        "vibeTheme"
-                    ) || "dark"
-            }
+            extra
         );
 
         siteLanguage =
@@ -2608,8 +3942,10 @@ async function register() {
             JSON.stringify(currentUser)
         );
 
+
         /*
-            Сохраняем имя на текущем сервере.
+            Теперь отправляем дополнительные данные
+            на новый server.js.
         */
 
         try {
@@ -2627,15 +3963,38 @@ async function register() {
 
                         body:
                             JSON.stringify({
+
                                 login:
                                     currentUser.login,
 
                                 name,
 
                                 about:"",
+
                                 photo:"",
+
                                 messageStyle:
-                                    "classic"
+                                    "classic",
+
+                                language,
+
+                                email,
+
+                                birthDate,
+
+                                background:
+                                    "default",
+
+                                privacy:{
+                                    birthDate:
+                                        "everyone",
+
+                                    photo:
+                                        "everyone",
+
+                                    about:
+                                        "everyone"
+                                }
                             })
                         }
                     );
@@ -2657,6 +4016,7 @@ async function register() {
             }
 
         } catch {}
+
 
         closeModal(
             "registerModal"
@@ -2876,6 +4236,41 @@ function logout() {
    SETTINGS
 ========================================================= */
 
+function switchSettingsTab(tab) {
+
+    const profile =
+        tab === "profile";
+
+    $("settingsProfileTab")
+        .classList
+        .toggle(
+            "active",
+            profile
+        );
+
+    $("settingsDataTab")
+        .classList
+        .toggle(
+            "active",
+            !profile
+        );
+
+    $("settingsProfilePage")
+        .classList
+        .toggle(
+            "active",
+            profile
+        );
+
+    $("settingsDataPage")
+        .classList
+        .toggle(
+            "active",
+            !profile
+        );
+}
+
+
 function openSettings() {
 
     if (!currentUser) {
@@ -2900,9 +4295,158 @@ function openSettings() {
         ) ||
         "dark";
 
+    switchSettingsTab("profile");
+
     $("settingsModal")
         .classList
         .remove("hidden");
+}
+
+
+/* =========================================================
+   CHANGE PASSWORD
+========================================================= */
+
+function openChangePassword() {
+
+    $("currentPasswordInput").value = "";
+    $("newPasswordInput").value = "";
+    $("repeatPasswordInput").value = "";
+
+    $("changePasswordMessage")
+        .textContent = "";
+
+    $("changePasswordModal")
+        .classList
+        .remove("hidden");
+}
+
+
+async function changePassword() {
+
+    if (!currentUser) {
+        return;
+    }
+
+    const currentPassword =
+        $("currentPasswordInput")
+            .value;
+
+    const newPassword =
+        $("newPasswordInput")
+            .value;
+
+    const repeatPassword =
+        $("repeatPasswordInput")
+            .value;
+
+    const message =
+        $("changePasswordMessage");
+
+    message.textContent = "";
+
+    if (
+        !currentPassword ||
+        !newPassword ||
+        !repeatPassword
+    ) {
+
+        message.textContent =
+            "Заполни все поля";
+
+        return;
+    }
+
+    if (newPassword.length < 4) {
+
+        message.textContent =
+            "Новый пароль должен содержать минимум 4 символа";
+
+        return;
+    }
+
+    if (newPassword !== repeatPassword) {
+
+        message.textContent =
+            "Новые пароли не совпадают";
+
+        return;
+    }
+
+    if (newPassword === currentPassword) {
+
+        message.textContent =
+            "Новый пароль должен отличаться от старого";
+
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                "/change-password",
+                {
+                    method:"POST",
+
+                    headers:{
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            login:
+                                currentUser.login,
+
+                            currentPassword,
+
+                            newPassword
+                        })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!data.success) {
+
+            message.textContent =
+                data.message ||
+                "Не удалось изменить пароль";
+
+            return;
+        }
+
+        message.style.color =
+            "#86efac";
+
+        message.textContent =
+            "Пароль успешно изменён";
+
+        $("currentPasswordInput").value = "";
+        $("newPasswordInput").value = "";
+        $("repeatPasswordInput").value = "";
+
+        setTimeout(
+            () => {
+
+                closeModal(
+                    "changePasswordModal"
+                );
+
+                message.style.color = "";
+
+            },
+            900
+        );
+
+    } catch {
+
+        message.textContent =
+            "Ошибка сервера";
+    }
 }
 
 
@@ -3639,6 +5183,14 @@ async function openChat(login) {
 
     openMobileChatView();
 
+    /*
+        Поллинг на 1.5 секунды УДАЛЁН.
+
+        Новые сообщения уже приходят через WebSocket,
+        поэтому постоянные запросы к серверу больше
+        не нужны.
+    */
+
     if (chatTimer) {
 
         clearInterval(chatTimer);
@@ -3681,23 +5233,6 @@ async function openChat(login) {
     await loadMessages(true);
 
     await markChatAsRead(login);
-
-    chatTimer =
-        setInterval(
-            () => {
-
-                if (
-                    currentChat &&
-                    !currentChannel
-                ) {
-
-                    loadMessages(false);
-                    loadChats();
-                }
-
-            },
-            1500
-        );
 
     renderChats();
 
@@ -3919,6 +5454,11 @@ async function sendMessage() {
         return;
     }
 
+    /*
+        Сразу очищаем поле и отправляем запрос.
+        После ответа сервера обновляем только нужные данные.
+    */
+
     input.value = "";
 
     try {
@@ -3952,6 +5492,11 @@ async function sendMessage() {
 
         if (data.success) {
 
+            /*
+                Сервер уже сохранил сообщение.
+                Показываем его сразу после ответа POST.
+            */
+
             await loadMessages(true);
 
             await loadChats();
@@ -3959,9 +5504,25 @@ async function sendMessage() {
             await markChatAsRead(
                 currentChat
             );
+
+        } else {
+
+            input.value = text;
+
+            alert(
+                data.message ||
+                "Не удалось отправить сообщение"
+            );
         }
 
-    } catch {}
+    } catch {
+
+        input.value = text;
+
+        alert(
+            "Ошибка отправки сообщения"
+        );
+    }
 }
 
 
@@ -3970,6 +5531,10 @@ async function sendMessage() {
 ========================================================= */
 
 async function openProfile() {
+
+    if (!currentUser) {
+        return;
+    }
 
     profileViewLogin =
         currentUser.login;
@@ -3992,6 +5557,14 @@ async function openProfile() {
         .textContent =
         "Мой профиль";
 
+    $("profileViewContent")
+        .classList
+        .add("hidden");
+
+    $("profileEditContent")
+        .classList
+        .remove("hidden");
+
     $("profileName").value =
         user.name || "";
 
@@ -4010,22 +5583,40 @@ async function openProfile() {
         "classic";
 
     $("profileBirthDate").value =
-        extra.birthDate || "";
+        user.birthDate ||
+        extra.birthDate ||
+        "";
 
     $("profileEmail").value =
-        extra.email || "";
+        user.email ||
+        extra.email ||
+        "";
 
     $("privacyBirthDate").value =
+        user.privacy?.birthDate ||
         extra.privacyBirthDate ||
         "everyone";
 
     $("privacyPhoto").value =
+        user.privacy?.photo ||
         extra.privacyPhoto ||
         "everyone";
 
     $("privacyAbout").value =
+        user.privacy?.about ||
         extra.privacyAbout ||
         "everyone";
+
+
+    selectedProfileBackground =
+        user.background ||
+        extra.background ||
+        "default";
+
+    selectProfileBackground(
+        selectedProfileBackground
+    );
+
 
     $("profileName").disabled = false;
     $("profileAbout").disabled = false;
@@ -4035,6 +5626,10 @@ async function openProfile() {
     $("profileEmail").disabled = false;
 
     $("profilePrivacy")
+        .classList
+        .remove("hidden");
+
+    $("profileBackgroundSection")
         .classList
         .remove("hidden");
 
@@ -4068,101 +5663,276 @@ async function openUserProfile(login) {
     const own =
         login === currentUser.login;
 
+    if (own) {
+
+        await openProfile();
+
+        return;
+    }
+
     const extra =
         getExtraProfile(login);
 
     $("profileModalTitle")
         .textContent =
-        own
-            ? "Мой профиль"
-            : "Профиль пользователя";
+        "Профиль пользователя";
 
-    $("profileName").value =
-        user.name || "";
-
-    $("profileAbout").value =
-        user.about || "";
-
-    $("profilePhoto").value =
-        user.photo || "";
-
-    if ($("profilePhotoFile")) {
-        $("profilePhotoFile").value = "";
-    }
-
-    $("messageStyle").value =
-        user.messageStyle ||
-        "classic";
 
     /*
-        Email всегда скрыт от других.
+        Для чужого профиля теперь используется
+        отдельный красивый режим просмотра.
     */
 
-    $("profileEmail").value =
-        own
-            ? (extra.email || "")
-            : "";
-
-    /*
-        День рождения показываем
-        только если это разрешено.
-    */
-
-    let canSeeBirthDate = own;
-
-    if (!own) {
-
-        canSeeBirthDate =
-            extra.privacyBirthDate ===
-            "everyone";
-
-        if (
-            extra.privacyBirthDate ===
-            "friends"
-        ) {
-
-            canSeeBirthDate =
-                friends.some(
-                    friend =>
-                        friend.login === login
-                );
-        }
-    }
-
-    $("profileBirthDate").value =
-        canSeeBirthDate
-            ? (extra.birthDate || "")
-            : "";
-
-    $("profileName").disabled = !own;
-    $("profileAbout").disabled = !own;
-    $("profilePhoto").disabled = !own;
-    $("messageStyle").disabled = !own;
-    $("profileBirthDate").disabled = !own;
-    $("profileEmail").disabled = !own;
-
-    $("profilePrivacy")
+    $("profileEditContent")
         .classList
-        .toggle(
-            "hidden",
-            !own
-        );
+        .add("hidden");
+
+    $("profileViewContent")
+        .classList
+        .remove("hidden");
 
     $("profileButtons")
         .classList
-        .toggle(
-            "hidden",
-            !own
+        .add("hidden");
+
+
+    const privacy =
+        user.privacy ||
+        extra.privacy ||
+        {};
+
+
+    /* Дата рождения */
+
+    let canSeeBirthDate = false;
+
+    const birthPrivacy =
+        privacy.birthDate ||
+        extra.privacyBirthDate ||
+        "everyone";
+
+    if (birthPrivacy === "everyone") {
+
+        canSeeBirthDate = true;
+
+    } else if (
+        birthPrivacy === "friends"
+    ) {
+
+        canSeeBirthDate =
+            friends.some(
+                friend =>
+                    friend.login === login
+            );
+    }
+
+
+    /* Фото */
+
+    let canSeePhoto = true;
+
+    const photoPrivacy =
+        privacy.photo ||
+        extra.privacyPhoto ||
+        "everyone";
+
+    if (photoPrivacy === "nobody") {
+
+        canSeePhoto = false;
+
+    } else if (
+        photoPrivacy === "friends"
+    ) {
+
+        canSeePhoto =
+            friends.some(
+                friend =>
+                    friend.login === login
+            );
+    }
+
+
+    /* О себе */
+
+    let canSeeAbout = true;
+
+    const aboutPrivacy =
+        privacy.about ||
+        extra.privacyAbout ||
+        "everyone";
+
+    if (aboutPrivacy === "nobody") {
+
+        canSeeAbout = false;
+
+    } else if (
+        aboutPrivacy === "friends"
+    ) {
+
+        canSeeAbout =
+            friends.some(
+                friend =>
+                    friend.login === login
+            );
+    }
+
+
+    /*
+        Фон профиля
+    */
+
+    const background =
+        user.background ||
+        extra.background ||
+        "default";
+
+    applyProfileBackground(
+        $("profileViewBackground"),
+        background
+    );
+
+
+    /*
+        Фото
+    */
+
+    $("profileViewPhoto")
+        .innerHTML =
+        canSeePhoto && user.photo
+            ? `<img src="${escapeHTML(user.photo)}">`
+            : "👤";
+
+
+    /*
+        Имя и логин
+    */
+
+    $("profileViewName")
+        .textContent =
+        user.name ||
+        user.login;
+
+    $("profileViewLogin")
+        .textContent =
+        "@" + user.login;
+
+
+    /*
+        О себе
+    */
+
+    $("profileViewAbout")
+        .textContent =
+        canSeeAbout && user.about
+            ? user.about
+            : "";
+
+
+    /*
+        Информация
+    */
+
+    const grid =
+        $("profileViewGrid");
+
+    grid.innerHTML = "";
+
+
+    if (canSeeBirthDate) {
+
+        const birth =
+            user.birthDate ||
+            extra.birthDate;
+
+        if (birth) {
+
+            grid.appendChild(
+                createProfileInfoCard(
+                    "🎂 Дата рождения",
+                    formatBirthDate(birth)
+                )
+            );
+        }
+    }
+
+
+    if (user.messageStyle) {
+
+        grid.appendChild(
+            createProfileInfoCard(
+                "💬 Стиль сообщений",
+                user.messageStyle
+            )
         );
+    }
 
-    currentPhoto =
-        user.photo || "";
 
-    updateProfilePreview();
+    /*
+        Email чужого профиля никогда не показываем.
+    */
+
 
     $("profileModal")
         .classList
         .remove("hidden");
+}
+
+
+function createProfileInfoCard(label,value) {
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+    card.className =
+        "profile-info-card";
+
+    card.innerHTML =
+        `
+        <div class="profile-info-label">
+            ${escapeHTML(label)}
+        </div>
+
+        <div class="profile-info-value">
+            ${escapeHTML(value)}
+        </div>
+        `;
+
+    return card;
+}
+
+
+function formatBirthDate(value) {
+
+    if (!value) {
+        return "";
+    }
+
+    try {
+
+        return new Date(
+            value + "T00:00:00"
+        ).toLocaleDateString(
+            siteLanguage === "ru"
+                ? "ru-RU"
+                : "en-US"
+        );
+
+    } catch {
+
+        return value;
+    }
+}
+
+
+function closeProfile() {
+
+    closeModal(
+        "profileModal"
+    );
+
+    profileViewLogin = "";
 }
 
 
@@ -4188,34 +5958,92 @@ $("profilePhoto")
         }
     );
 
+
 $("profilePhotoFile")
     .addEventListener(
         "change",
         event => {
 
-            const file = event.target.files?.[0];
+            const file =
+                event.target.files?.[0];
 
-            if (!file || !file.type.startsWith("image/")) {
+            if (
+                !file ||
+                !file.type.startsWith("image/")
+            ) {
                 return;
             }
 
-            const reader = new FileReader();
+            const reader =
+                new FileReader();
 
             reader.onload = () => {
-                const img = new Image();
+
+                const img =
+                    new Image();
+
                 img.onload = () => {
+
                     const max = 700;
-                    const scale = Math.min(1, max / Math.max(img.width, img.height));
-                    const canvas = document.createElement("canvas");
-                    canvas.width = Math.max(1, Math.round(img.width * scale));
-                    canvas.height = Math.max(1, Math.round(img.height * scale));
-                    const ctx = canvas.getContext("2d");
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    currentPhoto = canvas.toDataURL("image/jpeg", 0.82);
-                    $("profilePhoto").value = currentPhoto;
+
+                    const scale =
+                        Math.min(
+                            1,
+                            max /
+                            Math.max(
+                                img.width,
+                                img.height
+                            )
+                        );
+
+                    const canvas =
+                        document.createElement(
+                            "canvas"
+                        );
+
+                    canvas.width =
+                        Math.max(
+                            1,
+                            Math.round(
+                                img.width *
+                                scale
+                            )
+                        );
+
+                    canvas.height =
+                        Math.max(
+                            1,
+                            Math.round(
+                                img.height *
+                                scale
+                            )
+                        );
+
+                    const ctx =
+                        canvas.getContext("2d");
+
+                    ctx.drawImage(
+                        img,
+                        0,
+                        0,
+                        canvas.width,
+                        canvas.height
+                    );
+
+                    currentPhoto =
+                        canvas.toDataURL(
+                            "image/jpeg",
+                            0.82
+                        );
+
+                    $("profilePhoto").value =
+                        currentPhoto;
+
                     updateProfilePreview();
                 };
-                img.src = reader.result;
+
+                img.src =
+                    reader.result;
             };
 
             reader.readAsDataURL(file);
@@ -4246,6 +6074,10 @@ async function saveProfile() {
     extra.email =
         $("profileEmail").value.trim();
 
+    extra.background =
+        selectedProfileBackground ||
+        "default";
+
     extra.privacyBirthDate =
         $("privacyBirthDate").value;
 
@@ -4264,6 +6096,7 @@ async function saveProfile() {
         currentUser.login,
         extra
     );
+
 
     try {
 
@@ -4286,20 +6119,52 @@ async function saveProfile() {
 
                             name:
                                 $("profileName")
-                                    .value,
+                                    .value
+                                    .trim(),
 
                             about:
                                 $("profileAbout")
-                                    .value,
+                                    .value
+                                    .trim(),
 
                             photo:
                                 currentPhoto ||
                                 $("profilePhoto")
-                                    .value,
+                                    .value
+                                    .trim(),
 
                             messageStyle:
                                 $("messageStyle")
+                                    .value,
+
+                            language:
+                                siteLanguage,
+
+                            email:
+                                $("profileEmail")
                                     .value
+                                    .trim(),
+
+                            birthDate:
+                                $("profileBirthDate")
+                                    .value,
+
+                            background:
+                                selectedProfileBackground,
+
+                            privacy:{
+                                birthDate:
+                                    $("privacyBirthDate")
+                                        .value,
+
+                                photo:
+                                    $("privacyPhoto")
+                                        .value,
+
+                                about:
+                                    $("privacyAbout")
+                                        .value
+                            }
                         })
                 }
             );
@@ -4322,9 +6187,7 @@ async function saveProfile() {
             currentPhoto =
                 currentUser.photo || "";
 
-            closeModal(
-                "profileModal"
-            );
+            closeProfile();
 
             loadChats();
             loadFriends();
@@ -4335,9 +6198,27 @@ async function saveProfile() {
                 !currentChannel
             ) {
 
-                openChat(
-                    currentChat
-                );
+                /*
+                    Не запускаем лишний цикл
+                    и не создаём polling.
+                */
+
+                const user =
+                    await getUser(
+                        currentChat
+                    );
+
+                if (user) {
+
+                    $("chatName").textContent =
+                        user.name ||
+                        user.login;
+
+                    $("chatAvatar").innerHTML =
+                        user.photo
+                            ? `<img src="${escapeHTML(user.photo)}">`
+                            : "👤";
+                }
             }
 
         } else {
@@ -4784,11 +6665,6 @@ async function openChannel(channel) {
             ? `<img src="${escapeHTML(channel.photo)}">`
             : "📢";
 
-    /*
-        Теперь сверху явно показывается
-        название канала.
-    */
-
     $("chatName").textContent =
         "📢 " + channel.name;
 
@@ -5120,11 +6996,6 @@ async function loadChannelPosts(forceScroll=true) {
             100;
 
         box.innerHTML = "";
-
-        /*
-            Название канала остаётся сверху
-            даже если публикаций пока нет.
-        */
 
         const channelBanner =
             document.createElement("div");
@@ -5958,10 +7829,100 @@ function endCallUI() {
 
 function closeModal(id) {
 
-    $(id)
+    const element =
+        $(id);
+
+    if (!element) {
+        return;
+    }
+
+    element
         .classList
         .add("hidden");
 }
+
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key !== "Escape") {
+            return;
+        }
+
+        const modals = [
+            "registerModal",
+            "profileModal",
+            "settingsModal",
+            "changePasswordModal",
+            "channelsModal",
+            "createChannelModal",
+            "channelProfileModal",
+            "incomingCallModal"
+        ];
+
+        for (const id of modals) {
+
+            const modal =
+                $(id);
+
+            if (
+                modal &&
+                !modal.classList.contains("hidden")
+            ) {
+
+                if (id === "profileModal") {
+
+                    closeProfile();
+
+                } else {
+
+                    closeModal(id);
+                }
+
+                break;
+            }
+        }
+    }
+);
+
+
+/*
+    Закрытие модалки по клику на затемнённую область.
+    Само содержимое модалки не закрывается.
+*/
+
+document.querySelectorAll(".modal")
+    .forEach(
+        modal => {
+
+            modal.addEventListener(
+                "click",
+                event => {
+
+                    if (
+                        event.target ===
+                        modal
+                    ) {
+
+                        if (
+                            modal.id ===
+                            "profileModal"
+                        ) {
+
+                            closeProfile();
+
+                        } else {
+
+                            closeModal(
+                                modal.id
+                            );
+                        }
+                    }
+                }
+            );
+        }
+    );
 
 
 /* =========================================================
@@ -5975,4 +7936,5 @@ autoLogin();
 </script>
 
 </body>
+
 </html>

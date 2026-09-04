@@ -18,20 +18,13 @@ const MAX_BODY_SIZE = 20 * 1024 * 1024;
 ========================================================= */
 
 function ensureFile(file, defaultValue = []) {
-
     if (!fs.existsSync(file)) {
-
         fs.writeFileSync(
             file,
-            JSON.stringify(
-                defaultValue,
-                null,
-                2
-            )
+            JSON.stringify(defaultValue, null, 2)
         );
     }
 }
-
 
 ensureFile(USERS_FILE, []);
 ensureFile(MESSAGES_FILE, []);
@@ -40,32 +33,20 @@ ensureFile(CHANNEL_POSTS_FILE);
 
 
 function readJSON(file) {
-
     try {
-
         return JSON.parse(
-            fs.readFileSync(
-                file,
-                "utf8"
-            )
+            fs.readFileSync(file, "utf8")
         );
-
     } catch {
-
         return [];
     }
 }
 
 
 function saveJSON(file, data) {
-
     fs.writeFileSync(
         file,
-        JSON.stringify(
-            data,
-            null,
-            2
-        )
+        JSON.stringify(data, null, 2)
     );
 }
 
@@ -80,95 +61,62 @@ function normalizeUser(user) {
         user.friends = [];
     }
 
-
     if (
         !user.profile ||
         typeof user.profile !== "object"
     ) {
-
         user.profile = {};
     }
 
-
-    if (
-        typeof user.profile.name !== "string"
-    ) {
-
-        user.profile.name =
-            user.login || "";
+    if (typeof user.profile.name !== "string") {
+        user.profile.name = user.login || "";
     }
 
-
-    if (
-        typeof user.profile.about !== "string"
-    ) {
-
+    if (typeof user.profile.about !== "string") {
         user.profile.about = "";
     }
 
-
-    if (
-        typeof user.profile.photo !== "string"
-    ) {
-
+    if (typeof user.profile.photo !== "string") {
         user.profile.photo = "";
     }
 
-
-    if (
-        typeof user.profile.messageStyle !== "string"
-    ) {
-
-        user.profile.messageStyle =
-            "classic";
+    if (typeof user.profile.background !== "string") {
+        user.profile.background = "";
     }
 
+    if (typeof user.profile.messageStyle !== "string") {
+        user.profile.messageStyle = "classic";
+    }
 
     if (
         user.profile.messageStyle !== "classic" &&
         user.profile.messageStyle !== "square" &&
         user.profile.messageStyle !== "neon"
     ) {
-
-        user.profile.messageStyle =
-            "classic";
+        user.profile.messageStyle = "classic";
     }
-
 
     if (
         user.profile.language !== "ru" &&
         user.profile.language !== "en"
     ) {
-
-        user.profile.language =
-            "ru";
+        user.profile.language = "ru";
     }
 
-
-    if (
-        typeof user.profile.birthDate !== "string"
-    ) {
-
+    if (typeof user.profile.birthDate !== "string") {
         user.profile.birthDate = "";
     }
 
-
-    if (
-        typeof user.profile.email !== "string"
-    ) {
-
+    if (typeof user.profile.email !== "string") {
         user.profile.email = "";
     }
-
 
     if (
         !user.profile.privacy ||
         typeof user.profile.privacy !== "object"
     ) {
-
         user.profile.privacy = {};
     }
-
 
     const allowedPrivacy = [
         "everyone",
@@ -176,61 +124,45 @@ function normalizeUser(user) {
         "nobody"
     ];
 
-
     if (
         !allowedPrivacy.includes(
             user.profile.privacy.profile
         )
     ) {
-
-        user.profile.privacy.profile =
-            "everyone";
+        user.profile.privacy.profile = "everyone";
     }
-
 
     if (
         !allowedPrivacy.includes(
             user.profile.privacy.birthDate
         )
     ) {
-
-        user.profile.privacy.birthDate =
-            "friends";
+        user.profile.privacy.birthDate = "friends";
     }
-
 
     if (
         !allowedPrivacy.includes(
             user.profile.privacy.age
         )
     ) {
-
-        user.profile.privacy.age =
-            "friends";
+        user.profile.privacy.age = "friends";
     }
-
 
     if (
         !allowedPrivacy.includes(
             user.profile.privacy.photo
         )
     ) {
-
-        user.profile.privacy.photo =
-            "everyone";
+        user.profile.privacy.photo = "everyone";
     }
-
 
     if (
         !allowedPrivacy.includes(
             user.profile.privacy.about
         )
     ) {
-
-        user.profile.privacy.about =
-            "everyone";
+        user.profile.privacy.about = "everyone";
     }
-
 
     return user;
 }
@@ -246,55 +178,36 @@ function normalizeChannel(channel) {
         channel.subscribers = [];
     }
 
-
-    if (
-        typeof channel.name !== "string"
-    ) {
-
+    if (typeof channel.name !== "string") {
         channel.name = "Канал";
     }
 
-
-    if (
-        typeof channel.description !== "string"
-    ) {
-
+    if (typeof channel.description !== "string") {
         channel.description = "";
     }
 
-
-    if (
-        typeof channel.photo !== "string"
-    ) {
-
+    if (typeof channel.photo !== "string") {
         channel.photo = "";
     }
-
 
     if (
         !channel.settings ||
         typeof channel.settings !== "object"
     ) {
-
         channel.settings = {};
     }
-
 
     if (
         typeof channel.settings.comments !== "boolean"
     ) {
-
         channel.settings.comments = false;
     }
-
 
     if (
         typeof channel.settings.notifications !== "boolean"
     ) {
-
         channel.settings.notifications = true;
     }
-
 
     return channel;
 }
@@ -306,40 +219,31 @@ function normalizeChannel(channel) {
 
 function getUsers() {
 
-    const users = readJSON(
-        USERS_FILE
-    );
+    const users = readJSON(USERS_FILE);
 
     let changed = false;
 
+    users.forEach(user => {
 
-    users.forEach(
-        user => {
+        const before =
+            JSON.stringify(user);
 
-            const before =
-                JSON.stringify(user);
+        normalizeUser(user);
 
-            normalizeUser(user);
-
-            if (
-                before !==
-                JSON.stringify(user)
-            ) {
-
-                changed = true;
-            }
+        if (
+            before !==
+            JSON.stringify(user)
+        ) {
+            changed = true;
         }
-    );
-
+    });
 
     if (changed) {
-
         saveJSON(
             USERS_FILE,
             users
         );
     }
-
 
     return users;
 }
@@ -360,14 +264,11 @@ function findUser(login) {
    AGE
 ========================================================= */
 
-function calculateAge(
-    birthDate
-) {
+function calculateAge(birthDate) {
 
     if (!birthDate) {
         return null;
     }
-
 
     const birth =
         new Date(
@@ -375,30 +276,23 @@ function calculateAge(
             "T00:00:00"
         );
 
-
     if (
         Number.isNaN(
             birth.getTime()
         )
     ) {
-
         return null;
     }
 
-
-    const now =
-        new Date();
-
+    const now = new Date();
 
     let age =
         now.getFullYear() -
         birth.getFullYear();
 
-
     const month =
         now.getMonth() -
         birth.getMonth();
-
 
     if (
         month < 0 ||
@@ -408,10 +302,8 @@ function calculateAge(
             birth.getDate()
         )
     ) {
-
         age--;
     }
-
 
     return age >= 0
         ? age
@@ -428,38 +320,23 @@ function areFriends(
     login2
 ) {
 
-    if (
-        !login1 ||
-        !login2
-    ) {
-
+    if (!login1 || !login2) {
         return false;
     }
 
-
-    if (
-        login1 === login2
-    ) {
-
+    if (login1 === login2) {
         return true;
     }
 
-
     const user =
         findUser(login1);
-
 
     if (!user) {
         return false;
     }
 
-
-    return Array.isArray(
-        user.friends
-    ) &&
-    user.friends.includes(
-        login2
-    );
+    return Array.isArray(user.friends) &&
+        user.friends.includes(login2);
 }
 
 
@@ -476,29 +353,23 @@ function canSeeField(
     if (
         ownerLogin === viewerLogin
     ) {
-
         return true;
     }
-
 
     if (
         setting === "everyone"
     ) {
-
         return true;
     }
-
 
     if (
         setting === "friends"
     ) {
-
         return areFriends(
             ownerLogin,
             viewerLogin
         );
     }
-
 
     return false;
 }
@@ -515,10 +386,8 @@ function publicUser(
 
     normalizeUser(user);
 
-
     const privacy =
         user.profile.privacy;
-
 
     const result = {
 
@@ -535,15 +404,14 @@ function publicUser(
         photo:
             "",
 
+        background:
+            "",
+
         messageStyle:
             user.profile.messageStyle ||
             "classic"
     };
 
-
-    /*
-        Профиль
-    */
 
     const profileAllowed =
         canSeeField(
@@ -552,10 +420,6 @@ function publicUser(
             privacy.profile
         );
 
-
-    /*
-        ABOUT
-    */
 
     if (
         profileAllowed &&
@@ -571,10 +435,6 @@ function publicUser(
     }
 
 
-    /*
-        PHOTO
-    */
-
     if (
         profileAllowed &&
         canSeeField(
@@ -589,9 +449,14 @@ function publicUser(
     }
 
 
-    /*
-        Если сам профиль скрыт
-    */
+    if (
+        profileAllowed
+    ) {
+
+        result.background =
+            user.profile.background || "";
+    }
+
 
     if (
         !profileAllowed &&
@@ -603,12 +468,9 @@ function publicUser(
 
         result.about = "";
         result.photo = "";
+        result.background = "";
     }
 
-
-    /*
-        DATE OF BIRTH
-    */
 
     if (
         canSeeField(
@@ -622,10 +484,6 @@ function publicUser(
             user.profile.birthDate || "";
     }
 
-
-    /*
-        AGE
-    */
 
     if (
         canSeeField(
@@ -642,10 +500,6 @@ function publicUser(
     }
 
 
-    /*
-        Личные данные только владельцу
-    */
-
     if (
         user.login === viewerLogin
     ) {
@@ -659,7 +513,6 @@ function publicUser(
         result.privacy =
             privacy;
     }
-
 
     return result;
 }
@@ -676,14 +529,12 @@ function getBody(req) {
 
             let body = "";
 
-
             req.on(
                 "data",
                 chunk => {
 
                     body +=
                         chunk.toString();
-
 
                     if (
                         body.length >
@@ -701,24 +552,19 @@ function getBody(req) {
                 }
             );
 
-
             req.on(
                 "end",
                 () => {
 
                     if (!body) {
-
                         resolve({});
                         return;
                     }
 
-
                     try {
 
                         resolve(
-                            JSON.parse(
-                                body
-                            )
+                            JSON.parse(body)
                         );
 
                     } catch {
@@ -731,7 +577,6 @@ function getBody(req) {
                     }
                 }
             );
-
 
             req.on(
                 "error",
@@ -755,7 +600,6 @@ function sendJSON(
     const json =
         JSON.stringify(data);
 
-
     res.writeHead(
         status,
         {
@@ -772,7 +616,6 @@ function sendJSON(
                 "GET,POST,OPTIONS"
         }
     );
-
 
     res.end(json);
 }
@@ -818,7 +661,6 @@ const server =
                         `http://${req.headers.host}`
                     );
 
-
                 const pathname =
                     url.pathname;
 
@@ -841,7 +683,6 @@ const server =
                             "utf8"
                         );
 
-
                     res.writeHead(
                         200,
                         {
@@ -849,7 +690,6 @@ const server =
                                 "text/html; charset=utf-8"
                         }
                     );
-
 
                     res.end(html);
 
@@ -869,36 +709,30 @@ const server =
                     const body =
                         await getBody(req);
 
-
                     const login =
                         String(
                             body.login || ""
                         ).trim();
-
 
                     const password =
                         String(
                             body.password || ""
                         );
 
-
                     const name =
                         String(
                             body.name || ""
                         ).trim();
-
 
                     const email =
                         String(
                             body.email || ""
                         ).trim();
 
-
                     const birthDate =
                         String(
                             body.birthDate || ""
                         ).trim();
-
 
                     const language =
                         body.language === "en"
@@ -926,8 +760,7 @@ const server =
 
 
                     if (
-                        login.length >
-                        40
+                        login.length > 40
                     ) {
 
                         sendJSON(
@@ -936,6 +769,24 @@ const server =
                                 success: false,
                                 message:
                                     "Логин слишком длинный"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        password.length < 4
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Пароль должен содержать минимум 4 символа"
                             },
                             400
                         );
@@ -993,6 +844,8 @@ const server =
 
                             photo: "",
 
+                            background: "",
+
                             messageStyle:
                                 "classic",
 
@@ -1029,7 +882,6 @@ const server =
 
                     users.push(user);
 
-
                     saveJSON(
                         USERS_FILE,
                         users
@@ -1049,7 +901,6 @@ const server =
                         }
                     );
 
-
                     return;
                 }
 
@@ -1066,18 +917,15 @@ const server =
                     const body =
                         await getBody(req);
 
-
                     const login =
                         String(
                             body.login || ""
                         ).trim();
 
-
                     const password =
                         String(
                             body.password || ""
                         );
-
 
                     const user =
                         findUser(login);
@@ -1115,6 +963,181 @@ const server =
                         }
                     );
 
+                    return;
+                }
+
+
+                /* =====================================================
+                   CHANGE PASSWORD
+                ===================================================== */
+
+                if (
+                    req.method === "POST" &&
+                    pathname === "/change-password"
+                ) {
+
+                    const body =
+                        await getBody(req);
+
+
+                    const login =
+                        String(
+                            body.login || ""
+                        ).trim();
+
+
+                    const currentPassword =
+                        String(
+                            body.currentPassword || ""
+                        );
+
+
+                    const newPassword =
+                        String(
+                            body.newPassword || ""
+                        );
+
+
+                    if (
+                        !login ||
+                        !currentPassword ||
+                        !newPassword
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Заполните все поля"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        newPassword.length < 4
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Новый пароль должен содержать минимум 4 символа"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        newPassword.length > 200
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Новый пароль слишком длинный"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    const users =
+                        getUsers();
+
+
+                    const user =
+                        users.find(
+                            item =>
+                                item.login ===
+                                login
+                        );
+
+
+                    if (!user) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Пользователь не найден"
+                            },
+                            404
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        user.password !==
+                        currentPassword
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Текущий пароль указан неправильно"
+                            },
+                            401
+                        );
+
+                        return;
+                    }
+
+
+                    if (
+                        currentPassword ===
+                        newPassword
+                    ) {
+
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message:
+                                    "Новый пароль должен отличаться от текущего"
+                            },
+                            400
+                        );
+
+                        return;
+                    }
+
+
+                    user.password =
+                        newPassword;
+
+
+                    saveJSON(
+                        USERS_FILE,
+                        users
+                    );
+
+
+                    sendJSON(
+                        res,
+                        {
+                            success: true,
+                            message:
+                                "Пароль успешно изменён"
+                        }
+                    );
 
                     return;
                 }
@@ -1270,7 +1293,8 @@ const server =
                     const user =
                         users.find(
                             item =>
-                                item.login === login
+                                item.login ===
+                                login
                         );
 
 
@@ -1325,6 +1349,18 @@ const server =
 
                         user.profile.photo =
                             body.photo.trim();
+                    }
+
+
+                    if (
+                        typeof body.background ===
+                        "string"
+                    ) {
+
+                        user.profile.background =
+                            body.background
+                                .trim()
+                                .slice(0, 2000000);
                     }
 
 
@@ -1542,7 +1578,8 @@ const server =
                     const user =
                         users.find(
                             item =>
-                                item.login === login
+                                item.login ===
+                                login
                         );
 
 
@@ -1656,7 +1693,6 @@ const server =
                                 message.from !== login &&
                                 message.to !== login
                             ) {
-
                                 return;
                             }
 
@@ -2638,11 +2674,6 @@ const server =
                     );
 
 
-                    /*
-                        Отправляем подписчикам
-                        название и фото канала.
-                    */
-
                     channel.subscribers.forEach(
                         subscriber => {
 
@@ -2700,7 +2731,6 @@ const server =
             } catch (error) {
 
                 console.error(error);
-
 
                 sendJSON(
                     res,
@@ -2771,10 +2801,6 @@ wss.on(
                         );
 
 
-                    /* =============================================
-                       AUTH
-                    ============================================= */
-
                     if (
                         data.type ===
                         "auth"
@@ -2810,10 +2836,6 @@ wss.on(
                     }
 
 
-                    /* =============================================
-                       CALL
-                    ============================================= */
-
                     if (
                         data.type ===
                         "call"
@@ -2848,10 +2870,6 @@ wss.on(
                     }
 
 
-                    /* =============================================
-                       ANSWER
-                    ============================================= */
-
                     if (
                         data.type ===
                         "answer"
@@ -2871,10 +2889,6 @@ wss.on(
                         return;
                     }
 
-
-                    /* =============================================
-                       ICE
-                    ============================================= */
 
                     if (
                         data.type ===
@@ -2896,10 +2910,6 @@ wss.on(
                     }
 
 
-                    /* =============================================
-                       REJECT
-                    ============================================= */
-
                     if (
                         data.type ===
                         "reject-call"
@@ -2916,10 +2926,6 @@ wss.on(
                         return;
                     }
 
-
-                    /* =============================================
-                       HANGUP
-                    ============================================= */
 
                     if (
                         data.type ===
