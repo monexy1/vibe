@@ -944,6 +944,46 @@ select:focus {
     flex: 1;
 }
 
+/* VIBE POLISH */
+.brand {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    text-shadow:0 0 18px rgba(236,72,153,.45), 0 0 30px rgba(139,92,246,.4);
+}
+.brand::before {
+    content:"V";
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#050505;
+    color:#fff;
+    font-size:20px;
+    font-weight:900;
+    box-shadow:0 0 12px rgba(236,72,153,.55),0 0 24px rgba(139,92,246,.4);
+}
+
+.file-upload-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    padding:12px;
+    margin:0 0 12px;
+    border-radius:13px;
+    background:var(--panel2);
+    color:var(--text);
+    border:1px solid var(--border);
+    cursor:pointer;
+}
+.file-upload-btn:hover {
+    border-color:var(--accent);
+    background:var(--panel2);
+}
+
 /* MOBILE */
 
 @media (max-width:750px) {
@@ -1029,8 +1069,35 @@ select:focus {
         width: calc(100vw - 75px);
     }
 
+    .bottom-buttons {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+    }
+
+    .bottom-buttons button {
+        min-height: 44px;
+        padding: 9px 5px;
+        font-size: 12px;
+    }
+
     .modal {
-        padding: 10px;
+        padding: 0;
+        align-items: stretch;
+        justify-content: stretch;
+    }
+
+    .modal-card {
+        width:100%;
+        max-width:none;
+        height:100dvh;
+        max-height:none;
+        overflow-y:auto;
+        border-radius:0;
+        padding:20px 14px calc(20px + env(safe-area-inset-bottom));
+    }
+
+    #settingsModal .modal-card {
+        padding-top:max(20px, env(safe-area-inset-top));
     }
 
     .modal-card {
@@ -1173,6 +1240,10 @@ select:focus {
 
                 <button onclick="openChannels()">
                     📢 Каналы
+                </button>
+
+                <button onclick="openSettings()">
+                    ⚙️ Настройки
                 </button>
 
                 <button onclick="logout()">
@@ -1388,6 +1459,16 @@ select:focus {
             id="profilePhoto"
             placeholder="Ссылка на фото или data:image..."
         >
+
+        <label class="file-upload-btn">
+            📷 Выбрать фото с устройства
+            <input
+                id="profilePhotoFile"
+                type="file"
+                accept="image/*"
+                hidden
+            >
+        </label>
 
         <label class="setting-label">
             Дата рождения
@@ -3920,6 +4001,10 @@ async function openProfile() {
     $("profilePhoto").value =
         user.photo || "";
 
+    if ($("profilePhotoFile")) {
+        $("profilePhotoFile").value = "";
+    }
+
     $("messageStyle").value =
         user.messageStyle ||
         "classic";
@@ -4000,6 +4085,10 @@ async function openUserProfile(login) {
 
     $("profilePhoto").value =
         user.photo || "";
+
+    if ($("profilePhotoFile")) {
+        $("profilePhotoFile").value = "";
+    }
 
     $("messageStyle").value =
         user.messageStyle ||
@@ -4099,6 +4188,40 @@ $("profilePhoto")
         }
     );
 
+$("profilePhotoFile")
+    .addEventListener(
+        "change",
+        event => {
+
+            const file = event.target.files?.[0];
+
+            if (!file || !file.type.startsWith("image/")) {
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = () => {
+                const img = new Image();
+                img.onload = () => {
+                    const max = 700;
+                    const scale = Math.min(1, max / Math.max(img.width, img.height));
+                    const canvas = document.createElement("canvas");
+                    canvas.width = Math.max(1, Math.round(img.width * scale));
+                    canvas.height = Math.max(1, Math.round(img.height * scale));
+                    const ctx = canvas.getContext("2d");
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    currentPhoto = canvas.toDataURL("image/jpeg", 0.82);
+                    $("profilePhoto").value = currentPhoto;
+                    updateProfilePreview();
+                };
+                img.src = reader.result;
+            };
+
+            reader.readAsDataURL(file);
+        }
+    );
+
 
 async function saveProfile() {
 
@@ -4170,6 +4293,7 @@ async function saveProfile() {
                                     .value,
 
                             photo:
+                                currentPhoto ||
                                 $("profilePhoto")
                                     .value,
 
