@@ -9224,20 +9224,34 @@ async function loadChannelPosts(forceScroll=true) {
                         ${Number(post.views || 0)}
                     </span>
 
+                    ${(
+                        currentChannel &&
+                        currentChannel.discussionGroupId &&
+                        currentChannel.settings?.comments !== false
+                    ) ? `
                     <button
                         type="button"
                         class="channel-comment-toggle"
+                        data-post-id="${escapeHTML(post.id || "")}"
                         title="Комментарии"
+                        aria-label="Открыть комментарии"
                     >
                         ${vibeIcon("comment")}
                         ${comments.length}
                     </button>
+                    ` : ""}
                 </div>
 
             `;
 
-            item.querySelector(".channel-comment-toggle").onclick =
-                () => openChannelDiscussion(post);
+            const commentButton = item.querySelector(".channel-comment-toggle");
+            if (commentButton) {
+                commentButton.onclick = (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openChannelDiscussion(post);
+                };
+            }
 
             box.appendChild(item);
 
@@ -9269,51 +9283,82 @@ async function loadChannelPosts(forceScroll=true) {
 /* =========================================================
    CHANNEL DISCUSSION / COMMENTS SCREEN
 ========================================================= */
-// Robust click handler: opening comments must work even if channel posts
-// are re-rendered after the normal listener was attached.
+// Fallback handler for dynamically rendered channel posts.
+// The button also receives a direct onclick handler above.
 document.addEventListener("click", event => {
     const button = event.target.closest?.(".channel-comment-toggle");
     if (!button) return;
-    const postId = button.closest(".channel-post")?.dataset?.postId;
+
+    const postId = button.dataset?.postId ||
+        button.closest(".channel-post")?.dataset?.postId;
+
     if (!postId) return;
-    const post = (window.__vibeChannelPosts || []).find(p => String(p.id) === String(postId));
-    if (post) {
-        event.preventDefault();
-        event.stopPropagation();
-        openChannelDiscussion(post);
-    }
+
+    const post = (window.__vibeChannelPosts || []).find(
+        p => String(p.id) === String(postId)
+    );
+
+    if (!post) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    openChannelDiscussion(post);
 });
 
 let channelDiscussionPost = null;
 let channelDiscussionAttachment = null;
 
 function openChannelDiscussion(post) {
-    if (!post || !currentChannel) return;
+    if (!post || !currentChannel || !currentUser) return;
+
+    // A discussion screen is available only for channels with a linked group.
+    if (
+        !currentChannel.discussionGroupId ||
+        currentChannel.settings?.comments === false
+    ) {
+        return;
+    }
+
+    const screen = $("channelDiscussionScreen");
+    if (!screen) {
+        console.error("Vibe: channelDiscussionScreen is missing");
+        return;
+    }
 
     channelDiscussionPost = post;
     channelDiscussionAttachment = null;
 
-    const screen = $("channelDiscussionScreen");
-    if (!screen) return;
-
-    $("channelDiscussionTitle").textContent = currentChannel.name || "Обсуждение";
-    $("channelDiscussionSubtitle").textContent = "Комментарии";
+    const title = $("channelDiscussionTitle");
+    const subtitle = $("channelDiscussionSubtitle");
     const avatar = $("channelDiscussionHeaderAvatar");
+
+    if (title) title.textContent = currentChannel.name || "Обсуждение";
+    if (subtitle) subtitle.textContent = "Комментарии";
     if (avatar) {
         avatar.innerHTML = currentChannel.photo
             ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
             : vibeIcon("channel");
     }
 
-    $("channelDiscussionInput").value = "";
+    const input = $("channelDiscussionInput");
+    if (input) input.value = "";
+
     $("channelDiscussionEmoji")?.classList.add("hidden");
     $("channelDiscussionAttachmentPreview")?.classList.add("hidden");
 
     renderChannelDiscussionMessages();
+
+    // Show the discussion as a real full-screen Vibe tab.
     screen.classList.remove("hidden");
     screen.setAttribute("aria-hidden", "false");
     document.body.classList.add("channel-discussion-open");
-    setTimeout(() => $("channelDiscussionInput")?.focus(), 80);
+    document.body.style.overflow = "hidden";
+
+    requestAnimationFrame(() => {
+        const messages = $("channelDiscussionMessages");
+        if (messages) messages.scrollTop = messages.scrollHeight;
+        $("channelDiscussionInput")?.focus();
+    });
 }
 
 function closeChannelDiscussion() {
@@ -9380,9 +9425,17 @@ function renderChannelDiscussionMessages() {
         const row = document.createElement("div");
         row.className = "channel-discussion-message" + (mine ? " mine" : "");
 
-        const avatar = currentChannel?.photo
-            ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
-            : vibeIcon("channel");
+        const commentUser = (groups || [])
+            .flatMap(group => Array.isArray(group.members) ? group.members : [])
+            .find(member => {
+                const login = typeof member === "string" ? member : member?.login;
+                return String(login || "") === String(comment.author || "");
+            });
+
+        const avatarPhoto = commentUser?.photo || "";
+        const avatar = avatarPhoto
+            ? `<img src="${escapeHTML(avatarPhoto)}" alt="">`
+            : vibeIcon("user");
 
         let media = "";
         const mediaType = String(comment.mediaType || "");
