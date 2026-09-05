@@ -227,13 +227,14 @@ function normalizeChannel(channel) {
         channel.photo = "";
     }
 
+    if (typeof channel.linkedGroupId !== "string") {
+        channel.linkedGroupId = "";
+    }
+
     // Never keep a truncated/invalid data URL as a channel avatar.
     if (channel.photo && channel.photo.startsWith("data:image/")) {
         const comma = channel.photo.indexOf(",");
-        if (
-            comma < 0 ||
-            channel.photo.length < comma + 20
-        ) {
+        if (comma < 0 || channel.photo.length < comma + 20) {
             channel.photo = "";
         }
     }
@@ -3307,6 +3308,8 @@ const server =
 
                         owner,
 
+                        linkedGroupId: "",
+
                         subscribers:
                             [owner],
 
@@ -3462,6 +3465,26 @@ const server =
 
                         channel.settings.comments =
                             body.comments;
+                    }
+
+                    if (typeof body.linkedGroupId === "string") {
+                        const linkedGroupId = body.linkedGroupId.trim();
+                        if (!linkedGroupId) {
+                            channel.linkedGroupId = "";
+                        } else {
+                            const groups = getGroups();
+                            const group = groups.find(g => g.id === linkedGroupId);
+                            if (!group) {
+                                sendJSON(res,{success:false,message:"Группа не найдена"},404);
+                                return;
+                            }
+                            normalizeGroup(group);
+                            if (group.owner !== body.owner && !group.admins.includes(body.owner)) {
+                                sendJSON(res,{success:false,message:"Подключить можно только группу, которой вы управляете"},403);
+                                return;
+                            }
+                            channel.linkedGroupId = linkedGroupId;
+                        }
                     }
 
 
@@ -3732,18 +3755,21 @@ const server =
                     const channelId = String(body.channelId || "");
                     const postId = String(body.postId || "");
                     const author = String(body.author || "");
-                    const text = String(body.text || "").trim().slice(0,300);
+                    const text = String(body.text || "").trim().slice(0,1000);
+                    const media = typeof body.media === "string" ? body.media.slice(0, 6000000) : "";
+                    const mediaType = media ? String(body.mediaType || "").slice(0,120) : "";
                     const channels = readJSON(CHANNELS_FILE);
                     const channel = channels.find(c => c.id === channelId);
                     if (!channel) { sendJSON(res,{success:false,message:"Канал не найден"},404); return; }
                     if (channel.settings && channel.settings.comments === false) { sendJSON(res,{success:false,message:"Комментарии отключены"},403); return; }
-                    if (!findUser(author) || !text) { sendJSON(res,{success:false,message:"Комментарий пустой"},400); return; }
+                    if (!findUser(author) || (!text && !media)) { sendJSON(res,{success:false,message:"Комментарий пустой"},400); return; }
+                    if (media && !media.startsWith("data:image/")) { sendJSON(res,{success:false,message:"Недопустимое изображение"},400); return; }
                     const posts = readJSON(CHANNEL_POSTS_FILE);
                     const post = posts.find(p => p.id === postId && p.channelId === channelId);
                     if (!post) { sendJSON(res,{success:false,message:"Публикация не найдена"},404); return; }
                     if (!Array.isArray(post.comments)) post.comments=[];
                     const u=findUser(author);
-                    const comment={id:Date.now().toString()+Math.random().toString(36).slice(2),author,name:u.name||author,text,time:new Date().toISOString()};
+                    const comment={id:Date.now().toString()+Math.random().toString(36).slice(2),author,name:u.name||author,text,media,mediaType,time:new Date().toISOString()};
                     post.comments.push(comment);
                     saveJSON(CHANNEL_POSTS_FILE,posts);
                     sendJSON(res,{success:true,comment});
