@@ -886,6 +886,97 @@ select:focus {
     margin-top: 8px;
 }
 
+
+/* =========================================================
+   CHANNEL DISCUSSION — Telegram-like comments screen
+========================================================= */
+.channel-discussion-screen{
+    position:fixed;
+    inset:0;
+    z-index:3000;
+    display:flex;
+    flex-direction:column;
+    background:var(--bg);
+    color:var(--text);
+}
+.channel-discussion-screen.hidden{display:none!important}
+.channel-discussion-head{
+    height:64px;
+    min-height:64px;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:8px 14px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 3px 16px rgba(0,0,0,.16);
+}
+.channel-discussion-back,
+.channel-discussion-head-btn{
+    width:42px;height:42px;border:0;border-radius:12px;
+    display:grid;place-items:center;background:var(--panel2);
+    color:var(--text);font-size:21px;flex:0 0 auto;
+}
+.channel-discussion-back:hover,
+.channel-discussion-head-btn:hover{background:var(--accent);color:#fff}
+.channel-discussion-head-main{min-width:0;flex:1}
+.channel-discussion-title{font-size:16px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.channel-discussion-subtitle{font-size:12px;color:var(--muted);margin-top:2px}
+.channel-discussion-head-actions{display:flex;gap:7px}
+.channel-discussion-head-btn svg,.channel-discussion-back svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.channel-discussion-messages{
+    flex:1;min-height:0;overflow-y:auto;padding:18px 20px 22px;
+    display:flex;flex-direction:column;gap:7px;
+}
+.channel-discussion-empty{
+    margin:auto;color:var(--muted);font-size:13px;padding:10px 16px;
+    border-radius:999px;background:var(--panel2);border:1px solid var(--border);
+}
+.channel-discussion-date{
+    display:flex;align-items:center;justify-content:center;position:relative;margin:8px 0 10px;
+}
+.channel-discussion-date:before{content:"";position:absolute;left:0;right:0;height:1px;background:var(--border)}
+.channel-discussion-date span{position:relative;z-index:1;padding:5px 11px;border-radius:999px;background:var(--panel2);border:1px solid var(--border);font-size:11px;font-weight:800;color:var(--muted)}
+.channel-discussion-message{max-width:min(680px,82%);display:flex;gap:9px;align-items:flex-end}
+.channel-discussion-message.mine{margin-left:auto;flex-direction:row-reverse}
+.channel-discussion-avatar{width:34px;height:34px;min-width:34px;border-radius:50%;overflow:hidden;background:var(--accent);display:grid;place-items:center;color:#fff}
+.channel-discussion-avatar img{width:100%;height:100%;object-fit:cover}
+.channel-discussion-bubble{min-width:0;padding:9px 11px 7px;border-radius:15px 15px 15px 5px;background:var(--panel);border:1px solid var(--border);box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.channel-discussion-message.mine .channel-discussion-bubble{border-radius:15px 15px 5px 15px;background:var(--accent);border-color:transparent;color:#fff}
+.channel-discussion-name{font-size:12px;font-weight:900;margin-bottom:4px}
+.channel-discussion-text{font-size:14px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+.channel-discussion-media{max-width:min(420px,70vw);max-height:430px;border-radius:11px;overflow:hidden;margin-bottom:5px;background:#070a12}
+.channel-discussion-media img,.channel-discussion-media video{display:block;width:100%;max-height:430px;object-fit:contain}
+.channel-discussion-time{font-size:10px;color:var(--muted);text-align:right;margin-top:4px}
+.channel-discussion-message.mine .channel-discussion-time{color:rgba(255,255,255,.72)}
+.channel-discussion-composer{position:relative;display:flex;align-items:flex-end;gap:7px;padding:9px 12px;background:var(--panel);border-top:1px solid var(--border)}
+.channel-discussion-composer input[type=text]{flex:1;min-width:0;height:44px;padding:0 13px;border:1px solid var(--border);border-radius:13px;background:var(--panel2);color:var(--text);outline:none}
+.channel-discussion-composer button{border:0}
+.channel-discussion-tool{width:44px;height:44px;border-radius:13px;background:var(--panel2);color:var(--text);display:grid;place-items:center}
+.channel-discussion-tool:hover{background:var(--accent);color:#fff}
+.channel-discussion-tool svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.channel-discussion-send{width:46px;height:44px;border-radius:13px;background:var(--accent);color:#fff;display:grid;place-items:center}
+.channel-discussion-send:hover{background:var(--accent2)}
+.channel-discussion-send svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.channel-discussion-emoji{position:absolute;right:65px;bottom:62px;width:310px;max-width:calc(100vw - 20px);max-height:280px;overflow:auto;padding:10px;border-radius:16px;background:var(--panel);border:1px solid var(--border);box-shadow:0 18px 45px rgba(0,0,0,.42);z-index:2}
+.channel-discussion-emoji .emoji-grid{grid-template-columns:repeat(8,minmax(0,1fr))}
+.channel-discussion-emoji .emoji-item{min-width:0;display:grid;place-items:center;aspect-ratio:1;padding:4px;font-size:23px}
+.channel-discussion-attachment-preview{display:flex;align-items:center;gap:8px;position:absolute;left:12px;right:12px;bottom:61px;padding:8px 10px;border-radius:13px;background:var(--panel);border:1px solid var(--border);box-shadow:0 10px 35px rgba(0,0,0,.35)}
+.channel-discussion-attachment-preview img{width:52px;height:52px;object-fit:cover;border-radius:9px}
+.channel-discussion-attachment-preview span{flex:1;min-width:0;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.channel-discussion-attachment-preview button{width:32px;height:32px;border-radius:9px;background:var(--panel2);color:var(--text)}
+@media(max-width:700px){
+ .channel-discussion-head{height:58px;min-height:58px;padding:7px 8px}
+ .channel-discussion-back,.channel-discussion-head-btn{width:40px;height:40px}
+ .channel-discussion-messages{padding:12px 9px 18px}
+ .channel-discussion-message{max-width:90%}
+ .channel-discussion-media{max-width:76vw;max-height:360px}
+ .channel-discussion-composer{padding:7px}
+ .channel-discussion-tool{width:40px;height:40px}
+ .channel-discussion-send{width:42px;height:40px}
+ .channel-discussion-composer input[type=text]{height:40px}
+}
+
 /* =========================================================
    MODALS
 ========================================================= */
@@ -4097,6 +4188,54 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             </button>
             <button onclick="closeModal('channelProfileModal')">Закрыть</button>
         </div>
+    </div>
+</div>
+
+
+<!-- =========================================================
+     CHANNEL DISCUSSION / COMMENTS
+========================================================= -->
+<div id="channelDiscussionScreen" class="channel-discussion-screen hidden" aria-hidden="true">
+    <div class="channel-discussion-head">
+        <button type="button" class="channel-discussion-back" onclick="closeChannelDiscussion()" title="Назад">
+            <svg viewBox="0 0 24 24"><path d="m14.5 5-7 7 7 7"/><path d="M8 12h11"/></svg>
+        </button>
+        <div id="channelDiscussionHeaderAvatar" class="channel-discussion-avatar"></div>
+        <div class="channel-discussion-head-main">
+            <div id="channelDiscussionTitle" class="channel-discussion-title">Обсуждение</div>
+            <div id="channelDiscussionSubtitle" class="channel-discussion-subtitle">Комментарии</div>
+        </div>
+        <div class="channel-discussion-head-actions">
+            <button type="button" class="channel-discussion-head-btn" title="Поиск">
+                <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg>
+            </button>
+            <button type="button" class="channel-discussion-head-btn" title="Меню">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="19" r="1" fill="currentColor"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="channelDiscussionMessages" class="channel-discussion-messages"></div>
+
+    <div class="channel-discussion-composer">
+        <div id="channelDiscussionAttachmentPreview" class="channel-discussion-attachment-preview hidden">
+            <img id="channelDiscussionAttachmentImage" alt="Предпросмотр">
+            <span id="channelDiscussionAttachmentName"></span>
+            <button type="button" onclick="clearChannelDiscussionAttachment()" title="Убрать">✕</button>
+        </div>
+        <div id="channelDiscussionEmoji" class="channel-discussion-emoji hidden">
+            <div id="channelDiscussionEmojiGrid" class="emoji-grid"></div>
+        </div>
+        <button type="button" class="channel-discussion-tool" onclick="pickChannelDiscussionPhoto()" title="Фото">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L9 18"/></svg>
+        </button>
+        <input id="channelDiscussionInput" type="text" maxlength="1000" placeholder="Написать комментарий…">
+        <button type="button" class="channel-discussion-tool" onclick="toggleChannelDiscussionEmoji()" title="Смайлики">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M8.5 9h.01M15.5 9h.01"/></svg>
+        </button>
+        <button type="button" class="channel-discussion-send" onclick="sendChannelDiscussionComment()" title="Отправить">
+            <svg viewBox="0 0 24 24"><path d="m4 4 16 8-16 8 3-8-3-8Z"/><path d="M7 12h13"/></svg>
+        </button>
     </div>
 </div>
 
@@ -9163,7 +9302,7 @@ async function loadChannelPosts(forceScroll=true) {
             };
 
             item.querySelector(".channel-comment-toggle").onclick =
-                renderComments;
+                () => openChannelDiscussion(post);
 
             box.appendChild(item);
 
@@ -9190,6 +9329,246 @@ async function loadChannelPosts(forceScroll=true) {
         }
     } catch {}
 }
+
+
+/* =========================================================
+   CHANNEL DISCUSSION / COMMENTS SCREEN
+========================================================= */
+let channelDiscussionPost = null;
+let channelDiscussionAttachment = null;
+
+function openChannelDiscussion(post) {
+    if (!post || !currentChannel) return;
+
+    channelDiscussionPost = post;
+    channelDiscussionAttachment = null;
+
+    const screen = $("channelDiscussionScreen");
+    if (!screen) return;
+
+    $("channelDiscussionTitle").textContent = currentChannel.name || "Обсуждение";
+    $("channelDiscussionSubtitle").textContent = "Комментарии";
+    const avatar = $("channelDiscussionHeaderAvatar");
+    if (avatar) {
+        avatar.innerHTML = currentChannel.photo
+            ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
+            : vibeIcon("channel");
+    }
+
+    $("channelDiscussionInput").value = "";
+    $("channelDiscussionEmoji")?.classList.add("hidden");
+    $("channelDiscussionAttachmentPreview")?.classList.add("hidden");
+
+    renderChannelDiscussionMessages();
+    screen.classList.remove("hidden");
+    screen.setAttribute("aria-hidden", "false");
+    document.body.classList.add("channel-discussion-open");
+    setTimeout(() => $("channelDiscussionInput")?.focus(), 80);
+}
+
+function closeChannelDiscussion() {
+    const screen = $("channelDiscussionScreen");
+    if (!screen) return;
+    screen.classList.add("hidden");
+    screen.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("channel-discussion-open");
+    channelDiscussionPost = null;
+    channelDiscussionAttachment = null;
+}
+
+function formatDiscussionDate(time) {
+    const d = new Date(time);
+    if (Number.isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat(siteLanguage === "en" ? "en-GB" : "ru-RU", {
+        day:"numeric", month:"long", year:"numeric"
+    }).format(d);
+}
+
+function formatDiscussionTime(time) {
+    const d = new Date(time);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString(siteLanguage === "en" ? "en-GB" : "ru-RU", {
+        hour:"2-digit", minute:"2-digit"
+    });
+}
+
+function renderChannelDiscussionMessages() {
+    const box = $("channelDiscussionMessages");
+    if (!box || !channelDiscussionPost) return;
+
+    const comments = Array.isArray(channelDiscussionPost.comments)
+        ? channelDiscussionPost.comments
+        : [];
+
+    box.innerHTML = "";
+
+    if (!comments.length) {
+        const empty = document.createElement("div");
+        empty.className = "channel-discussion-empty";
+        empty.textContent = "Комментариев пока нет. Будьте первым!";
+        box.appendChild(empty);
+        return;
+    }
+
+    let previousDate = "";
+
+    comments.forEach(comment => {
+        const date = new Date(comment.time);
+        const dateKey = Number.isNaN(date.getTime()) ? "" :
+            `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+
+        if (dateKey && dateKey !== previousDate) {
+            const divider = document.createElement("div");
+            divider.className = "channel-discussion-date";
+            divider.innerHTML = `<span>${escapeHTML(formatDiscussionDate(comment.time))}</span>`;
+            box.appendChild(divider);
+            previousDate = dateKey;
+        }
+
+        const mine = String(comment.author || "") === String(currentUser?.login || "");
+        const row = document.createElement("div");
+        row.className = "channel-discussion-message" + (mine ? " mine" : "");
+
+        const avatar = currentChannel?.photo
+            ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
+            : vibeIcon("channel");
+
+        let media = "";
+        const mediaType = String(comment.mediaType || "");
+        if (comment.media && mediaType.startsWith("image")) {
+            media = `<div class="channel-discussion-media"><img src="${escapeHTML(comment.media)}" alt="Фото комментария"></div>`;
+        } else if (comment.media && mediaType.startsWith("video")) {
+            media = `<div class="channel-discussion-media"><video src="${escapeHTML(comment.media)}" controls playsinline></video></div>`;
+        }
+
+        row.innerHTML = `
+            <div class="channel-discussion-avatar">${avatar}</div>
+            <div class="channel-discussion-bubble">
+                <div class="channel-discussion-name">${escapeHTML(comment.name || comment.author || "Пользователь")}</div>
+                ${media}
+                ${comment.text ? `<div class="channel-discussion-text">${escapeHTML(comment.text)}</div>` : ""}
+                <div class="channel-discussion-time">${escapeHTML(formatDiscussionTime(comment.time))}</div>
+            </div>
+        `;
+        box.appendChild(row);
+    });
+
+    requestAnimationFrame(() => { box.scrollTop = box.scrollHeight; });
+}
+
+function initChannelDiscussionEmoji() {
+    const grid = $("channelDiscussionEmojiGrid");
+    if (!grid || grid.childElementCount) return;
+    emojis.forEach(emoji => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "emoji-item";
+        b.textContent = emoji;
+        b.onclick = () => {
+            const input = $("channelDiscussionInput");
+            if (!input) return;
+            const start = input.selectionStart ?? input.value.length;
+            const end = input.selectionEnd ?? input.value.length;
+            input.value = input.value.slice(0,start) + emoji + input.value.slice(end);
+            input.focus();
+            input.selectionStart = input.selectionEnd = start + emoji.length;
+        };
+        grid.appendChild(b);
+    });
+}
+
+function toggleChannelDiscussionEmoji() {
+    initChannelDiscussionEmoji();
+    $("channelDiscussionEmoji")?.classList.toggle("hidden");
+}
+
+function pickChannelDiscussionPhoto() {
+    if (!channelDiscussionPost || !currentUser) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,video/*";
+    input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        if (file.size > 12 * 1024 * 1024) {
+            alert("Файл слишком большой. Максимум 12 МБ.");
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            channelDiscussionAttachment = {
+                data:String(reader.result || ""),
+                mediaType:file.type || "application/octet-stream",
+                name:file.name || "Фото"
+            };
+            const preview = $("channelDiscussionAttachmentPreview");
+            const img = $("channelDiscussionAttachmentImage");
+            $("channelDiscussionAttachmentName").textContent = channelDiscussionAttachment.name;
+            if (channelDiscussionAttachment.mediaType.startsWith("image")) {
+                img.src = channelDiscussionAttachment.data;
+                img.classList.remove("hidden");
+            } else {
+                img.removeAttribute("src");
+                img.classList.add("hidden");
+            }
+            preview?.classList.remove("hidden");
+            $("channelDiscussionInput")?.focus();
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+}
+
+function clearChannelDiscussionAttachment() {
+    channelDiscussionAttachment = null;
+    $("channelDiscussionAttachmentPreview")?.classList.add("hidden");
+}
+
+async function sendChannelDiscussionComment() {
+    if (!channelDiscussionPost || !currentChannel || !currentUser) return;
+
+    const input = $("channelDiscussionInput");
+    const text = input?.value.trim() || "";
+    if (!text && !channelDiscussionAttachment) return;
+
+    const attachment = channelDiscussionAttachment;
+    input.value = "";
+    clearChannelDiscussionAttachment();
+    $("channelDiscussionEmoji")?.classList.add("hidden");
+
+    try {
+        const response = await fetch("/channel-comment", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                channelId:currentChannel.id,
+                postId:channelDiscussionPost.id,
+                author:currentUser.login,
+                text,
+                media:attachment?.data || "",
+                mediaType:attachment?.mediaType || ""
+            })
+        });
+        const data = await response.json();
+        if (!data.success) {
+            alert(data.message || "Не удалось отправить комментарий");
+            return;
+        }
+        if (!Array.isArray(channelDiscussionPost.comments)) channelDiscussionPost.comments = [];
+        channelDiscussionPost.comments.push(data.comment);
+        renderChannelDiscussionMessages();
+        loadChannelPosts(false).catch(() => {});
+    } catch {
+        alert("Ошибка отправки комментария");
+    }
+}
+
+$("channelDiscussionInput")?.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendChannelDiscussionComment();
+    }
+});
 
 /* =========================================================
    PUBLISH CHANNEL
@@ -9892,6 +10271,11 @@ document.addEventListener(
             return;
         }
 
+        if (!$("channelDiscussionScreen")?.classList.contains("hidden")) {
+            closeChannelDiscussion();
+            return;
+        }
+
         const modals = [
             "registerModal",
             "profileModal",
@@ -9900,7 +10284,8 @@ document.addEventListener(
             "channelsModal",
             "createChannelModal",
             "channelProfileModal",
-            "incomingCallModal"
+            "incomingCallModal",
+            "channelDiscussionScreen"
         ];
 
         for (const id of modals) {

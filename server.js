@@ -3856,18 +3856,21 @@ const server =
                     const channelId = String(body.channelId || "");
                     const postId = String(body.postId || "");
                     const author = String(body.author || "");
-                    const text = String(body.text || "").trim().slice(0,300);
+                    const text = String(body.text || "").trim().slice(0,1000);
+                    const media = String(body.media || "").trim();
+                    const mediaType = String(body.mediaType || "").trim().slice(0,100);
                     const channels = readJSON(CHANNELS_FILE);
                     const channel = channels.find(c => c.id === channelId);
                     if (!channel) { sendJSON(res,{success:false,message:"Канал не найден"},404); return; }
                     if (channel.settings && channel.settings.comments === false) { sendJSON(res,{success:false,message:"Комментарии отключены"},403); return; }
-                    if (!findUser(author) || !text) { sendJSON(res,{success:false,message:"Комментарий пустой"},400); return; }
+                    if (!findUser(author) || (!text && !media)) { sendJSON(res,{success:false,message:"Комментарий пустой"},400); return; }
+                    if (media && media.length > 16 * 1024 * 1024) { sendJSON(res,{success:false,message:"Файл комментария слишком большой"},413); return; }
                     const posts = readJSON(CHANNEL_POSTS_FILE);
                     const post = posts.find(p => p.id === postId && p.channelId === channelId);
                     if (!post) { sendJSON(res,{success:false,message:"Публикация не найдена"},404); return; }
                     if (!Array.isArray(post.comments)) post.comments=[];
                     const u=findUser(author);
-                    const comment={id:Date.now().toString()+Math.random().toString(36).slice(2),author,name:u.name||author,text,time:new Date().toISOString()};
+                    const comment={id:Date.now().toString()+Math.random().toString(36).slice(2),author,name:u.name||author,text,media,mediaType,time:new Date().toISOString()};
                     post.comments.push(comment);
                     saveJSON(CHANNEL_POSTS_FILE,posts);
                     sendJSON(res,{success:true,comment});
