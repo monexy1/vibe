@@ -9113,6 +9113,7 @@ async function loadChannelPosts(forceScroll=true) {
         if (!response.ok) return;
 
         const posts = await response.json();
+        window.__vibeChannelPosts = Array.isArray(posts) ? posts : [];
         const box = $("messages");
         const wasNearBottom =
             box.scrollHeight - box.scrollTop - box.clientHeight < 100;
@@ -9161,6 +9162,7 @@ async function loadChannelPosts(forceScroll=true) {
 
             const item = document.createElement("article");
             item.className = "channel-post";
+            item.dataset.postId = String(post.id || "");
 
             /*
              * Publications belong visually to the channel.
@@ -9232,74 +9234,7 @@ async function loadChannelPosts(forceScroll=true) {
                     </button>
                 </div>
 
-                <div class="channel-comments hidden"></div>
             `;
-
-            const commentsBox =
-                item.querySelector(".channel-comments");
-
-            const renderComments = () => {
-                commentsBox.innerHTML =
-                    comments.map(comment =>
-                        `<div class="channel-comment">
-                            <b>${escapeHTML(comment.name || comment.author || "")}</b>
-                            ${escapeHTML(comment.text || "")}
-                         </div>`
-                    ).join("") +
-                    `
-                    <div class="channel-comment-form">
-                        <input
-                            maxlength="300"
-                            placeholder="Написать комментарий…"
-                        >
-                        <button type="button">Отправить</button>
-                    </div>
-                    `;
-
-                commentsBox.classList.toggle("hidden");
-
-                const input = commentsBox.querySelector("input");
-                const button = commentsBox.querySelector("button");
-
-                if (!input || !button) return;
-
-                button.onclick = async () => {
-                    const text = input.value.trim();
-                    if (!text) return;
-
-                    try {
-                        const response = await fetch(
-                            "/channel-comment",
-                            {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "application/json"
-                                },
-                                body: JSON.stringify({
-                                    channelId: currentChannel.id,
-                                    postId: post.id,
-                                    author: currentUser.login,
-                                    text
-                                })
-                            }
-                        );
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            comments.push(data.comment);
-                            renderComments();
-                        } else {
-                            alert(
-                                data.message ||
-                                "Не удалось отправить комментарий"
-                            );
-                        }
-                    } catch {
-                        alert("Ошибка отправки комментария");
-                    }
-                };
-            };
 
             item.querySelector(".channel-comment-toggle").onclick =
                 () => openChannelDiscussion(post);
@@ -9334,6 +9269,21 @@ async function loadChannelPosts(forceScroll=true) {
 /* =========================================================
    CHANNEL DISCUSSION / COMMENTS SCREEN
 ========================================================= */
+// Robust click handler: opening comments must work even if channel posts
+// are re-rendered after the normal listener was attached.
+document.addEventListener("click", event => {
+    const button = event.target.closest?.(".channel-comment-toggle");
+    if (!button) return;
+    const postId = button.closest(".channel-post")?.dataset?.postId;
+    if (!postId) return;
+    const post = (window.__vibeChannelPosts || []).find(p => String(p.id) === String(postId));
+    if (post) {
+        event.preventDefault();
+        event.stopPropagation();
+        openChannelDiscussion(post);
+    }
+});
+
 let channelDiscussionPost = null;
 let channelDiscussionAttachment = null;
 
@@ -9372,6 +9322,7 @@ function closeChannelDiscussion() {
     screen.classList.add("hidden");
     screen.setAttribute("aria-hidden", "true");
     document.body.classList.remove("channel-discussion-open");
+    document.body.style.overflow = "";
     channelDiscussionPost = null;
     channelDiscussionAttachment = null;
 }
