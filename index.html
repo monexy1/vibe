@@ -2381,6 +2381,74 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 .message-context-menu .vibe-icon{width:17px;height:17px}
 .channel-post-meta .vibe-icon{width:15px;height:15px;vertical-align:-.2em}
 
+
+/* Help modal polish */
+.vibe-help-icon svg{
+    width:24px;
+    height:24px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:2.1;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+.vibe-help-row > div:first-child{
+    width:42px;
+    height:42px;
+    min-width:42px;
+    border-radius:13px;
+    display:grid;
+    place-items:center;
+    background:rgba(139,92,246,.14);
+    color:var(--accent);
+}
+.vibe-help-row > div:first-child svg{
+    width:21px;
+    height:21px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:2;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+.vibe-help-row > div:nth-child(2){
+    min-width:0;
+    flex:1;
+}
+.vibe-help-close{
+    width:100%;
+    min-height:48px;
+    margin-top:18px;
+    border:1px solid rgba(139,92,246,.45);
+    border-radius:14px;
+    background:linear-gradient(135deg,#8b5cf6,#a855f7);
+    color:#fff;
+    font:inherit;
+    font-weight:850;
+    font-size:14px;
+    cursor:pointer;
+    box-shadow:0 10px 25px rgba(139,92,246,.18);
+    transition:transform .15s ease,filter .15s ease,box-shadow .15s ease;
+}
+.vibe-help-close:hover{
+    transform:translateY(-1px);
+    filter:brightness(1.06);
+    box-shadow:0 13px 30px rgba(139,92,246,.26);
+}
+.vibe-help-close:active{
+    transform:translateY(0);
+}
+@media(max-width:560px){
+    .vibe-help-card{
+        width:calc(100vw - 20px);
+        padding:18px;
+        border-radius:20px;
+    }
+    .vibe-help-row{
+        padding:11px;
+    }
+}
+
 </style>
 
 </head>
@@ -6981,7 +7049,7 @@ async function updateProfileViewActions(user) {
             ${isBlocked ? vibeIcon("lock") + " Разблокировать" : vibeIcon("shield") + " Заблокировать"}
         </button>
         <button type="button" id="profileMessageButton">
-            ${vibeIcon("comment")} Написать сообщение
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 7.8 7.8 0 0 1-3.6-.9L4 20l1.5-4.2A7.4 7.4 0 0 1 5 11.5 7.5 7.5 0 0 1 12.5 4 7.5 7.5 0 0 1 20 11.5Z"/></svg> Написать сообщение
         </button>
     `;
 
@@ -7708,7 +7776,7 @@ function renderGroupsList() {
                 <div class="channel-icon">${group.photo ? `<img src="${escapeHTML(group.photo)}">` : vibeIcon("community")}</div>
                 <div class="channel-info">
                     <div class="channel-name">${escapeHTML(group.name)}</div>
-                    <div class="channel-description">${escapeHTML(group.description || "Группа")} · ${vibeIcon("community")} ${Number(group.memberCount || group.members?.length || 0)}</div>
+                    <div class="channel-description">${escapeHTML(group.description || "Группа")} · <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-3.2 2.3-5 5.5-5s5.1 1.8 5.5 5M14 14.5c2.9-.2 5.1 1.3 6 4.5"/></svg> ${Number(group.memberCount || group.members?.length || 0)}</div>
                 </div>
             </div>`;
         item.querySelector(".channel-item-main").onclick = () => {
@@ -7961,7 +8029,7 @@ function renderChannelsList() {
                     <div class="channel-description">
                         ${escapeHTML(channel.description || "Канал Vibe")}
                     </div>
-                    <div class="channel-description">${vibeIcon("community")} ${Number(channel.subscriberCount || channel.subscribers?.length || 0)} подписчиков</div>
+                    <div class="channel-description"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-3.2 2.3-5 5.5-5s5.1 1.8 5.5 5M14 14.5c2.9-.2 5.1 1.3 6 4.5"/></svg> ${Number(channel.subscriberCount || channel.subscribers?.length || 0)} подписчиков</div>
 
                 </div>
                 `;
@@ -8624,7 +8692,7 @@ async function loadChannelPosts(forceScroll=true) {
         box.innerHTML="";
         const banner=document.createElement("div");
         banner.className="channel-banner";
-        banner.innerHTML=`<b>${vibeIcon("channel")} ${escapeHTML(currentChannel.name)}</b><span>${escapeHTML(currentChannel.description||"Канал Vibe")}</span>`;
+        banner.innerHTML=`<b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 4l8 3.5-8 3-8-3Z"/><path d="M4 7.5V16l8 4 8-4V7.5M8 10v5.5M16 10v5.5"/></svg> ${escapeHTML(currentChannel.name)}</b><span>${escapeHTML(currentChannel.description||"Канал Vibe")}</span>`;
         box.appendChild(banner);
         if(!posts.length){const empty=document.createElement("div");empty.className="empty-chat";empty.style.height="calc(100% - 70px)";empty.textContent="В канале пока нет публикаций";box.appendChild(empty);return;}
         posts.forEach(post=>{
@@ -8640,7 +8708,7 @@ async function loadChannelPosts(forceScroll=true) {
             item.innerHTML=`
               <div class="channel-post-head"><div class="avatar">${avatar}</div><div class="channel-post-head-main"><div class="channel-post-channel-name">${escapeHTML(currentChannel.name)}</div><div class="channel-post-author-name">${escapeHTML(author.name||author.login)}</div></div></div>
               <div class="channel-post-body">${post.text?`<div class="channel-post-text">${escapeHTML(post.text)}</div>`:""}${mediaHTML}</div>
-              <div class="channel-post-meta"><span>${new Date(post.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span><span class="channel-post-views">${vibeIcon("eye")} ${Number(post.views||0)}</span><button type="button" class="channel-comment-toggle">${vibeIcon("comment")} ${comments.length}</button></div>
+              <div class="channel-post-meta"><span>${new Date(post.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span><span class="channel-post-views">${vibeIcon("eye")} ${Number(post.views||0)}</span><button type="button" class="channel-comment-toggle"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 7.8 7.8 0 0 1-3.6-.9L4 20l1.5-4.2A7.4 7.4 0 0 1 5 11.5 7.5 7.5 0 0 1 12.5 4 7.5 7.5 0 0 1 20 11.5Z"/></svg> ${comments.length}</button></div>
               <div class="channel-comments hidden"></div>`;
             const commentsBox=item.querySelector(".channel-comments");
             const renderComments=()=>{commentsBox.innerHTML=comments.map(c=>`<div class="channel-comment"><b>${escapeHTML(c.name||c.author)}</b>${escapeHTML(c.text||"")}</div>`).join("")+`<div class="channel-comment-form"><input maxlength="300" placeholder="Написать комментарий…"><button type="button">Отправить</button></div>`; commentsBox.classList.toggle("hidden");};
@@ -9464,10 +9532,10 @@ autoLogin();
   <div class="vibe-help-card">
     <div class="vibe-help-head"><div class="vibe-help-icon">?</div><div><h2>Как пользоваться Vibe</h2><p>Короткая инструкция без лишних сложностей</p></div></div>
     <div class="vibe-help-list">
-      <div class="vibe-help-row"><div>${vibeIcon("comment")}</div><div><b>Чаты</b><span>Выбери человека слева и отправляй сообщения, фото, GIF, файлы или голосовые.</span></div></div>
-      <div class="vibe-help-row"><div>${vibeIcon("community")}</div><div><b>Контакты и группы</b><span>Ищи пользователей через поиск. Группы позволяют общаться сразу нескольким участникам.</span></div></div>
-      <div class="vibe-help-row"><div>${vibeIcon("channel")}</div><div><b>Каналы</b><span>Канал предназначен для публикаций. Подписчики видят новые посты и могут открывать комментарии.</span></div></div>
-      <div class="vibe-help-row"><div>${vibeIcon("settings")}</div><div><b>Настройки</b><span>Там можно менять профиль, приватность, язык и оформление Vibe.</span></div></div>
+      <div class="vibe-help-row"><div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 7.8 7.8 0 0 1-3.6-.9L4 20l1.5-4.2A7.4 7.4 0 0 1 5 11.5 7.5 7.5 0 0 1 12.5 4 7.5 7.5 0 0 1 20 11.5Z"/></svg></div><div><b>Чаты</b><span>Выбери человека слева и отправляй сообщения, фото, GIF, файлы или голосовые.</span></div></div>
+      <div class="vibe-help-row"><div><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19c.4-3.2 2.3-5 5.5-5s5.1 1.8 5.5 5M14 14.5c2.9-.2 5.1 1.3 6 4.5"/></svg></div><div><b>Контакты и группы</b><span>Ищи пользователей через поиск. Группы позволяют общаться сразу нескольким участникам.</span></div></div>
+      <div class="vibe-help-row"><div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 4l8 3.5-8 3-8-3Z"/><path d="M4 7.5V16l8 4 8-4V7.5M8 10v5.5M16 10v5.5"/></svg></div><div><b>Каналы</b><span>Канал предназначен для публикаций. Подписчики видят новые посты и могут открывать комментарии.</span></div></div>
+      <div class="vibe-help-row"><div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9.5 3 .5 2a7.8 7.8 0 0 1 4 0l.5-2 2.3 1-.8 1.9a8 8 0 0 1 2.8 2.8l1.9-.8 1 2.3-2 .5a7.8 7.8 0 0 1 0 4l2 .5-1 2.3-1.9-.8a8 8 0 0 1-2.8 2.8l.8 1.9-2.3 1-.5-2a7.8 7.8 0 0 1-4 0l-.5 2-2.3-1 .8-1.9a8 8 0 0 1-2.8-2.8l-1.9.8-1-2.3 2-.5a7.8 7.8 0 0 1 0-4l-2-.5 1-2.3 1.9.8a8 8 0 0 1 2.8-2.8L7.2 4l2.3-1Z"/><circle cx="12" cy="12" r="3"/></svg></div><div><b>Настройки</b><span>Там можно менять профиль, приватность, язык и оформление Vibe.</span></div></div>
     </div>
     <button class="vibe-help-close" type="button" onclick="closeVibeHelp()">Понятно</button>
   </div>
