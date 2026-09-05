@@ -9,6 +9,7 @@ const USERS_FILE = path.join(__dirname, "users.json");
 const MESSAGES_FILE = path.join(__dirname, "messages.json");
 const CHANNELS_FILE = path.join(__dirname, "channels.json");
 const CHANNEL_POSTS_FILE = path.join(__dirname, "channel-posts.json");
+const GROUPS_FILE = path.join(__dirname, "groups.json");
 
 const MAX_BODY_SIZE = 20 * 1024 * 1024;
 
@@ -30,6 +31,7 @@ ensureFile(USERS_FILE, []);
 ensureFile(MESSAGES_FILE, []);
 ensureFile(CHANNELS_FILE, []);
 ensureFile(CHANNEL_POSTS_FILE, []);
+ensureFile(GROUPS_FILE, []);
 
 
 function readJSON(file) {
@@ -247,6 +249,32 @@ function normalizeChannel(channel) {
     return channel;
 }
 
+
+/* =========================================================
+   GROUPS
+========================================================= */
+
+function normalizeGroup(group) {
+    if (!Array.isArray(group.members)) group.members = [];
+    if (!Array.isArray(group.admins)) group.admins = [];
+    if (typeof group.id !== "string") group.id = Date.now().toString();
+    if (typeof group.name !== "string") group.name = "Группа";
+    if (typeof group.description !== "string") group.description = "";
+    if (typeof group.photo !== "string") group.photo = "";
+    return group;
+}
+
+function getGroups() {
+    const groups = readJSON(GROUPS_FILE);
+    let changed = false;
+    groups.forEach(group => {
+        const before = JSON.stringify(group);
+        normalizeGroup(group);
+        if (before !== JSON.stringify(group)) changed = true;
+    });
+    if (changed) saveJSON(GROUPS_FILE, groups);
+    return groups;
+}
 
 /* =========================================================
    USERS
@@ -521,6 +549,16 @@ function publicUser(
                 if (!viewer) return false;
                 normalizeUser(viewer);
                 return viewer.contacts.includes(user.login);
+            })(),
+
+        isMutualContact:
+            (() => {
+                const viewer = findUser(viewerLogin);
+                if (!viewer) return false;
+                normalizeUser(viewer);
+                return viewer.contacts.includes(user.login) &&
+                       Array.isArray(user.contacts) &&
+                       user.contacts.includes(viewerLogin);
             })(),
 
         isBlockedByViewer:
@@ -2882,6 +2920,149 @@ const server =
                     return;
                 }
 
+
+                /* =====================================================
+                   GROUPS
+                ===================================================== */
+
+                if (req.method === "GET" && pathname === "/groups") {
+                    const login = String(url.searchParams.get("login") || "");
+                    const result = getGroups()
+                        .map(normalizeGroup)
+                        .filter(group => group.members.includes(login))
+                        .map(group => ({
+                            ...group,
+                            memberCount: group.members.length
+                        }));
+                    sendJSON(res, result);
+                    return;
+                }
+
+                if (req.method === "POST" && pathname === "/groups") {
+                    const body = await getBody(req);
+                    const owner = String(body.owner || "").trim();
+                    const name = String(body.name || "").trim();
+                    const description = String(body.description || "").trim();
+                    const photo = String(body.photo || "").trim();
+
+                    if (!owner || !findUser(owner)) {
+                        sendJSON(res, {success:false, message:"Пользователь не найден"}, 404);
+                        return;
+                    }
+                    if (!name) {
+                        sendJSON(res, {success:false, message:"Введите название группы"}, 400);
+                        return;
+                    }
+
+                    const groups = getGroups();
+                    const group = normalizeGroup({
+                        id: "g_" + Date.now() + "_" + Math.random().toString(36).slice(2,8),
+                        name, description, photo,
+                        owner,
+                        members:[owner],
+                        admins:[owner],
+                        createdAt:new Date().toISOString()
+                    });
+                    groups.push(group);
+                    saveJSON(GROUPS_FILE, groups);
+                    sendJSON(res, {success:true, group});
+                    return;
+                }
+
+                if (req.method === "POST" && pathname === "/group-members") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const target = String(body.target || "").trim();
+                    const groupId = String(body.groupId || "").trim();
+                    const action = body.action === "remove" ? "remove" : "add";
+                    const groups = getGroups();
+                    const group = groups.find(g => g.id === groupId);
+
+                    if (!group || !findUser(login) || !findUser(target)) {
+                        sendJSON(res, {success:false, message:"Группа или пользователь не найден"}, 404);
+                        return;
+                    }
+                    normalizeGroup(group);
+
+                    if (!group.admins.includes(login)) {
+                        sendJSON(res, {success:false, message:"Только администратор может менять участников"}, 403);
+                        return;
+                    }
+
+                    if (action === "add") {
+                        if (!group.members.includes(target)) group.members.push(target);
+                    } else {
+                        group.members = group.members.filter(x => x !== target);
+                        group.admins = group.admins.filter(x => x !== target);
+                    }
+
+                    saveJSON(GROUPS_FILE, groups);
+                    sendJSON(res, {success:true, group});
+                    return;
+                }
+
+                if (req.method === "GET" && pathname === "/group-messages") {
+                    const groupId = String(url.searchParams.get("groupId") || "");
+                    const login = String(url.searchParams.get("login") || "");
+                    const group = getGroups().find(g => g.id === groupId);
+                    if (!group || !group.members.includes(login)) {
+                        sendJSON(res, [], 403);
+                        return;
+                    }
+                    const messages = readJSON(MESSAGES_FILE)
+                        .filter(m => m.groupId === groupId && !(
+                            Array.isArray(m.deletedFor) && m.deletedFor.includes(login)
+                        ) && !m.deletedForAll);
+                    sendJSON(res, messages);
+                    return;
+                }
+
+                if (req.method === "POST" && pathname === "/group-message") {
+                    const body = await getBody(req);
+                    const from = String(body.from || "").trim();
+                    const groupId = String(body.groupId || "").trim();
+                    const type = body.type === "voice" ? "voice" : "text";
+                    const text = String(body.text || "").trim();
+                    const audio = type === "voice" && typeof body.audio === "string" ? body.audio : "";
+                    const duration = Number.isFinite(Number(body.duration)) ? Number(body.duration) : 0;
+                    const replyTo = body.replyTo && body.replyTo.id ? {
+                        id:String(body.replyTo.id),
+                        from:String(body.replyTo.from || ""),
+                        text:String(body.replyTo.text || "").slice(0,500)
+                    } : null;
+
+                    const group = getGroups().find(g => g.id === groupId);
+                    if (!group || !group.members.includes(from)) {
+                        sendJSON(res, {success:false, message:"Нет доступа к группе"}, 403);
+                        return;
+                    }
+                    if ((type === "text" && !text) || (type === "voice" && !audio)) {
+                        sendJSON(res, {success:false, message:"Пустое сообщение"}, 400);
+                        return;
+                    }
+
+                    const message = {
+                        id:Date.now().toString() + Math.random().toString(36).slice(2),
+                        from, to:"",
+                        groupId, type,
+                        text:type === "text" ? text : "",
+                        audio:type === "voice" ? audio : "",
+                        duration:type === "voice" ? duration : 0,
+                        replyTo,
+                        time:new Date().toISOString()
+                    };
+                    const messages = readJSON(MESSAGES_FILE);
+                    messages.push(message);
+                    saveJSON(MESSAGES_FILE, messages);
+
+                    group.members.forEach(member => {
+                        if (member !== from) {
+                            sendToUser(member, {type:"new-group-message", message});
+                        }
+                    });
+                    sendJSON(res, {success:true, message});
+                    return;
+                }
 
                 /* =====================================================
                    CHANNELS GET
