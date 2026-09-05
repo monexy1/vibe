@@ -3131,12 +3131,74 @@ const server =
                     if (action === "add") {
                         if (!group.members.includes(target)) group.members.push(target);
                     } else {
+                        if (target === group.owner) {
+                            sendJSON(res, {success:false, message:"Создателя группы нельзя удалить"}, 400);
+                            return;
+                        }
                         group.members = group.members.filter(x => x !== target);
                         group.admins = group.admins.filter(x => x !== target);
                     }
 
                     saveJSON(GROUPS_FILE, groups);
                     sendJSON(res, {success:true, group});
+                    return;
+                }
+
+
+                /* =====================================================
+                   GROUP SETTINGS
+                ===================================================== */
+
+                if (req.method === "POST" && pathname === "/group-update") {
+                    const body = await getBody(req);
+                    const groupId = String(body.groupId || "").trim();
+                    const owner = String(body.owner || "").trim();
+                    const groups = getGroups();
+                    const group = groups.find(g => g.id === groupId);
+
+                    if (!group) {
+                        sendJSON(res, {success:false, message:"Группа не найдена"}, 404);
+                        return;
+                    }
+
+                    normalizeGroup(group);
+
+                    if (group.owner !== owner) {
+                        sendJSON(res, {success:false, message:"Только создатель группы может изменять настройки"}, 403);
+                        return;
+                    }
+
+                    if (typeof body.name === "string") {
+                        const name = body.name.trim().slice(0, 80);
+                        if (!name) {
+                            sendJSON(res, {success:false, message:"Введите название группы"}, 400);
+                            return;
+                        }
+                        group.name = name;
+                    }
+
+                    if (typeof body.description === "string") {
+                        group.description = body.description.trim().slice(0, 500);
+                    }
+
+                    if (typeof body.photo === "string") {
+                        const photo = body.photo.trim();
+                        if (photo && !photo.startsWith("data:image/")) {
+                            sendJSON(res, {success:false, message:"Некорректное фото группы"}, 400);
+                            return;
+                        }
+                        group.photo = photo;
+                    }
+
+                    if (typeof body.public === "boolean") {
+                        group.settings.public = body.public;
+                    }
+
+                    saveJSON(GROUPS_FILE, groups);
+                    sendJSON(res, {
+                        success:true,
+                        group:normalizeGroup(group)
+                    });
                     return;
                 }
 
