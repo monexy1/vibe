@@ -284,6 +284,8 @@ function normalizeGroup(group) {
     if (typeof group.name !== "string") group.name = "Группа";
     if (typeof group.description !== "string") group.description = "";
     if (typeof group.photo !== "string") group.photo = "";
+    if (!group.settings || typeof group.settings !== "object") group.settings = {};
+    if (typeof group.settings.public !== "boolean") group.settings.public = true;
     return group;
 }
 
@@ -2980,6 +2982,83 @@ const server =
 
 
                 /* =====================================================
+                   PUBLIC GROUP SEARCH
+                ===================================================== */
+
+                if (req.method === "GET" && pathname === "/group-search") {
+                    const login = String(url.searchParams.get("login") || "");
+                    const query = String(url.searchParams.get("q") || "").trim().toLowerCase();
+
+                    if (!query) {
+                        sendJSON(res, []);
+                        return;
+                    }
+
+                    const result = getGroups()
+                        .map(normalizeGroup)
+                        .filter(group => group.settings.public !== false)
+                        .filter(group => {
+                            const haystack = [
+                                group.name,
+                                group.description,
+                                group.id
+                            ].join(" ").toLowerCase();
+                            return haystack.includes(query);
+                        })
+                        .slice(0, 30)
+                        .map(group => ({
+                            id: group.id,
+                            name: group.name,
+                            description: group.description,
+                            photo: group.photo,
+                            joined: group.members.includes(login),
+                            memberCount: group.members.length,
+                            owner: group.owner
+                        }));
+
+                    sendJSON(res, result);
+                    return;
+                }
+
+                /* =====================================================
+                   JOIN PUBLIC GROUP
+                ===================================================== */
+
+                if (req.method === "POST" && pathname === "/group-join") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const groupId = String(body.groupId || "").trim();
+
+                    if (!login || !findUser(login)) {
+                        sendJSON(res, {success:false, message:"Пользователь не найден"}, 404);
+                        return;
+                    }
+
+                    const groups = getGroups();
+                    const group = groups.find(g => g.id === groupId);
+
+                    if (!group) {
+                        sendJSON(res, {success:false, message:"Группа не найдена"}, 404);
+                        return;
+                    }
+
+                    normalizeGroup(group);
+
+                    if (group.settings.public === false) {
+                        sendJSON(res, {success:false, message:"Эта группа закрытая"}, 403);
+                        return;
+                    }
+
+                    if (!group.members.includes(login)) {
+                        group.members.push(login);
+                    }
+
+                    saveJSON(GROUPS_FILE, groups);
+                    sendJSON(res, {success:true, group});
+                    return;
+                }
+
+                /* =====================================================
                    GROUPS
                 ===================================================== */
 
@@ -3001,7 +3080,8 @@ const server =
                     const owner = String(body.owner || "").trim();
                     const name = String(body.name || "").trim();
                     const description = String(body.description || "").trim();
-                    const photo = String(body.photo || "").trim();
+                    const photo = String(body.photo || "").trim().slice(0, 6000000);
+                    const isPublic = body.public !== false;
 
                     if (!owner || !findUser(owner)) {
                         sendJSON(res, {success:false, message:"Пользователь не найден"}, 404);
@@ -3019,6 +3099,7 @@ const server =
                         owner,
                         members:[owner],
                         admins:[owner],
+                        settings:{public:isPublic},
                         createdAt:new Date().toISOString()
                     });
                     groups.push(group);
