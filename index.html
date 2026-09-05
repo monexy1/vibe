@@ -1994,6 +1994,33 @@ async function removeFriend(login) {
     }
 }
 
+
+.group-add-member { display:flex; gap:8px; margin:12px 0; }
+.group-add-member input { flex:1; min-width:0; }
+.group-members-list { display:flex; flex-direction:column; gap:7px; max-height:42vh; overflow:auto; }
+.group-member-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-radius:12px; background:var(--panel2); }
+.group-member-row button { border:0; border-radius:9px; padding:7px 10px; background:rgba(255,90,90,.15); color:var(--text); cursor:pointer; }
+.group-admin-badge { margin-left:7px; font-size:10px; color:var(--accent); }
+#chatStatus { cursor:default; }
+
+
+/* Final Vibe visual polish */
+button {
+    transition:transform .12s ease, filter .12s ease, background .12s ease;
+}
+button:hover { filter:brightness(1.07); }
+button:active { transform:scale(.98); }
+.modal-card {
+    box-shadow:0 24px 70px rgba(0,0,0,.35);
+    border:1px solid rgba(255,255,255,.06);
+}
+.message {
+    box-shadow:0 5px 18px rgba(0,0,0,.12);
+}
+.channel-item, .person, .chat-item {
+    border-radius:14px;
+}
+
 </style>
 
 </head>
@@ -3144,6 +3171,22 @@ async function removeFriend(login) {
         <button class="primary" onclick="openCreateGroup()">👥 Создать группу</button>
         <button class="secondary" style="margin-top:8px;" onclick="openChannels()">📢 Открыть каналы</button>
         <div id="groupsList" class="channels-list" style="margin-top:14px;"></div>
+    </div>
+</div>
+
+
+<div id="groupManageModal" class="modal hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">👥 Участники группы</div>
+            <button class="modal-close" onclick="closeModal('groupManageModal')">✕</button>
+        </div>
+        <div class="group-manage-owner" id="groupManageOwner"></div>
+        <div class="group-add-member">
+            <input id="groupMemberLoginInput" placeholder="Логин пользователя">
+            <button class="primary" onclick="addGroupMember()">Добавить</button>
+        </div>
+        <div id="groupMembersList" class="group-members-list"></div>
     </div>
 </div>
 
@@ -5925,7 +5968,8 @@ function openMessageActions(messageInfo, x, y) {
 async function copySelectedMessage() {
     closeMessageActions();
     if (!selectedMessageForAction) return;
-    const text = selectedMessageForAction.bubble.querySelector("div")?.textContent || "";
+    const content = selectedMessageForAction.bubble.querySelector(".message-reply + div, .message > div:not(.message-time)");
+    const text = content?.textContent?.trim() || "";
     try { await navigator.clipboard.writeText(text); } catch {}
 }
 
@@ -7117,11 +7161,75 @@ async function openGroup(group) {
     $("chatAvatar").innerHTML = group.photo ? `<img src="${escapeHTML(group.photo)}">` : "👥";
     $("chatName").textContent = "👥 " + group.name;
     $("chatStatus").textContent = (group.description || "Группа Vibe") + " · 👥 " + Number(group.memberCount || group.members?.length || 0);
+    $("chatStatus").title = "Нажмите, чтобы открыть участников";
+    $("chatStatus").onclick = () => openGroupManager(group);
     const input = $("messageInput");
     input.disabled = false;
     input.placeholder = translations[siteLanguage].write;
     await loadGroupMessages(true);
     setTimeout(() => input.focus(), 100);
+}
+
+
+async function openGroupManager(group) {
+    currentGroup = group;
+    const fresh = await fetch("/groups?login=" + encodeURIComponent(currentUser.login)).then(r => r.ok ? r.json() : []).catch(() => []);
+    const found = fresh.find(g => g.id === group.id);
+    if (found) currentGroup = found;
+    const g = currentGroup;
+    $("groupManageOwner").textContent = "Создатель: @" + (g.owner || "—") + " · " + (g.members?.length || 0) + " участников";
+    const box = $("groupMembersList");
+    box.innerHTML = "";
+    (g.members || []).forEach(login => {
+        const row = document.createElement("div");
+        row.className = "group-member-row";
+        const isAdmin = (g.admins || []).includes(login);
+        row.innerHTML = `<div><b>@${escapeHTML(login)}</b>${isAdmin ? `<span class="group-admin-badge">админ</span>` : ""}</div>`;
+        if (g.admins?.includes(currentUser.login) && login !== g.owner) {
+            const btn = document.createElement("button");
+            btn.textContent = "Удалить";
+            btn.onclick = () => removeGroupMember(login);
+            row.appendChild(btn);
+        }
+        box.appendChild(row);
+    });
+    $("groupManageModal").classList.remove("hidden");
+}
+
+async function addGroupMember() {
+    const target = $("groupMemberLoginInput").value.trim();
+    if (!target || !currentGroup) return;
+    try {
+        const r = await fetch("/group-members", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({login:currentUser.login,target,groupId:currentGroup.id,action:"add"})
+        });
+        const d = await r.json();
+        if (!d.success) { alert(d.message || "Не удалось добавить"); return; }
+        $("groupMemberLoginInput").value = "";
+        currentGroup = d.group;
+        await loadGroups();
+        await openGroupManager(currentGroup);
+        $("chatStatus").textContent = (currentGroup.description || "Группа Vibe") + " · 👥 " + currentGroup.members.length;
+    } catch { alert("Ошибка сервера"); }
+}
+
+async function removeGroupMember(target) {
+    if (!currentGroup) return;
+    try {
+        const r = await fetch("/group-members", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({login:currentUser.login,target,groupId:currentGroup.id,action:"remove"})
+        });
+        const d = await r.json();
+        if (!d.success) { alert(d.message || "Не удалось удалить"); return; }
+        currentGroup = d.group;
+        await loadGroups();
+        await openGroupManager(currentGroup);
+        $("chatStatus").textContent = (currentGroup.description || "Группа Vibe") + " · 👥 " + currentGroup.members.length;
+    } catch { alert("Ошибка сервера"); }
 }
 
 async function loadGroupMessages(forceScroll=false) {
@@ -8193,15 +8301,12 @@ async function publishChannelPostFromComposer() {
 ========================================================= */
 
 const rtcConfig = {
-
     iceServers: [
-
-        {
-            urls:
-                "stun:stun.l.google.com:19302"
-        }
-
-    ]
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" }
+    ],
+    iceCandidatePoolSize: 10
 };
 
 
@@ -8524,7 +8629,6 @@ async function acceptIncomingCall() {
         return;
     }
 
-    pendingIceCandidates = [];
     activeCallUser =
         incomingCall.from;
 
