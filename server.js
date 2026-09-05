@@ -10,7 +10,6 @@ const MESSAGES_FILE = path.join(__dirname, "messages.json");
 const CHANNELS_FILE = path.join(__dirname, "channels.json");
 const CHANNEL_POSTS_FILE = path.join(__dirname, "channel-posts.json");
 const GROUPS_FILE = path.join(__dirname, "groups.json");
-const INVITES_FILE = path.join(__dirname, "invites.json");
 
 const MAX_BODY_SIZE = 20 * 1024 * 1024;
 
@@ -33,7 +32,6 @@ ensureFile(MESSAGES_FILE, []);
 ensureFile(CHANNELS_FILE, []);
 ensureFile(CHANNEL_POSTS_FILE, []);
 ensureFile(GROUPS_FILE, []);
-ensureFile(INVITES_FILE, []);
 
 
 function readJSON(file) {
@@ -225,8 +223,6 @@ function normalizeChannel(channel) {
         channel.description = "";
     }
 
-    if (!["public","private"].includes(channel.visibility)) channel.visibility="public";
-
     if (typeof channel.photo !== "string") {
         channel.photo = "";
     }
@@ -265,7 +261,6 @@ function normalizeGroup(group) {
     if (typeof group.name !== "string") group.name = "Группа";
     if (typeof group.description !== "string") group.description = "";
     if (typeof group.photo !== "string") group.photo = "";
-    if (!["public","private"].includes(group.visibility)) group.visibility="public";
     return group;
 }
 
@@ -2685,7 +2680,9 @@ const server =
                     const type =
                         body.type === "voice"
                             ? "voice"
-                            : "text";
+                            : body.type === "attachment"
+                                ? "attachment"
+                                : "text";
 
 
                     const text =
@@ -2715,15 +2712,25 @@ const server =
 
                     const duration =
                         type === "voice" &&
-                        Number.isFinite(
-                            Number(
-                                body.duration
-                            )
-                        )
-                            ? Number(
-                                body.duration
-                            )
+                        Number.isFinite(Number(body.duration))
+                            ? Number(body.duration)
                             : 0;
+
+                    const attachment =
+                        type === "attachment" &&
+                        typeof body.attachment === "string"
+                            ? body.attachment
+                            : "";
+
+                    const attachmentType =
+                        type === "attachment"
+                            ? String(body.attachmentType || "").slice(0,120)
+                            : "";
+
+                    const attachmentName =
+                        type === "attachment"
+                            ? String(body.attachmentName || "Файл").slice(0,180)
+                            : "";
 
 
                     if (
@@ -2802,6 +2809,14 @@ const server =
                     }
 
 
+                    if (
+                        type === "attachment" &&
+                        !attachment
+                    ) {
+                        sendJSON(res, {success:false, message:"Файл пустой"}, 400);
+                        return;
+                    }
+
                     const message = {
 
                         id:
@@ -2830,6 +2845,21 @@ const server =
                             type === "voice"
                                 ? duration
                                 : 0,
+
+                        attachment:
+                            type === "attachment"
+                                ? attachment
+                                : "",
+
+                        attachmentType:
+                            type === "attachment"
+                                ? attachmentType
+                                : "",
+
+                        attachmentName:
+                            type === "attachment"
+                                ? attachmentName
+                                : "",
 
                         replyTo,
 
@@ -3026,10 +3056,18 @@ const server =
                     const body = await getBody(req);
                     const from = String(body.from || "").trim();
                     const groupId = String(body.groupId || "").trim();
-                    const type = body.type === "voice" ? "voice" : "text";
+                    const type =
+                        body.type === "voice"
+                            ? "voice"
+                            : body.type === "attachment"
+                                ? "attachment"
+                                : "text";
                     const text = String(body.text || "").trim();
                     const audio = type === "voice" && typeof body.audio === "string" ? body.audio : "";
                     const duration = Number.isFinite(Number(body.duration)) ? Number(body.duration) : 0;
+                    const attachment = type === "attachment" && typeof body.attachment === "string" ? body.attachment : "";
+                    const attachmentType = type === "attachment" ? String(body.attachmentType || "").slice(0,120) : "";
+                    const attachmentName = type === "attachment" ? String(body.attachmentName || "Файл").slice(0,180) : "";
                     const replyTo = body.replyTo && body.replyTo.id ? {
                         id:String(body.replyTo.id),
                         from:String(body.replyTo.from || ""),
@@ -3041,7 +3079,7 @@ const server =
                         sendJSON(res, {success:false, message:"Нет доступа к группе"}, 403);
                         return;
                     }
-                    if ((type === "text" && !text) || (type === "voice" && !audio)) {
+                    if ((type === "text" && !text) || (type === "voice" && !audio) || (type === "attachment" && !attachment)) {
                         sendJSON(res, {success:false, message:"Пустое сообщение"}, 400);
                         return;
                     }
@@ -3053,6 +3091,9 @@ const server =
                         text:type === "text" ? text : "",
                         audio:type === "voice" ? audio : "",
                         duration:type === "voice" ? duration : 0,
+                        attachment:type === "attachment" ? attachment : "",
+                        attachmentType:type === "attachment" ? attachmentType : "",
+                        attachmentName:type === "attachment" ? attachmentName : "",
                         replyTo,
                         time:new Date().toISOString()
                     };
@@ -3192,7 +3233,8 @@ const server =
                         String(
                             body.photo || ""
                         )
-                            .trim();
+                            .trim()
+                            .slice(0, 2_500_000);
 
 
                     if (
@@ -3251,9 +3293,6 @@ const server =
                         description,
 
                         photo,
-
-                        visibility:
-                            body.visibility === "private" ? "private" : "public",
 
                         owner,
 
@@ -3654,32 +3693,6 @@ const server =
                    CHANNEL POST
                 ===================================================== */
 
-
-                if (req.method === "POST" && pathname === "/channel-vote") {
-                    const body = await getBody(req);
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => c.id === body.channelId);
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = posts.find(p => p.id === body.postId && p.channelId === body.channelId && p.type === "poll");
-                    const index = Number(body.optionIndex);
-                    const login = String(body.login || "");
-                    if (!channel || !post || !Number.isInteger(index) || index < 0 || index >= (post.options || []).length) {
-                        sendJSON(res,{success:false,message:"Опрос не найден"},404); return;
-                    }
-                    if (!Array.isArray(channel.subscribers) || !channel.subscribers.includes(login)) {
-                        sendJSON(res,{success:false,message:"Сначала подпишитесь на канал"},403); return;
-                    }
-                    if (!post.votes || typeof post.votes !== "object") post.votes = {};
-                    Object.keys(post.votes).forEach(k => {
-                        if (Array.isArray(post.votes[k])) post.votes[k] = post.votes[k].filter(x => x !== login);
-                    });
-                    if (!Array.isArray(post.votes[index])) post.votes[index] = [];
-                    post.votes[index].push(login);
-                    saveJSON(CHANNEL_POSTS_FILE, posts);
-                    sendJSON(res,{success:true,post});
-                    return;
-                }
-
                 if (
                     req.method === "POST" &&
                     pathname === "/channel-post"
@@ -3757,21 +3770,11 @@ const server =
                             ? body.mediaType
                             : "";
 
-                    const type =
-                        body.type === "poll" ? "poll" :
-                        body.type === "gif" ? "gif" :
-                        body.type === "media" ? "media" : "text";
 
-                    const options = Array.isArray(body.options)
-                        ? body.options.map(x => String(x).trim()).filter(Boolean).slice(0, 8)
-                        : [];
-
-                    if (type === "poll" && (!text || options.length < 2)) {
-                        sendJSON(res,{success:false,message:"Нужен вопрос и минимум 2 варианта"},400);
-                        return;
-                    }
-
-                    if (!text && !media && type !== "poll") {
+                    if (
+                        !text &&
+                        !media
+                    ) {
 
                         sendJSON(
                             res,
@@ -3806,9 +3809,6 @@ const server =
                         media,
 
                         mediaType,
-                        type,
-                        options,
-                        votes: {},
 
                         time:
                             new Date()
@@ -3870,36 +3870,6 @@ const server =
                     return;
                 }
 
-
-                /* DIRECTORY / INVITES / POLLS */
-                if (req.method === "GET" && pathname === "/directory") {
-                    const q=String(url.searchParams.get("q")||"").trim().toLowerCase();
-                    const groups=getGroups().map(normalizeGroup).filter(g=>g.visibility==="public"&&(!q||g.name.toLowerCase().includes(q)));
-                    const channels=readJSON(CHANNELS_FILE).map(normalizeChannel).filter(c=>c.visibility==="public"&&(!q||c.name.toLowerCase().includes(q)));
-                    sendJSON(res,{groups,channels}); return;
-                }
-                if (req.method === "GET" && pathname === "/invites") {
-                    const login=String(url.searchParams.get("login")||"");
-                    sendJSON(res,readJSON(INVITES_FILE).filter(x=>x.to===login&&x.status==="pending")); return;
-                }
-                if (req.method === "POST" && pathname === "/invites") {
-                    const b=await getBody(req),from=String(b.from||"").trim(),to=String(b.to||"").trim(),id=String(b.targetId||"").trim(),type=b.targetType==="channel"?"channel":"group";
-                    if(!findUser(from)||!findUser(to)){sendJSON(res,{success:false,message:"Пользователь не найден"},404);return;}
-                    const target=type==="group"?getGroups().find(x=>x.id===id):readJSON(CHANNELS_FILE).find(x=>x.id===id);
-                    if(!target){sendJSON(res,{success:false,message:"Не найдено"},404);return;}
-                    const inv=readJSON(INVITES);inv.push({id:"inv_"+Date.now(),from,to,targetId:id,targetType:type,targetName:target.name,status:"pending"});saveJSON(INVITES_FILE,inv);sendJSON(res,{success:true});return;
-                }
-                if (req.method === "POST" && pathname === "/invite-action") {
-                    const b=await getBody(req),invites=readJSON(INVITES_FILE),inv=invites.find(x=>x.id===String(b.id||"")&&x.to===String(b.login||"")&&x.status==="pending");
-                    if(!inv){sendJSON(res,{success:false,message:"Приглашение не найдено"},404);return;}
-                    if(b.action!=="decline"){if(inv.targetType==="group"){const gs=getGroups(),g=gs.find(x=>x.id===inv.targetId);if(g&&!g.members.includes(inv.to)){g.members.push(inv.to);saveJSON(GROUPS_FILE,gs);}}else{const cs=readJSON(CHANNELS_FILE),c=cs.find(x=>x.id===inv.targetId);if(c&&!c.subscribers.includes(inv.to)){c.subscribers.push(inv.to);saveJSON(CHANNELS_FILE,cs);}}}
-                    inv.status=b.action==="decline"?"declined":"accepted";saveJSON(INVITES_FILE,invites);sendJSON(res,{success:true});return;
-                }
-                if (req.method === "POST" && pathname === "/channel-vote") {
-                    const b=await getBody(req),posts=readJSON(CHANNEL_POSTS_FILE),p=posts.find(x=>x.id===String(b.postId||"")&&x.type==="poll"),login=String(b.login||""),i=Number(b.optionIndex);
-                    if(!p||!Number.isInteger(i)||i<0||i>=(p.options||[]).length){sendJSON(res,{success:false,message:"Опрос не найден"},400);return;}
-                    p.votes=p.votes||{};Object.keys(p.votes).forEach(k=>{if(Array.isArray(p.votes[k]))p.votes[k]=p.votes[k].filter(x=>x!==login)});if(!Array.isArray(p.votes[i]))p.votes[i]=[];p.votes[i].push(login);saveJSON(CHANNEL_POSTS_FILE,posts);sendJSON(res,{success:true});return;
-                }
 
                 /* =====================================================
                    404

@@ -2022,73 +2022,119 @@ button:active { transform:scale(.98); }
 }
 
 
-/* ===== Vibe Channels 2.0 ===== */
-.vc-icon{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.vc-icon-lg{width:24px;height:24px}
-.channel-hub-card{width:min(780px,96vw)!important;max-height:min(760px,92vh);padding:0!important;overflow:hidden}
-.channel-hub{display:flex;flex-direction:column;min-height:0}
-.channel-hub-head{padding:22px;background:linear-gradient(135deg,rgba(139,92,246,.20),rgba(236,72,153,.10));border-bottom:1px solid var(--border)}
-.channel-hub-title{display:flex;align-items:center;gap:12px;font-size:24px;font-weight:900}
-.channel-hub-title-icon{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 12px 30px rgba(139,92,246,.24)}
-.channel-hub-subtitle{margin:7px 0 0;color:var(--muted);font-size:13px}
-.channel-hub-tools{display:flex;gap:9px;margin-top:16px}
-.channel-hub-search{flex:1;min-width:0!important}
-.channel-create-btn{display:flex;align-items:center;gap:8px;white-space:nowrap!important}
-.channel-hub-body{padding:17px 18px 20px;overflow:auto}
-.channel-section-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:900;margin:2px 0 10px}
-.channel-cards{display:grid;gap:10px}
-.channel-card{display:flex;align-items:center;gap:13px;padding:12px;border:1px solid var(--border);border-radius:18px;background:var(--panel2);transition:.18s}
-.channel-card:hover{transform:translateY(-1px);border-color:rgba(139,92,246,.45);box-shadow:0 12px 30px rgba(0,0,0,.13)}
-.channel-card-main{display:flex;align-items:center;gap:13px;min-width:0;flex:1;cursor:pointer}
-.channel-card-avatar{width:58px;height:58px;min-width:58px;border-radius:18px;display:grid;place-items:center;overflow:hidden;background:linear-gradient(135deg,#292045,#151a2e);color:#fff}
-.channel-card-avatar img{width:100%;height:100%;object-fit:cover}
-.channel-card-info{min-width:0;flex:1}
-.channel-card-name{font-weight:900;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.channel-card-desc{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.channel-card-meta{display:flex;gap:9px;align-items:center;margin-top:6px;font-size:11px;color:var(--muted)}
-.channel-card-action{border:0;border-radius:11px;padding:9px 12px;background:var(--accent);color:#fff;font-weight:800;white-space:nowrap}
-.channel-card-action.subscribed{background:var(--panel);color:var(--text);border:1px solid var(--border)}
-.channel-empty{padding:38px 15px;text-align:center;color:var(--muted)}
-.channel-empty-icon{width:58px;height:58px;margin:0 auto 10px;border-radius:19px;display:grid;place-items:center;background:var(--panel2);color:var(--accent)}
-.channel-create-card{width:min(530px,94vw)!important}
-.channel-create-hero{display:flex;align-items:center;gap:13px;padding:14px;border-radius:16px;background:linear-gradient(135deg,rgba(139,92,246,.14),rgba(236,72,153,.08));margin-bottom:10px}
-.channel-create-hero-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--panel2);color:var(--accent)}
-.channel-field-label{display:block;margin:12px 0 6px;font-size:12px;color:var(--muted);font-weight:800}
-.channel-visibility{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.channel-visibility label{cursor:pointer}
-.channel-visibility input{display:none}
-.channel-visibility span{display:flex;align-items:center;gap:8px;padding:11px;border:1px solid var(--border);border-radius:12px;background:var(--panel2);font-size:12px}
-.channel-visibility input:checked+span{border-color:var(--accent);background:rgba(139,92,246,.12)}
-.channel-workspace-actions{display:flex;gap:7px}
-.channel-tool-btn{width:40px;height:40px;border:0;border-radius:12px;background:var(--panel2);color:var(--text);display:grid;place-items:center}
-.channel-tool-btn:hover{background:var(--accent);color:#fff}
-.channel-feed{padding:18px clamp(10px,3vw,28px)!important}
-.channel-feed-banner{max-width:850px;margin:0 auto 15px;padding:16px;border-radius:20px;background:linear-gradient(135deg,rgba(139,92,246,.13),rgba(236,72,153,.08));border:1px solid var(--border)}
-.channel-feed-banner-row{display:flex;align-items:center;gap:12px}
-.channel-feed-banner h3{margin:0;font-size:19px}.channel-feed-banner p{margin:4px 0 0;color:var(--muted);font-size:12px}
-.channel-post-modern{max-width:850px;margin:0 auto 13px;padding:15px;border:1px solid var(--border);border-radius:19px;background:var(--panel);box-shadow:0 8px 28px rgba(0,0,0,.10)}
-.channel-post-top{display:flex;align-items:center;gap:10px}.channel-post-top .avatar{width:38px;height:38px;min-width:38px}
-.channel-post-author-block{min-width:0;flex:1}.channel-post-author-name{font-weight:900;font-size:13px}.channel-post-author-meta{font-size:10px;color:var(--muted);margin-top:2px}
-.channel-post-more{width:32px;height:32px;border:0;border-radius:10px;background:transparent;color:var(--muted)}
-.channel-post-modern .channel-post-text{font-size:14px;line-height:1.55;margin-top:11px;white-space:pre-wrap}
-.channel-post-modern img,.channel-post-modern video{max-width:100%;width:auto;max-height:520px;object-fit:contain;border-radius:15px;margin-top:11px}
-.channel-post-modern .channel-post-time{font-size:10px;color:var(--muted);margin-top:10px}
-.channel-poll-card{margin-top:12px;padding:12px;border-radius:15px;background:var(--panel2)}
-.channel-poll-question{font-weight:900;margin-bottom:9px}
-.channel-poll-option{width:100%;border:1px solid var(--border);background:var(--panel);color:var(--text);padding:10px 12px;border-radius:11px;margin-top:6px;text-align:left;cursor:pointer}
-.channel-poll-option:hover{border-color:var(--accent)}
-.channel-composer{position:relative;max-width:900px;margin:0 auto;width:100%;display:flex;gap:7px;align-items:flex-end}
-.channel-composer-tools{display:flex;gap:5px}
-.channel-composer .channel-tool-btn{width:42px;height:44px}
-.channel-composer input{height:44px!important}
-.channel-send-btn{width:48px!important;height:44px!important}
+/* ===== Composer / attachments 2.0 ===== */
+.composer{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex-wrap:nowrap;
+}
+.composer-tools{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    flex:0 0 auto;
+}
+.composer-icon-btn,
+.composer-text-btn{
+    width:42px!important;
+    min-width:42px!important;
+    height:42px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:12px!important;
+    display:grid!important;
+    place-items:center!important;
+    flex:0 0 42px!important;
+}
+.composer-icon-btn svg{
+    width:20px;height:20px;fill:none;stroke:currentColor;
+    stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+}
+.composer-text-btn{
+    font-size:11px!important;
+    font-weight:900!important;
+    letter-spacing:.02em;
+}
+.composer-icon-btn:hover,.composer-text-btn:hover{
+    filter:brightness(1.08);
+}
+.voice-btn.recording{
+    background:#ef4444!important;
+    color:#fff!important;
+}
+.emoji-picker{
+    left:8px!important;
+    right:auto!important;
+    bottom:58px!important;
+    width:310px!important;
+    max-width:calc(100vw - 16px)!important;
+    max-height:280px!important;
+    background:var(--panel)!important;
+    color:var(--text)!important;
+    z-index:999!important;
+}
+.emoji-grid{
+    display:grid!important;
+    grid-template-columns:repeat(8,1fr)!important;
+}
+.emoji-item{
+    color:var(--text)!important;
+    background:transparent!important;
+    font-family:"Segoe UI Emoji","Apple Color Emoji",sans-serif!important;
+    font-size:24px!important;
+    min-height:36px!important;
+}
+.chat-attachment{
+    max-width:min(430px,80vw);
+    margin-top:7px;
+}
+.chat-attachment img,
+.chat-attachment video{
+    display:block;
+    max-width:100%;
+    max-height:420px;
+    border-radius:14px;
+    object-fit:contain;
+}
+.chat-file{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    border-radius:13px;
+    background:var(--panel2);
+    color:var(--text);
+    text-decoration:none;
+    font-weight:800;
+}
+.chat-file-icon{
+    width:36px;height:36px;border-radius:10px;
+    display:grid;place-items:center;
+    background:rgba(139,92,246,.16);
+    color:var(--accent);
+}
+.chat-file-name{
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.channel-only-tools{display:none!important}
 @media(max-width:700px){
- .channel-hub-card{width:100%!important;max-height:100vh;border-radius:0!important}
- .channel-hub-head{padding:16px}.channel-hub-title{font-size:20px}.channel-hub-tools{flex-wrap:wrap}.channel-hub-search{flex-basis:100%}.channel-create-btn{flex:1;justify-content:center}
- .channel-card{padding:10px}.channel-card-avatar{width:48px;height:48px;min-width:48px}.channel-card-action{padding:8px 9px;font-size:11px}
- .channel-feed{padding:10px 8px!important}.channel-post-modern{border-radius:16px;padding:12px}
- .channel-composer{gap:4px}.channel-composer-tools{gap:3px}.channel-composer .channel-tool-btn{width:36px;height:40px}.channel-send-btn{width:42px!important}
- .channel-composer input{padding:10px!important}
+    .composer{gap:4px;padding:7px!important}
+    .composer-tools{gap:3px}
+    .composer-icon-btn,.composer-text-btn{
+        width:38px!important;min-width:38px!important;height:40px!important;flex-basis:38px!important;
+        border-radius:11px!important;
+    }
+    .composer-icon-btn svg{width:19px;height:19px}
+    .composer-text-btn{font-size:10px!important}
+    .emoji-picker{
+        left:4px!important;
+        bottom:56px!important;
+        width:calc(100vw - 8px)!important;
+        max-height:260px!important;
+    }
+    .emoji-grid{grid-template-columns:repeat(7,1fr)!important}
 }
 
 </style>
@@ -2219,7 +2265,7 @@ button:active { transform:scale(.98); }
                 <input
                     id="searchInput"
                     type="text"
-                    placeholder="Поиск людей, групп и каналов..."
+                    placeholder="Поиск людей..."
                     oninput="searchUsers()"
                 >
 
@@ -2284,7 +2330,10 @@ button:active { transform:scale(.98); }
 
             <div id="messages" class="messages">
 
-                <div class="vibe-home"><div class="vibe-home-logo">V</div><h2>Добро пожаловать в Vibe</h2><p>Найди пользователя, группу или канал через поиск.</p><div class="vibe-home-grid"><button onclick="openHelp()">Инструкция</button><button onclick="openSettings()">Настройки</button></div></div>
+                <div class="empty-chat">
+                    Выберите чат,<br>
+                    чтобы начать общение
+                </div>
 
             </div>
 
@@ -2293,6 +2342,7 @@ button:active { transform:scale(.98); }
                 <div id="emojiPicker" class="emoji-picker hidden">
                     <div id="emojiGrid" class="emoji-grid"></div>
                 </div>
+
                 <div id="replyPreview" class="reply-preview hidden">
                     <div class="reply-preview-main">
                         <div class="reply-preview-title">Ответ на сообщение</div>
@@ -2300,28 +2350,48 @@ button:active { transform:scale(.98); }
                     </div>
                     <button type="button" class="reply-preview-close" onclick="clearReplyTarget()">✕</button>
                 </div>
-                <div class="channel-composer">
-                    <div class="channel-composer-tools">
-                        <button id="channelMediaButton" class="channel-tool-btn hidden" title="Фото или видео" onclick="openChannelMediaPicker()">
-                            <svg class="vc-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L9 18"/></svg>
-                        </button>
-                        <button id="channelPollButton" class="channel-tool-btn hidden" title="Опрос" onclick="openPollCreator()">
-                            <svg class="vc-icon" viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M8 8h8M8 12h5M8 16h8"/></svg>
-                        </button>
-                        <label id="channelGifButton" class="channel-tool-btn hidden" title="GIF">
-                            <span style="font-size:10px;font-weight:900;">GIF</span>
-                            <input id="channelGifFile" type="file" accept="image/gif" hidden>
-                        </label>
-                    </div>
-                    <input id="messageInput" type="text" placeholder="Написать сообщение..." onkeydown="if(event.key==='Enter') sendMessage()">
-                    <button class="emoji-btn" onclick="toggleEmojiPicker()" title="Emoji">☺</button>
-                    <button id="voiceRecordButton" class="voice-btn" onclick="toggleVoiceRecording()" title="Голосовое">
-                        <svg class="vc-icon" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+
+                <div class="composer-tools">
+                    <button id="attachmentPhotoButton" class="composer-icon-btn" type="button" title="Фото" onclick="pickChatAttachment('photo')">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L9 18"/></svg>
                     </button>
-                    <button class="send-button channel-send-btn" onclick="sendMessage()" title="Отправить">
-                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="m4 4 16 8-16 8 3-8-3-8Z"/><path d="M7 12h13"/></svg>
+
+                    <button id="attachmentFileButton" class="composer-icon-btn" type="button" title="Файл" onclick="pickChatAttachment('file')">
+                        <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>
                     </button>
+
+                    <button id="attachmentGifButton" class="composer-text-btn" type="button" title="GIF" onclick="pickChatAttachment('gif')">GIF</button>
                 </div>
+
+                <input
+                    id="messageInput"
+                    type="text"
+                    placeholder="Написать сообщение..."
+                    onkeydown="if(event.key==='Enter') sendMessage()"
+                >
+
+                <button
+                    class="emoji-btn composer-icon-btn"
+                    type="button"
+                    onclick="toggleEmojiPicker()"
+                    title="Смайлики"
+                >
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M8.5 9h.01M15.5 9h.01"/></svg>
+                </button>
+
+                <button
+                    id="voiceRecordButton"
+                    class="voice-btn composer-icon-btn"
+                    type="button"
+                    onclick="toggleVoiceRecording()"
+                    title="Голосовое сообщение"
+                >
+                    <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/></svg>
+                </button>
+
+                <button class="send-button composer-icon-btn" type="button" onclick="sendMessage()" title="Отправить">
+                    <svg viewBox="0 0 24 24"><path d="m4 4 16 8-16 8 3-8-3-8Z"/><path d="M7 12h13"/></svg>
+                </button>
             </div>
 
         </main>
@@ -3268,35 +3338,47 @@ button:active { transform:scale(.98); }
 </div>
 
 <div id="channelsModal" class="modal hidden">
-    <div class="modal-card channel-hub-card">
-        <div class="channel-hub">
-            <div class="channel-hub-head">
-                <div class="modal-header" style="padding:0;border:0;">
-                    <div>
-                        <div class="channel-hub-title">
-                            <div class="channel-hub-title-icon">
-                                <svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7A3.5 3.5 0 0 1 16.5 16H11l-5 4v-4.5A3.5 3.5 0 0 1 2.5 12V7A3.5 3.5 0 0 1 4 5.5Z"/></svg>
-                            </div>
-                            Каналы
-                        </div>
-                        <div class="channel-hub-subtitle">Публикации, опросы, GIF и ваши подписки.</div>
-                    </div>
-                    <button class="modal-close" onclick="closeModal('channelsModal')">✕</button>
-                </div>
-                <div class="channel-hub-tools">
-                    <input id="channelHubSearch" class="channel-hub-search" placeholder="Поиск каналов..." oninput="filterChannelHub()">
-                    <button class="primary channel-create-btn" onclick="openCreateChannel()">
-                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-                        Создать
-                    </button>
-                </div>
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+
+            <div class="modal-title">
+                📢 Каналы
             </div>
-            <div class="channel-hub-body">
-                <div class="channel-section-label">Мои каналы и подписки</div>
-                <div id="channelsList" class="channel-cards"></div>
-            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('channelsModal')"
+            >
+                ✕
+            </button>
+
         </div>
+
+        <button
+            class="primary"
+            onclick="openCreateChannel()"
+        >
+            + Создать канал
+        </button>
+
+        <div
+            id="channelsList"
+            class="channels-list"
+            style="margin-top:14px;"
+        ></div>
+
+        <div class="modal-actions">
+
+            <button onclick="closeModal('channelsModal')">
+                Закрыть
+            </button>
+
+        </div>
+
     </div>
+
 </div>
 
 
@@ -3305,36 +3387,68 @@ button:active { transform:scale(.98); }
 ========================================================= -->
 
 <div id="createChannelModal" class="modal hidden">
-    <div class="modal-card channel-create-card">
+
+    <div class="modal-card">
+
         <div class="modal-header">
-            <div class="modal-title">Новый канал</div>
-            <button class="modal-close" onclick="closeModal('createChannelModal')">✕</button>
-        </div>
-        <div class="channel-create-hero">
-            <div class="channel-create-hero-icon">
-                <svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7A3.5 3.5 0 0 1 16.5 16H11l-5 4v-4.5A3.5 3.5 0 0 1 2.5 12V7A3.5 3.5 0 0 1 4 5.5Z"/></svg>
+
+            <div class="modal-title">
+                Создать канал
             </div>
-            <div><b>Создай свой канал</b><div style="font-size:12px;color:var(--muted);margin-top:3px;">Публикуй новости и контент для подписчиков.</div></div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('createChannelModal')"
+            >
+                ✕
+            </button>
+
         </div>
-        <label class="channel-field-label">Название</label>
-        <input id="channelNameInput" placeholder="Например, Vibe News">
-        <label class="channel-field-label">Описание</label>
-        <textarea id="channelDescriptionInput" placeholder="О чём канал?"></textarea>
-        <label class="channel-field-label">Фото</label>
+
+        <input
+            id="channelNameInput"
+            placeholder="Название канала"
+        >
+
+        <textarea
+            id="channelDescriptionInput"
+            placeholder="Описание канала"
+        ></textarea>
+
         <input id="channelPhotoInput" type="hidden" value="">
-        <label class="file-upload-btn channel-photo-upload" for="channelPhotoFile">Выбрать фото с устройства<input id="channelPhotoFile" type="file" accept="image/*" hidden></label>
-        <div id="channelCreatePreview" class="profile-photo"></div>
-        <label class="channel-field-label">Доступ</label>
-        <div class="channel-visibility">
-            <label><input type="radio" name="channelVisibility" value="public" checked><span>🌐 Публичный</span></label>
-            <label><input type="radio" name="channelVisibility" value="private"><span>🔒 Приватный</span></label>
+        <label class="file-upload-btn channel-photo-upload" for="channelPhotoFile">
+            📷 Выбрать фото канала
+            <input id="channelPhotoFile" type="file" accept="image/*" hidden>
+        </label>
+
+        <div id="channelCreatePreview" class="profile-photo">
+            📢
         </div>
-        <div id="channelCreateError" class="auth-message"></div>
+
+        <div
+            id="channelCreateError"
+            class="auth-message"
+        ></div>
+
         <div class="modal-actions">
-            <button class="primary" onclick="createChannel()">Создать канал</button>
-            <button onclick="closeModal('createChannelModal')">Отмена</button>
+
+            <button
+                class="primary"
+                onclick="createChannel()"
+            >
+                Создать
+            </button>
+
+            <button
+                onclick="closeModal('createChannelModal')"
+            >
+                Отмена
+            </button>
+
         </div>
+
     </div>
+
 </div>
 
 
@@ -4017,10 +4131,22 @@ function initEmojiPicker() {
 
 
 function toggleEmojiPicker() {
+    const picker = $("emojiPicker");
+    if (!picker) return;
 
-    $("emojiPicker")
-        .classList
-        .toggle("hidden");
+    if (!picker.querySelector(".emoji-item")) {
+        initEmojiPicker();
+    }
+
+    picker.classList.toggle("hidden");
+    if (!picker.classList.contains("hidden")) {
+        picker.style.display = "block";
+        requestAnimationFrame(() => {
+            picker.scrollTop = 0;
+        });
+    } else {
+        picker.style.display = "";
+    }
 }
 
 
@@ -4560,99 +4686,51 @@ async function autoLogin() {
 
     applyLanguage();
 
+    let cachedUser = null;
+
     try {
-
-        const savedUser =
-            localStorage.getItem(
-                "vibeUser"
-            );
-
+        const savedUser = localStorage.getItem("vibeUser");
         if (savedUser) {
-
-            const user =
-                JSON.parse(
-                    savedUser
-                );
-
-            if (
-                user &&
-                user.login
-            ) {
-
-                const serverUser =
-                    await getUser(
-                        user.login
-                    );
-
-                if (serverUser) {
-
-                    currentUser =
-                        serverUser;
-
-                    const extra =
-                        getExtraProfile(
-                            currentUser.login
-                        );
-
-                    if (extra.language) {
-
-                        siteLanguage =
-                            extra.language;
-
-                        localStorage.setItem(
-                            "vibeLanguage",
-                            siteLanguage
-                        );
-                    }
-
-                    if (extra.theme) {
-                        applyTheme(
-                            extra.theme
-                        );
-                    }
-
-                    localStorage.setItem(
-                        "vibeUser",
-                        JSON.stringify(
-                            currentUser
-                        )
-                    );
-
-                    applyLanguage();
-
-                    showApp();
-
-                    return;
-                }
-            }
+            const parsed = JSON.parse(savedUser);
+            if (parsed && parsed.login) cachedUser = parsed;
         }
+    } catch {}
 
-    } catch {
-        try { const cached=localStorage.getItem("vibeUser"); const u=cached?JSON.parse(cached):null; if(u&&u.login){currentUser=u;showApp();return;} } catch {}
+    if (cachedUser) {
+        // Do not log the user out just because the first server request
+        // is temporarily unavailable after a refresh.
+        currentUser = cachedUser;
+
+        const extra = getExtraProfile(currentUser.login);
+        if (extra.language) {
+            siteLanguage = extra.language;
+            localStorage.setItem("vibeLanguage", siteLanguage);
+        }
+        if (extra.theme) applyTheme(extra.theme);
+
+        applyLanguage();
+        showApp();
+
+        // Refresh profile silently when the server is available.
+        getUser(currentUser.login)
+            .then(serverUser => {
+                if (!serverUser || !currentUser || serverUser.login !== currentUser.login) return;
+                currentUser = serverUser;
+                localStorage.setItem("vibeUser", JSON.stringify(currentUser));
+                loadFriends();
+                loadChats();
+                loadChannels();
+            })
+            .catch(() => {});
+        return;
     }
 
-    const savedLogin =
-        localStorage.getItem(
-            "vibeLogin"
-        );
+    const savedLogin = localStorage.getItem("vibeLogin");
+    if (savedLogin) $("loginInput").value = savedLogin;
 
-    if (savedLogin) {
-
-        $("loginInput").value =
-            savedLogin;
-    }
-
-    $("authScreen")
-        .classList
-        .remove("hidden");
-
-    $("app")
-        .classList
-        .add("hidden");
-
-    document.body
-        .classList
-        .remove("booting");
+    $("authScreen").classList.remove("hidden");
+    $("app").classList.add("hidden");
+    document.body.classList.remove("booting");
 }
 
 
@@ -5749,12 +5827,11 @@ async function openChat(login) {
     currentGroup = null;
     currentChannel = null;
     currentChat = login;
-    $("messages")?.classList.remove("channel-feed");
-    document.querySelector(".channel-workspace-actions")?.classList.add("hidden");
-    $("channelMediaButton")?.classList.add("hidden");
-    $("channelPollButton")?.classList.add("hidden");
-    $("channelGifButton")?.classList.add("hidden");
-    $("voiceRecordButton")?.classList.remove("hidden");
+
+    document.querySelectorAll(".channel-only-tools").forEach(el => el.classList.add("hidden"));
+    $("attachmentPhotoButton")?.classList.remove("hidden");
+    $("attachmentFileButton")?.classList.remove("hidden");
+    $("attachmentGifButton")?.classList.remove("hidden");
 
     $("emojiPicker")
         .classList
@@ -5919,6 +5996,17 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
 
         if (message.type === "voice" && message.audio) {
             bubble.innerHTML = `${senderHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
+        } else if (message.type === "attachment" && message.attachment) {
+            const mime = String(message.attachmentType || "");
+            let attachmentHtml = "";
+            if (mime.startsWith("image/")) {
+                attachmentHtml = `<div class="chat-attachment"><img src="${escapeHTML(message.attachment)}" alt="${escapeHTML(message.attachmentName || "Изображение")}"></div>`;
+            } else if (mime.startsWith("video/")) {
+                attachmentHtml = `<div class="chat-attachment"><video src="${escapeHTML(message.attachment)}" controls playsinline></video></div>`;
+            } else {
+                attachmentHtml = `<div class="chat-attachment"><a class="chat-file" href="${escapeHTML(message.attachment)}" download="${escapeHTML(message.attachmentName || "Файл")}"><span class="chat-file-icon">↧</span><span class="chat-file-name">${escapeHTML(message.attachmentName || "Файл")}</span></a></div>`;
+            }
+            bubble.innerHTML = `${senderHtml}${replyHtml}${attachmentHtml}<div class="message-time">${time}</div>`;
         } else {
             bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
@@ -6129,6 +6217,109 @@ async function toggleVoiceRecording() {
         alert("Не удалось получить доступ к микрофону. Проверь разрешение микрофона для сайта.");
     }
 }
+
+
+/* =========================================================
+   CHAT ATTACHMENTS
+========================================================= */
+
+function pickChatAttachment(kind) {
+    if (!currentUser || (!currentChat && !currentGroup && !currentChannel)) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+
+    if (kind === "photo") {
+        input.accept = "image/*";
+    } else if (kind === "gif") {
+        input.accept = "image/gif";
+    } else {
+        input.accept = "*/*";
+    }
+
+    input.onchange = () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        const maxBytes = 12 * 1024 * 1024;
+        if (file.size > maxBytes) {
+            alert("Файл слишком большой. Максимум 12 МБ.");
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const data = String(reader.result || "");
+            if (!data) return;
+
+            if (currentChannel) {
+                if (currentChannel.owner !== currentUser.login) return;
+                const response = await fetch("/channel-post", {
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({
+                        channelId:currentChannel.id,
+                        author:currentUser.login,
+                        text:"",
+                        media:data,
+                        mediaType:file.type,
+                        type: kind === "gif" ? "gif" : "media"
+                    })
+                });
+                const result = await response.json().catch(() => ({}));
+                if (!result.success) {
+                    alert(result.message || "Не удалось отправить файл");
+                    return;
+                }
+                await loadChannelPosts(true);
+                return;
+            }
+
+            const body = {
+                from: currentUser.login,
+                to: currentChat || "",
+                groupId: currentGroup?.id || "",
+                type: "attachment",
+                attachment: data,
+                attachmentType: file.type || "application/octet-stream",
+                attachmentName: file.name || "Файл",
+                text: "",
+                replyTo: replyTargetMessage ? {
+                    id: replyTargetMessage.id,
+                    from: replyTargetMessage.from,
+                    text: replyTargetMessage.text
+                } : null
+            };
+
+            const endpoint = currentGroup ? "/group-message" : "/send-message";
+            const response = await fetch(endpoint, {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify(body)
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (!result.success) {
+                alert(result.message || "Не удалось отправить файл");
+                return;
+            }
+
+            clearReplyTarget();
+
+            if (currentGroup) {
+                await loadGroupMessages(true);
+            } else {
+                await loadMessages(true);
+                await loadChats();
+            }
+        };
+
+        reader.readAsDataURL(file);
+    };
+
+    input.click();
+}
+
 
 /* =========================================================
    SEND MESSAGE
@@ -7179,6 +7370,10 @@ async function createGroup() {
 async function openGroup(group) {
     currentGroup = group;
     currentChannel = null;
+    $("attachmentPhotoButton")?.classList.remove("hidden");
+    $("attachmentFileButton")?.classList.remove("hidden");
+    $("attachmentGifButton")?.classList.remove("hidden");
+    currentChannel = null;
     currentChat = "";
     $("callButtons").classList.add("hidden");
     $("emojiPicker").classList.add("hidden");
@@ -7325,63 +7520,120 @@ async function loadChannels() {
 
 
 function renderChannelsList() {
-    const box = $("channelsList");
-    if (!box) return;
+
+    const box =
+        $("channelsList");
+
     box.innerHTML = "";
 
-    const query = ($("channelHubSearch")?.value || "").trim().toLowerCase();
-    const filtered = channels.filter(c =>
-        !query ||
-        (c.name || "").toLowerCase().includes(query) ||
-        (c.description || "").toLowerCase().includes(query)
-    );
+    if (!channels.length) {
 
-    if (!filtered.length) {
-        box.innerHTML = `<div class="channel-empty">
-            <div class="channel-empty-icon"><svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></div>
-            Каналы не найдены
-        </div>`;
+        box.innerHTML =
+            `
+            <div style="
+                color:var(--muted);
+                padding:15px;
+                text-align:center;
+            ">
+                Пока каналов нет
+            </div>
+            `;
+
         return;
     }
 
-    filtered.forEach(channel => {
-        const item = document.createElement("div");
-        item.className = "channel-card";
+    channels.forEach(
+        channel => {
 
-        const icon = channel.photo
-            ? `<img src="${escapeHTML(channel.photo)}">`
-            : `<svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7A3.5 3.5 0 0 1 16.5 16H11l-5 4v-4.5A3.5 3.5 0 0 1 2.5 12V7A3.5 3.5 0 0 1 4 5.5Z"/></svg>`;
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-        item.innerHTML = `
-            <div class="channel-card-main">
-                <div class="channel-card-avatar">${icon}</div>
-                <div class="channel-card-info">
-                    <div class="channel-card-name">${escapeHTML(channel.name || "Канал")}</div>
-                    <div class="channel-card-desc">${escapeHTML(channel.description || "Без описания")}</div>
-                    <div class="channel-card-meta">
-                        <span>👥 ${Number(channel.subscriberCount || channel.subscribers?.length || 0)}</span>
-                        <span>${channel.visibility === "private" ? "🔒 Приватный" : "Публичный"}</span>
-                    </div>
+            item.className =
+                "channel-item";
+
+            const main =
+                document.createElement(
+                    "div"
+                );
+
+            main.className =
+                "channel-item-main";
+
+            const icon =
+                channel.photo
+                    ? `<img src="${escapeHTML(channel.photo)}">`
+                    : "📢";
+
+            main.innerHTML =
+                `
+                <div class="channel-icon">
+                    ${icon}
                 </div>
-            </div>
-            <button class="channel-card-action ${channel.subscribed ? "subscribed" : ""}">
-                ${channel.subscribed ? "Подписан" : "Подписаться"}
-            </button>`;
 
-        item.querySelector(".channel-card-main").onclick = () => {
-            closeModal("channelsModal");
-            openChannel(channel);
-        };
-        item.querySelector(".channel-card-action").onclick = async e => {
-            e.stopPropagation();
-            await toggleChannelSubscription(channel);
-        };
-        box.appendChild(item);
-    });
-}
+                <div class="channel-info">
 
-function filterChannelHub() {
-    renderChannelsList();
+                    <div class="channel-name">
+                        ${escapeHTML(
+                            channel.name
+                        )}
+                    </div>
+
+                    <div class="channel-description">
+                        ${escapeHTML(channel.description || "Канал Vibe")}
+                    </div>
+                    <div class="channel-description">👥 ${Number(channel.subscriberCount || channel.subscribers?.length || 0)} подписчиков</div>
+
+                </div>
+                `;
+
+            main.onclick = () => {
+
+                closeModal(
+                    "channelsModal"
+                );
+
+                openChannel(
+                    channel
+                );
+            };
+
+            item.appendChild(main);
+
+            const button =
+                document.createElement(
+                    "button"
+                );
+
+            button.className =
+                "channel-action" +
+                (
+                    channel.subscribed
+                        ? " subscribed"
+                        : ""
+                );
+
+            button.textContent =
+                channel.subscribed
+                    ? "Подписан"
+                    : "Подписаться";
+
+            button.onclick =
+                async event => {
+
+                    event.stopPropagation();
+
+                    await toggleChannelSubscription(
+                        channel
+                    );
+                };
+
+            item.appendChild(button);
+
+            box.appendChild(item);
+        }
+    );
 }
 
 
@@ -7520,6 +7772,7 @@ function setupChannelPhotoPicker(fileId, valueId, previewId) {
     const valueInput = $(valueId);
     if (!fileInput || !valueInput || fileInput.dataset.bound === "1") return;
     fileInput.dataset.bound = "1";
+    fileInput.setAttribute("accept", "image/*");
     fileInput.addEventListener("change", event => {
         const file = event.target.files?.[0];
         if (!file || !file.type.startsWith("image/")) return;
@@ -7566,6 +7819,11 @@ async function createChannel() {
             .value
             .trim();
 
+    if (photo && !photo.startsWith("data:image/")) {
+        $("channelCreateError").textContent = "Не удалось загрузить фото канала";
+        return;
+    }
+
     if (!name) {
 
         $("channelCreateError")
@@ -7598,10 +7856,7 @@ async function createChannel() {
 
                             description,
 
-                            photo,
-
-                            visibility:
-                                document.querySelector('input[name="channelVisibility"]:checked')?.value || "public"
+                            photo
                         })
                 }
             );
@@ -7645,69 +7900,120 @@ async function createChannel() {
 ========================================================= */
 
 async function openChannel(channel) {
+
     currentGroup = null;
     currentChannel = channel;
+
+    $("attachmentPhotoButton")?.classList.add("hidden");
+    $("attachmentFileButton")?.classList.add("hidden");
+    $("attachmentGifButton")?.classList.remove("hidden");
+    $("voiceRecordButton")?.classList.add("hidden");
+
     currentChat = "";
-    $("messages")?.classList.add("channel-feed");
-    $("emojiPicker")?.classList.add("hidden");
+
+    $("emojiPicker")
+        .classList
+        .add("hidden");
+
     openMobileChatView();
 
-    if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+    if (chatTimer) {
 
-    $("callButtons")?.classList.add("hidden");
-    $("wallpaperButton")?.classList.add("hidden");
+        clearInterval(chatTimer);
 
-    updateChannelHeader();
+        chatTimer = null;
+    }
 
-    const input = $("messageInput");
-    const owner = channel.owner === currentUser.login;
+    $("callButtons")
+        .classList
+        .add("hidden");
 
-    input.disabled = !owner;
-    input.placeholder = owner ? "Написать публикацию..." : "Публиковать может только владелец";
-
-    $("channelMediaButton")?.classList.toggle("hidden", !owner);
-    $("channelPollButton")?.classList.toggle("hidden", !owner);
-    $("channelGifButton")?.classList.toggle("hidden", !owner);
+    $("attachmentPhotoButton")?.classList.add("hidden");
+    $("attachmentFileButton")?.classList.add("hidden");
+    $("attachmentGifButton")?.classList.remove("hidden");
     $("voiceRecordButton")?.classList.add("hidden");
+
+    $("chatAvatar")
+        .innerHTML =
+        channel.photo
+            ? `<img src="${escapeHTML(channel.photo)}">`
+            : "📢";
+
+    $("chatName").textContent =
+        "📢 " + channel.name;
+
+    $("chatStatus").textContent =
+        (channel.description || "Канал Vibe") + " · 👥 " + Number(channel.subscriberCount || channel.subscribers?.length || 0);
+
+    const input =
+        $("messageInput");
+
+    if (
+        channel.owner ===
+        currentUser.login
+    ) {
+
+        input.disabled = false;
+
+        input.placeholder =
+            "Новая публикация...";
+
+    } else {
+
+        input.disabled = true;
+
+        input.placeholder =
+            "Только владелец может публиковать";
+    }
 
     await loadChannelPosts(true);
 
-    if (channel.subscribed) await markChannelAsRead(channel.id);
+    if (channel.subscribed) {
+
+        await markChannelAsRead(
+            channel.id
+        );
+    }
+
     await loadChannels();
+
     renderChats();
 
-    setTimeout(() => { if (owner) input.focus(); }, 100);
+    setTimeout(
+        () => {
+
+            if (
+                channel.owner ===
+                currentUser.login
+            ) {
+
+                input.focus();
+            }
+
+        },
+        100
+    );
 }
 
 
 function updateChannelHeader() {
-    if (!currentChannel) return;
 
-    $("chatName").textContent = currentChannel.name || "Канал";
-    $("chatStatus").textContent =
-        `${currentChannel.description || "Канал Vibe"} · 👥 ${Number(currentChannel.subscriberCount || currentChannel.subscribers?.length || 0)}`;
-
-    $("chatAvatar").innerHTML = currentChannel.photo
-        ? `<img src="${escapeHTML(currentChannel.photo)}">`
-        : `<svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7A3.5 3.5 0 0 1 16.5 16H11l-5 4v-4.5A3.5 3.5 0 0 1 2.5 12V7A3.5 3.5 0 0 1 4 5.5Z"/></svg>`;
-
-    const head = document.querySelector(".chat-head");
-    if (!head) return;
-
-    let actions = head.querySelector(".channel-workspace-actions");
-    if (!actions) {
-        actions = document.createElement("div");
-        actions.className = "channel-workspace-actions";
-        actions.innerHTML = `
-            <button class="channel-tool-btn" title="Профиль канала" onclick="openChannelProfile()">
-                <svg class="vc-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>
-            </button>
-            <button class="channel-tool-btn" title="Подписка" onclick="toggleCurrentChannelSubscription()">
-                <svg class="vc-icon" viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 7 3 7 3 9H3c0-2 3-2 3-9Z"/><path d="M10 21h4"/></svg>
-            </button>`;
-        head.appendChild(actions);
+    if (!currentChannel) {
+        return;
     }
-    actions.classList.remove("hidden");
+
+    $("chatName").textContent =
+        "📢 " +
+        currentChannel.name;
+
+    $("chatStatus").textContent =
+        currentChannel.description ||
+        "Канал Vibe";
+
+    $("chatAvatar").innerHTML =
+        currentChannel.photo
+            ? `<img src="${escapeHTML(currentChannel.photo)}">`
+            : "📢";
 }
 
 
@@ -7931,83 +8237,203 @@ async function markChannelAsRead(channelId) {
 ========================================================= */
 
 async function loadChannelPosts(forceScroll=true) {
-    if (!currentChannel) return;
+
+    if (!currentChannel) {
+        return;
+    }
+
     try {
-        const response = await fetch("/channel-posts?channelId=" + encodeURIComponent(currentChannel.id));
-        if (!response.ok) return;
-        const posts = await response.json();
-        const box = $("messages");
-        const wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 100;
-        box.innerHTML = "";
-        box.classList.add("channel-feed");
 
-        const banner = document.createElement("div");
-        banner.className = "channel-feed-banner";
-        banner.innerHTML = `
-            <div class="channel-feed-banner-row">
-                <div class="channel-workspace-avatar">
-                    ${currentChannel.photo ? `<img src="${escapeHTML(currentChannel.photo)}">` : `<svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7A3.5 3.5 0 0 1 16.5 16H11l-5 4v-4.5A3.5 3.5 0 0 1 2.5 12V7A3.5 3.5 0 0 1 4 5.5Z"/></svg>`}
-                </div>
-                <div>
-                    <h3>${escapeHTML(currentChannel.name || "Канал")}</h3>
-                    <p>${escapeHTML(currentChannel.description || "Канал Vibe")} · 👥 ${Number(currentChannel.subscriberCount || currentChannel.subscribers?.length || 0)} подписчиков</p>
-                </div>
-            </div>`;
-        box.appendChild(banner);
+        const response =
+            await fetch(
+                "/channel-posts?channelId=" +
+                encodeURIComponent(
+                    currentChannel.id
+                )
+            );
 
-        if (!posts.length) {
-            const empty = document.createElement("div");
-            empty.className = "channel-empty";
-            empty.innerHTML = `<div class="channel-empty-icon"><svg class="vc-icon vc-icon-lg" viewBox="0 0 24 24"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v7A3.5 3.5 0 0 1 16.5 16H11l-5 4v-4.5A3.5 3.5 0 0 1 2.5 12V7A3.5 3.5 0 0 1 4 5.5Z"/></svg></div>В этом канале пока нет публикаций`;
-            box.appendChild(empty);
+        if (!response.ok) {
             return;
         }
 
-        posts.forEach(post => {
-            const item = document.createElement("article");
-            item.className = "channel-post-modern";
-            const author = post.authorUser || {login:post.author,name:post.author,photo:""};
-            const avatar = author.photo
-                ? `<img src="${escapeHTML(author.photo)}">`
-                : `<svg class="vc-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>`;
+        const posts =
+            await response.json();
 
-            let mediaHTML = "";
-            if (post.media) {
-                if (post.mediaType?.startsWith("image")) mediaHTML = `<img src="${escapeHTML(post.media)}" alt="Изображение">`;
-                else if (post.mediaType?.startsWith("video")) mediaHTML = `<video src="${escapeHTML(post.media)}" controls playsinline></video>`;
-            }
+        const box =
+            $("messages");
 
-            let postTextHTML = "";
-            if (post.type !== "poll" && post.text) postTextHTML = `<div class="channel-post-text">${escapeHTML(post.text)}</div>`;
+        const wasNearBottom =
+            box.scrollHeight -
+            box.scrollTop -
+            box.clientHeight <
+            100;
 
-            let pollHTML = "";
-            if (post.type === "poll") {
-                const votes = post.votes || {};
-                pollHTML = `<div class="channel-poll-card">
-                    <div class="channel-poll-question">${escapeHTML(post.text || "Опрос")}</div>
-                    ${(post.options || []).map((option,index) => {
-                        const count = Array.isArray(votes[index]) ? votes[index].length : 0;
-                        return `<button class="channel-poll-option" onclick="voteChannelPoll('${escapeHTML(post.id)}',${index})">${escapeHTML(option)} <span style="float:right;color:var(--muted)">${count}</span></button>`;
-                    }).join("")}
-                </div>`;
-            }
-            if (post.type === "gif" && post.media) mediaHTML = `<img src="${escapeHTML(post.media)}" alt="GIF">`;
+        box.innerHTML = "";
 
-            item.innerHTML = `
-                <div class="channel-post-top">
-                    <div class="avatar">${avatar}</div>
-                    <div class="channel-post-author-block">
-                        <div class="channel-post-author-name">${escapeHTML(author.name || author.login)}</div>
-                        <div class="channel-post-author-meta">@${escapeHTML(author.login || "")}</div>
+        const channelBanner =
+            document.createElement("div");
+
+        channelBanner.style.cssText =
+            `
+            padding:12px 14px;
+            margin-bottom:14px;
+            border-radius:15px;
+            background:var(--panel);
+            border:1px solid var(--border);
+            font-weight:800;
+            `;
+
+        channelBanner.innerHTML =
+            `
+            📢 ${escapeHTML(
+                currentChannel.name
+            )}
+            `;
+
+        box.appendChild(
+            channelBanner
+        );
+
+        if (!posts.length) {
+
+            const empty =
+                document.createElement("div");
+
+            empty.className =
+                "empty-chat";
+
+            empty.style.height =
+                "calc(100% - 65px)";
+
+            empty.innerHTML =
+                `
+                В канале пока нет публикаций
+                `;
+
+            box.appendChild(empty);
+
+            return;
+        }
+
+        posts.forEach(
+            post => {
+
+                const item =
+                    document.createElement(
+                        "div"
+                    );
+
+                item.className =
+                    "channel-post";
+
+                const author =
+                    post.authorUser ||
+                    {
+                        login:
+                            post.author,
+
+                        name:
+                            post.author,
+
+                        photo:""
+                    };
+
+                const avatar =
+                    author.photo
+                        ? `<img src="${escapeHTML(author.photo)}">`
+                        : "👤";
+
+                let mediaHTML = "";
+
+                if (post.media) {
+
+                    if (
+                        post.mediaType &&
+                        post.mediaType.startsWith(
+                            "image"
+                        )
+                    ) {
+
+                        mediaHTML =
+                            `
+                            <img
+                                src="${escapeHTML(
+                                    post.media
+                                )}"
+                            >
+                            `;
+
+                    } else if (
+                        post.mediaType &&
+                        post.mediaType.startsWith(
+                            "video"
+                        )
+                    ) {
+
+                        mediaHTML =
+                            `
+                            <video
+                                src="${escapeHTML(
+                                    post.media
+                                )}"
+                                controls
+                                playsinline
+                            ></video>
+                            `;
+                    }
+                }
+
+                item.innerHTML =
+                    `
+                    <div class="channel-post-author">
+
+                        <div class="avatar">
+                            ${avatar}
+                        </div>
+
+                        <div class="channel-post-author-name">
+                            ${escapeHTML(
+                                author.name ||
+                                author.login
+                            )}
+                        </div>
+
                     </div>
-                    <button class="channel-post-more" title="Ещё">•••</button>
-                </div>
-                ${postTextHTML}${mediaHTML}${pollHTML}
-                <div class="channel-post-time">${new Date(post.time).toLocaleString()}</div>`;
-            box.appendChild(item);
-        });
 
-        if (forceScroll || wasNearBottom) box.scrollTop = box.scrollHeight;
+                    ${
+                        post.text
+                            ? `
+                                <div class="channel-post-text">
+                                    ${escapeHTML(
+                                        post.text
+                                    )}
+                                </div>
+                              `
+                            : ""
+                    }
+
+                    ${mediaHTML}
+
+                    <div class="channel-post-time">
+                        ${new Date(
+                            post.time
+                        ).toLocaleString()}
+                    </div>
+                    `;
+
+                box.appendChild(item);
+            }
+        );
+
+        if (
+            forceScroll ||
+            wasNearBottom
+        ) {
+
+            box.scrollTop =
+                box.scrollHeight;
+        }
+
     } catch {}
 }
 
@@ -8015,77 +8441,6 @@ async function loadChannelPosts(forceScroll=true) {
 /* =========================================================
    PUBLISH CHANNEL
 ========================================================= */
-
-
-function openChannelMediaPicker() {
-    if (!currentChannel || currentChannel.owner !== currentUser.login) return;
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*,video/*";
-    input.onchange = () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = async () => {
-            const r = await fetch("/channel-post", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
-                    channelId:currentChannel.id, author:currentUser.login,
-                    text:"", type:"media", options:[],
-                    media:reader.result, mediaType:file.type
-                })
-            });
-            const d = await r.json();
-            if (!d.success) alert(d.message || "Не удалось опубликовать");
-            else await loadChannelPosts(true);
-        };
-        reader.readAsDataURL(file);
-    };
-    input.click();
-}
-
-
-function openPollCreator() {
-    if (!currentChannel || currentChannel.owner !== currentUser.login) return;
-    let modal = $("vibeChannelPollModal");
-    if (!modal) {
-        modal = document.createElement("div");
-        modal.id = "vibeChannelPollModal";
-        modal.className = "modal";
-        modal.innerHTML = `<div class="modal-card"><div class="modal-header"><div class="modal-title">Новый опрос</div><button class="modal-close" onclick="this.closest('.modal').classList.add('hidden')">✕</button></div><input id="vibePollQuestion" placeholder="Вопрос"><div id="vibePollOptions"></div><button onclick="addVibePollOption()">+ Вариант</button><div class="modal-actions"><button class="primary" onclick="createVibePoll()">Создать</button></div></div>`;
-        document.body.appendChild(modal);
-    }
-    $("vibePollQuestion").value = "";
-    $("vibePollOptions").innerHTML = "";
-    addVibePollOption(); addVibePollOption();
-    modal.classList.remove("hidden");
-}
-function addVibePollOption() {
-    const el = document.createElement("input");
-    el.className = "vibe-poll-option";
-    el.placeholder = "Вариант ответа";
-    $("vibePollOptions").appendChild(el);
-}
-async function createVibePoll() {
-    const question = $("vibePollQuestion").value.trim();
-    const options = [...document.querySelectorAll(".vibe-poll-option")].map(x=>x.value.trim()).filter(Boolean);
-    if (!question || options.length < 2) return alert("Нужен вопрос и минимум 2 варианта");
-    const r = await fetch("/channel-post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        channelId:currentChannel.id,author:currentUser.login,text:question,type:"poll",options,media:null,mediaType:""
-    })});
-    const d = await r.json();
-    if (!d.success) return alert(d.message || "Ошибка");
-    $("vibeChannelPollModal").classList.add("hidden");
-    await loadChannelPosts(true);
-}
-async function voteChannelPoll(postId,index) {
-    const r = await fetch("/channel-vote",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        channelId:currentChannel.id,postId,optionIndex:index,login:currentUser.login
-    })});
-    const d = await r.json();
-    if (d.success) await loadChannelPosts(false);
-}
 
 async function publishChannelPostFromComposer() {
 
@@ -8888,28 +9243,6 @@ autoLogin();
 
 </script>
 
-
-<script>
-(function(){
-const $=id=>document.getElementById(id);
-window.openHelp=function(){let m=$("vibeHelpModal");if(!m){m=document.createElement("div");m.id="vibeHelpModal";m.className="modal";m.innerHTML='<div class="modal-card"><div class="modal-header"><div class="modal-title">Инструкция Vibe</div><button class="modal-close" onclick="this.closest(\'.modal\').classList.add(\'hidden\')">✕</button></div><div class="help-list"><div><b>Чаты</b><span>Ищи людей через поиск.</span></div><div><b>Группы</b><span>Общий чат для участников.</span></div><div><b>Каналы</b><span>Публикации, опросы и GIF.</span></div><div><b>Обои</b><span>Выбери фон прямо в чате.</span></div><div><b>Настройки</b><span>Тема и приватность находятся там.</span></div></div></div>';document.body.appendChild(m)}m.classList.remove("hidden")};
-window.openChatWallpaperPicker=function(){if(!window.currentChat)return;const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{localStorage.setItem("vibeWallpaper_"+currentChat,r.result);applyChatWallpaper(currentChat)};r.readAsDataURL(f)};i.click()};
-window.applyChatWallpaper=function(login){const c=document.querySelector("main.chat"),s=localStorage.getItem("vibeWallpaper_"+login);if(!c)return;if(s){c.style.setProperty("--chat-wallpaper",'url("'+s+'")');c.classList.add("wallpaper-active")}else c.classList.remove("wallpaper-active")};
-const sb=$("topSettingsButton");if(sb&&!$("vibeHelpButton")){const b=document.createElement("button");b.id="vibeHelpButton";b.className="icon-btn";b.textContent="?";b.title="Инструкция";b.onclick=openHelp;sb.parentElement.insertBefore(b,sb)}
-const cb=$("callButtons");if(false&&cb&&!$("vibeWallpaperButton")){const b=document.createElement("button");b.id="vibeWallpaperButton";b.className="icon-btn";b.textContent="◌";b.title="Обои";b.onclick=openChatWallpaperPicker;cb.parentElement.insertBefore(b,cb)}
-if(typeof window.openChat==="function"){const old=window.openChat;window.openChat=async function(login){const r=await old(login);applyChatWallpaper(login);return r}}
-window.streakKey=(a,b)=>"vibeStreak_"+[a,b].sort().join("__");window.getChatStreak=o=>{try{return JSON.parse(localStorage.getItem(streakKey(currentUser.login,o))||'{"days":0}').days||0}catch{return 0}};window.updateChatStreak=o=>{const k=streakKey(currentUser.login,o),d=JSON.parse(localStorage.getItem(k)||'{"days":0,"last":""}'),t=new Date().toISOString().slice(0,10),p=new Date();p.setDate(p.getDate()-1);if(d.last!==t){d.days=d.last===p.toISOString().slice(0,10)?d.days+1:1;d.last=t;localStorage.setItem(k,JSON.stringify(d))}};
-if(typeof window.sendMessage==="function"){const oldSend=window.sendMessage;window.sendMessage=async function(){const r=await oldSend();if(window.currentChat)updateChatStreak(currentChat);return r}}
-window.openPollCreator=function(){if(!currentChannel||currentChannel.owner!==currentUser.login)return;let m=$("vibePollModal");if(!m){m=document.createElement("div");m.id="vibePollModal";m.className="modal";m.innerHTML='<div class="modal-card"><div class="modal-header"><div class="modal-title">Опрос</div><button class="modal-close" onclick="this.closest(\'.modal\').classList.add(\'hidden\')">✕</button></div><input id="vibePollQuestion" placeholder="Вопрос"><div id="vibePollOptions"></div><button onclick="addVibePollOption()">+ Вариант</button><button class="primary" onclick="createVibePoll()">Создать</button></div>';document.body.appendChild(m)}$("vibePollQuestion").value="";$("vibePollOptions").innerHTML="";addVibePollOption();addVibePollOption();m.classList.remove("hidden")};
-window.addVibePollOption=function(){const i=document.createElement("input");i.className="vibePollOption";i.placeholder="Вариант";$("vibePollOptions").appendChild(i)};
-window.createVibePoll=async function(){const q=$("vibePollQuestion").value.trim(),o=[...document.querySelectorAll(".vibePollOption")].map(x=>x.value.trim()).filter(Boolean);if(!q||o.length<2)return;const r=await fetch("/channel-post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,author:currentUser.login,text:q,type:"poll",options:o})}),d=await r.json();if(d.success){$("vibePollModal").classList.add("hidden");loadChannelPosts(true)}};
-window.handleVibeGif=function(e){const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const x=await fetch("/channel-post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,author:currentUser.login,text:"",type:"gif",media:r.result,mediaType:f.type})});if((await x.json()).success)loadChannelPosts(true)};r.readAsDataURL(f)};
-window.ensureVibeChannelTools=function(){if(!currentChannel||currentChannel.owner!==currentUser.login)return;const inp=$("messageInput");if(!inp)return;if(!$("vibePollButton")){const b=document.createElement("button");b.id="vibePollButton";b.className="composer-tool";b.textContent="▣";b.title="Опрос";b.onclick=openPollCreator;inp.parentNode.insertBefore(b,inp.nextSibling)}if(!$("vibeGifButton")){const l=document.createElement("label");l.id="vibeGifButton";l.className="composer-tool";l.textContent="GIF";const i=document.createElement("input");i.type="file";i.accept="image/gif";i.hidden=true;i.onchange=handleVibeGif;l.appendChild(i);inp.parentNode.insertBefore(l,$("vibePollButton").nextSibling)}};
-if(typeof window.openChannel==="function"){const old=window.openChannel;window.openChannel=async function(ch){const r=await old(ch);ensureVibeChannelTools();return r}}
-window.addEventListener("load",()=>{if($("searchInput"))$("searchInput").setAttribute("placeholder","Поиск людей, групп и каналов...")});
-const st=document.createElement("style");st.textContent='.vibe-home{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}.vibe-home-logo{width:80px;height:80px;border-radius:24px;display:grid;place-items:center;font-size:44px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2))}.vibe-home p{color:var(--muted);max-width:500px}.vibe-home-grid{display:flex;gap:10px;flex-wrap:wrap}.vibe-home-grid button,.directory-result{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:12px}.help-list{display:grid;gap:8px}.help-list>div{padding:12px;border-radius:12px;background:var(--panel2)}.help-list span{display:block;color:var(--muted);font-size:12px}.custom-theme-controls{display:grid;gap:8px}.composer-tool{border:0;border-radius:10px;background:var(--panel2);color:var(--text);padding:8px}.channel-post-poll{display:grid;gap:7px}.poll-option{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:10px;border-radius:10px;text-align:left}.channel-post-gif{max-width:100%;border-radius:12px}.chat.wallpaper-active #messages{background-image:var(--chat-wallpaper);background-size:cover;background-position:center}.directory-result{display:flex;justify-content:space-between;align-items:center;margin-top:6px}';document.head.appendChild(st);
-})();
-</script>
 </body>
 
 </html>
