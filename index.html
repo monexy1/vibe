@@ -9228,7 +9228,6 @@ async function loadChannelPosts(forceScroll=true) {
                         type="button"
                         class="channel-comment-toggle"
                         title="Комментарии"
-                        data-comment-post-id="${escapeHTML(String(post.id || ""))}"
                     >
                         ${vibeIcon("comment")}
                         ${comments.length}
@@ -9239,11 +9238,7 @@ async function loadChannelPosts(forceScroll=true) {
 
             const commentButton = item.querySelector(".channel-comment-toggle");
             if (commentButton) {
-                commentButton.onclick = event => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    openChannelDiscussionById(post.id);
-                };
+                commentButton.dataset.postId = String(post.id || "");
             }
 
             box.appendChild(item);
@@ -9276,35 +9271,27 @@ async function loadChannelPosts(forceScroll=true) {
 /* =========================================================
    CHANNEL DISCUSSION / COMMENTS SCREEN
 ========================================================= */
-// Fallback delegated handler for dynamically rendered channel posts.
+// Robust click handler: opening comments must work even if channel posts
+// are re-rendered after the normal listener was attached.
 document.addEventListener("click", event => {
     const button = event.target.closest?.(".channel-comment-toggle");
     if (!button) return;
-    const postId = button.dataset.commentPostId;
+
+    const postId = button.dataset.postId || button.closest(".channel-post")?.dataset?.postId;
     if (!postId) return;
+
+    const post = (window.__vibeChannelPosts || []).find(
+        p => String(p.id) === String(postId)
+    );
+    if (!post) return;
+
     event.preventDefault();
-    event.stopPropagation();
-    openChannelDiscussionById(postId);
-});
+    event.stopImmediatePropagation();
+    openChannelDiscussion(post);
+}, true);
 
 let channelDiscussionPost = null;
 let channelDiscussionAttachment = null;
-
-// Open the discussion by post id. This is intentionally independent from
-// the current DOM tree, because channel posts are frequently re-rendered.
-function openChannelDiscussionById(postId) {
-    if (!postId) return;
-
-    const posts = Array.isArray(window.__vibeChannelPosts)
-        ? window.__vibeChannelPosts
-        : [];
-
-    const post = posts.find(p => String(p.id) === String(postId));
-    if (!post || !currentChannel) return;
-
-    openChannelDiscussion(post);
-}
-
 
 function openChannelDiscussion(post) {
     if (!post || !currentChannel) return;
@@ -9312,8 +9299,16 @@ function openChannelDiscussion(post) {
     channelDiscussionPost = post;
     channelDiscussionAttachment = null;
 
-    const screen = $("channelDiscussionScreen");
-    if (!screen) return;
+    let screen = $("channelDiscussionScreen");
+    if (!screen) {
+        console.error("Vibe: channelDiscussionScreen not found");
+        return;
+    }
+
+    // Keep the discussion screen outside containers that may be hidden/closed.
+    if (screen.parentElement !== document.body) {
+        document.body.appendChild(screen);
+    }
 
     $("channelDiscussionTitle").textContent = currentChannel.name || "Обсуждение";
     $("channelDiscussionSubtitle").textContent = "Комментарии";
@@ -9330,7 +9325,9 @@ function openChannelDiscussion(post) {
 
     renderChannelDiscussionMessages();
     screen.classList.remove("hidden");
+    screen.style.display = "flex";
     screen.setAttribute("aria-hidden", "false");
+    screen.dataset.open = "1";
     document.body.classList.add("channel-discussion-open");
     setTimeout(() => $("channelDiscussionInput")?.focus(), 80);
 }
@@ -9339,7 +9336,9 @@ function closeChannelDiscussion() {
     const screen = $("channelDiscussionScreen");
     if (!screen) return;
     screen.classList.add("hidden");
+    screen.style.display = "none";
     screen.setAttribute("aria-hidden", "true");
+    screen.dataset.open = "0";
     document.body.classList.remove("channel-discussion-open");
     document.body.style.overflow = "";
     channelDiscussionPost = null;
