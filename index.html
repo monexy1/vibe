@@ -1958,6 +1958,42 @@ async function removeFriend(login) {
     }
 }
 
+
+/* Settings modal: keep every section inside the modal card */
+#settingsModal .modal-card {
+    width: min(520px, 100%);
+    max-width: 520px;
+    overflow-x: hidden;
+}
+
+#settingsModal .settings-page,
+#settingsModal .setting-section,
+#settingsModal .settings-row {
+    max-width: 100%;
+}
+
+@media (max-width: 560px) {
+    #settingsModal {
+        padding: 10px;
+    }
+
+    #settingsModal .modal-card {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100dvh - 20px);
+        padding: 16px;
+        border-radius: 18px;
+    }
+
+    #settingsModal .settings-row {
+        min-width: 0;
+    }
+
+    #settingsModal .settings-row-content {
+        min-width: 0;
+    }
+}
+
 </style>
 
 </head>
@@ -2893,9 +2929,6 @@ async function removeFriend(login) {
                 >
                     Изменить пароль
                 </button>
-
-            </div>
-</div>
 
             </div>
 
