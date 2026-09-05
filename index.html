@@ -3163,6 +3163,16 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     <span class="vibe-icon"><svg viewBox="0 0 24 24"><path d="M12 3.7 13.4 5l1.9-.4.9 1.7 1.8.8-.2 2 1.3 1.5-1.3 1.5.2 2-1.8.8-.9 1.7-1.9-.4-1.4 1.3-1.4-1.3-1.9.4-.9-1.7-1.8-.8.2-2L5 10.6l1.2-1.5-.2-2 1.8-.8.9-1.7 1.9.4L12 3.7Z"/><circle cx="12" cy="10.6" r="2.7"/></svg></span>
                 </button>
 
+                <button
+                    class="icon-btn mobile-help-button"
+                    id="mobileHelpButton"
+                    onclick="openInstructions()"
+                    title="Как пользоваться Vibe"
+                    aria-label="Как пользоваться Vibe"
+                >
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.7 9a2.4 2.4 0 1 1 4.2 1.6c-.9 1-1.9 1.2-1.9 2.7M12 17h.01"/></svg></span>
+                </button>
+
             </div>
 
             <div class="search">
@@ -8177,8 +8187,9 @@ async function openUserProfile(login) {
 
         grid.appendChild(
             createProfileInfoCard(
-                vibeIcon("comment") + " Стиль сообщений",
-                user.messageStyle
+                "Стиль сообщений",
+                user.messageStyle,
+                "comment"
             )
         );
     }
@@ -8197,26 +8208,29 @@ async function openUserProfile(login) {
 }
 
 
-function createProfileInfoCard(label,value) {
+function createProfileInfoCard(label,value,iconName="") {
 
-    const card =
-        document.createElement(
-            "div"
-        );
+    const card = document.createElement("div");
+    card.className = "profile-info-card";
 
-    card.className =
-        "profile-info-card";
+    const labelEl = document.createElement("div");
+    labelEl.className = "profile-info-label";
 
-    card.innerHTML =
-        `
-        <div class="profile-info-label">
-            ${escapeHTML(label)}
-        </div>
+    if (iconName) {
+        const iconWrap = document.createElement("span");
+        iconWrap.className = "vibe-icon profile-info-label-icon";
+        iconWrap.innerHTML = vibeIcon(iconName);
+        labelEl.appendChild(iconWrap);
+    }
 
-        <div class="profile-info-value">
-            ${escapeHTML(value)}
-        </div>
-        `;
+    labelEl.appendChild(document.createTextNode(String(label ?? "")));
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "profile-info-value";
+    valueEl.textContent = String(value ?? "");
+
+    card.appendChild(labelEl);
+    card.appendChild(valueEl);
 
     return card;
 }
@@ -11271,5 +11285,77 @@ autoLogin();
     .channel-description { max-width: 130px; }
     #communitiesModal .community-list-actions { gap: 4px; }
     #communitiesModal .community-list-settings { width: 34px; height: 34px; }
+}
+</style>
+
+<style>
+/* Profile action SVGs must never inherit an unconstrained browser size. */
+.profile-view-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.profile-view-actions button > svg {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    max-width: 20px !important;
+    min-height: 20px !important;
+    max-height: 20px !important;
+    flex: 0 0 20px;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.profile-info-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.profile-info-label-icon {
+    width: 14px !important;
+    height: 14px !important;
+}
+.profile-info-label-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+}
+.mobile-help-button {
+    display: none;
+}
+
+@media (max-width: 750px) {
+    .mobile-help-button {
+        display: inline-flex !important;
+    }
+
+    /* Keep the profile action row compact on phones. */
+    .profile-view-actions {
+        gap: 7px;
+    }
+    .profile-view-actions button {
+        min-width: 0 !important;
+        padding: 10px 9px !important;
+        font-size: 13px;
+    }
+    .profile-view-actions button > svg {
+        width: 18px !important;
+        height: 18px !important;
+        min-width: 18px !important;
+        max-width: 18px !important;
+        min-height: 18px !important;
+        max-height: 18px !important;
+        flex-basis: 18px;
+    }
+}
+
+@media (max-width: 420px) {
+    .profile-view-actions button {
+        font-size: 12px;
+        padding: 9px 7px !important;
+    }
 }
 </style>
