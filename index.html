@@ -2250,6 +2250,98 @@ button:active { transform:scale(.98); }
     }
 }
 
+
+/* =========================================================
+   VIBE SCROLLBARS
+   Replace native white browser bars with compact themed bars.
+========================================================= */
+html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
+.channel-posts, .modal, .modal-card, .settings-content, .emoji-picker,
+.profile-content, .chat-list, .channels-list, .groups-list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139,92,246,.55) rgba(255,255,255,.035);
+    overflow-x: hidden;
+}
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+*::-webkit-scrollbar-track {
+    background: rgba(255,255,255,.025);
+    border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(139,92,246,.78), rgba(109,40,217,.72));
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(167,139,250,.95), rgba(124,58,237,.9));
+    background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+
+/* =========================================================
+   EMOJI PICKER — open directly above the emoji button
+========================================================= */
+.composer {
+    position: relative;
+}
+#emojiPicker.emoji-picker {
+    left: auto !important;
+    right: 78px !important;
+    bottom: 70px !important;
+    width: 310px !important;
+    max-width: min(310px, calc(100% - 16px)) !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 10px !important;
+    border-radius: 16px !important;
+    background: var(--panel) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: 0 18px 45px rgba(0,0,0,.42) !important;
+    z-index: 9999 !important;
+}
+#emojiPicker .emoji-grid {
+    grid-template-columns: repeat(8, minmax(0,1fr)) !important;
+}
+#emojiPicker .emoji-item {
+    min-width: 0;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 1;
+    padding: 4px !important;
+    border-radius: 10px !important;
+    font-size: 23px !important;
+}
+#emojiPicker .emoji-item:hover {
+    background: var(--panel2) !important;
+}
+@media (max-width: 800px) {
+    #emojiPicker.emoji-picker {
+        right: 54px !important;
+        bottom: 62px !important;
+        width: 300px !important;
+        max-width: calc(100vw - 62px) !important;
+        max-height: 270px !important;
+    }
+    #emojiPicker .emoji-grid {
+        grid-template-columns: repeat(7, minmax(0,1fr)) !important;
+    }
+}
+@media (max-width: 420px) {
+    #emojiPicker.emoji-picker {
+        right: 48px !important;
+        width: calc(100vw - 56px) !important;
+        max-width: calc(100vw - 56px) !important;
+    }
+}
+
 </style>
 
 </head>
