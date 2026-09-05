@@ -3252,6 +3252,9 @@ const server =
 
                         photo,
 
+                        visibility:
+                            body.visibility === "private" ? "private" : "public",
+
                         owner,
 
                         subscribers:
@@ -3651,6 +3654,32 @@ const server =
                    CHANNEL POST
                 ===================================================== */
 
+
+                if (req.method === "POST" && pathname === "/channel-vote") {
+                    const body = await getBody(req);
+                    const channels = readJSON(CHANNELS_FILE);
+                    const channel = channels.find(c => c.id === body.channelId);
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const post = posts.find(p => p.id === body.postId && p.channelId === body.channelId && p.type === "poll");
+                    const index = Number(body.optionIndex);
+                    const login = String(body.login || "");
+                    if (!channel || !post || !Number.isInteger(index) || index < 0 || index >= (post.options || []).length) {
+                        sendJSON(res,{success:false,message:"Опрос не найден"},404); return;
+                    }
+                    if (!Array.isArray(channel.subscribers) || !channel.subscribers.includes(login)) {
+                        sendJSON(res,{success:false,message:"Сначала подпишитесь на канал"},403); return;
+                    }
+                    if (!post.votes || typeof post.votes !== "object") post.votes = {};
+                    Object.keys(post.votes).forEach(k => {
+                        if (Array.isArray(post.votes[k])) post.votes[k] = post.votes[k].filter(x => x !== login);
+                    });
+                    if (!Array.isArray(post.votes[index])) post.votes[index] = [];
+                    post.votes[index].push(login);
+                    saveJSON(CHANNEL_POSTS_FILE, posts);
+                    sendJSON(res,{success:true,post});
+                    return;
+                }
+
                 if (
                     req.method === "POST" &&
                     pathname === "/channel-post"
@@ -3728,11 +3757,21 @@ const server =
                             ? body.mediaType
                             : "";
 
+                    const type =
+                        body.type === "poll" ? "poll" :
+                        body.type === "gif" ? "gif" :
+                        body.type === "media" ? "media" : "text";
 
-                    if (
-                        !text &&
-                        !media
-                    ) {
+                    const options = Array.isArray(body.options)
+                        ? body.options.map(x => String(x).trim()).filter(Boolean).slice(0, 8)
+                        : [];
+
+                    if (type === "poll" && (!text || options.length < 2)) {
+                        sendJSON(res,{success:false,message:"Нужен вопрос и минимум 2 варианта"},400);
+                        return;
+                    }
+
+                    if (!text && !media && type !== "poll") {
 
                         sendJSON(
                             res,
@@ -3767,6 +3806,9 @@ const server =
                         media,
 
                         mediaType,
+                        type,
+                        options,
+                        votes: {},
 
                         time:
                             new Date()
