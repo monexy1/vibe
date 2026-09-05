@@ -2512,240 +2512,16 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 .channel-post-media{min-height:0!important;}
 .channel-post-media img{max-height:520px!important;width:auto!important;height:auto!important;object-fit:contain!important;}
 .channel-post{isolation:isolate;}
-</style>
 
-
-<style>
-/* =========================================================
-   CHANNEL COMMENTS MODAL
-========================================================= */
-.channel-comments-modal-card{
-    width:min(720px,calc(100vw - 28px));
-    max-height:min(780px,calc(100vh - 28px));
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-}
-.channel-comments-post-preview{
-    margin:0 0 10px;
-    padding:12px 14px;
-    background:var(--panel2);
-    border:1px solid var(--border);
-    border-radius:14px;
-}
-.channel-comments-post-title{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    font-weight:800;
-    margin-bottom:7px;
-}
-.channel-comments-post-title .avatar{
-    width:34px;
-    height:34px;
-    min-width:34px;
-    border-radius:50%;
-    overflow:hidden;
-    background:var(--accent);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-.channel-comments-post-title .avatar img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-.channel-comments-post-text{
-    white-space:pre-wrap;
-    word-break:break-word;
-    color:var(--text);
-}
-.channel-comments-post-media{
-    margin-top:9px;
-    max-height:240px;
-    overflow:hidden;
-    border-radius:12px;
-    background:transparent;
-}
-.channel-comments-post-media img,
-.channel-comments-post-media video{
-    display:block;
-    max-width:100%;
-    max-height:240px;
-    width:auto;
-    margin:0 auto;
-    border-radius:12px;
-    object-fit:contain;
-}
-.channel-comments-list{
-    flex:1;
-    min-height:120px;
-    overflow-y:auto;
-    padding:4px 2px 8px;
-}
-.channel-comment-row{
-    display:flex;
-    gap:9px;
-    padding:9px 5px;
-    border-radius:12px;
-}
-.channel-comment-row:hover{
-    background:rgba(255,255,255,.035);
-}
-.channel-comment-avatar{
-    width:34px;
-    height:34px;
-    min-width:34px;
-    border-radius:50%;
-    background:var(--accent);
-    color:#fff;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    overflow:hidden;
-}
-.channel-comment-avatar img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-.channel-comment-content{
-    min-width:0;
-    flex:1;
-}
-.channel-comment-name{
-    font-weight:800;
-    font-size:13px;
-}
-.channel-comment-time{
-    margin-left:7px;
+.search-section-title{
+    padding:8px 12px 5px;
     color:var(--muted);
     font-size:11px;
-    font-weight:500;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
 }
-.channel-comment-text{
-    margin-top:3px;
-    white-space:pre-wrap;
-    word-break:break-word;
-    line-height:1.4;
-}
-.channel-comment-media{
-    margin-top:6px;
-    max-width:300px;
-    max-height:260px;
-    border-radius:12px;
-    overflow:hidden;
-    background:var(--panel2);
-}
-.channel-comment-media img,
-.channel-comment-media video{
-    display:block;
-    max-width:100%;
-    max-height:260px;
-    object-fit:contain;
-}
-.channel-comment-empty{
-    padding:35px 10px;
-    text-align:center;
-    color:var(--muted);
-}
-.channel-comment-composer{
-    position:relative;
-    display:flex;
-    align-items:flex-end;
-    gap:7px;
-    padding-top:9px;
-    border-top:1px solid var(--border);
-}
-.channel-comment-input{
-    flex:1;
-    min-width:0;
-    min-height:44px;
-    max-height:120px;
-    resize:none;
-}
-.channel-comment-icon-btn svg{
-    width:20px;
-    height:20px;
-    fill:none;
-    stroke:currentColor;
-    stroke-width:1.8;
-    stroke-linecap:round;
-    stroke-linejoin:round;
-}
-.channel-comment-icon-btn{
-    width:44px !important;
-    min-width:44px !important;
-    height:44px;
-    padding:0 !important;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-}
-.channel-comment-emoji-picker{
-    position:absolute;
-    right:48px;
-    bottom:53px;
-    width:min(310px,calc(100vw - 42px));
-    max-height:260px;
-    overflow-y:auto;
-    padding:10px;
-    background:var(--panel);
-    border:1px solid var(--border);
-    border-radius:15px;
-    box-shadow:0 15px 40px rgba(0,0,0,.35);
-    z-index:1001;
-}
-.channel-comment-emoji-grid{
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    gap:3px;
-}
-.channel-comment-emoji-grid button{
-    border:0;
-    background:transparent;
-    color:var(--text);
-    font-size:22px;
-    border-radius:8px;
-    padding:5px;
-    cursor:pointer;
-}
-.channel-comment-emoji-grid button:hover{
-    background:var(--panel2);
-}
-.channel-comment-attachment-preview{
-    display:flex;
-    align-items:center;
-    gap:9px;
-    margin-bottom:8px;
-    padding:8px 10px;
-    background:var(--panel2);
-    border:1px solid var(--border);
-    border-radius:11px;
-}
-.channel-comment-attachment-preview img{
-    width:54px;
-    height:54px;
-    object-fit:cover;
-    border-radius:9px;
-}
-.channel-comment-attachment-remove{
-    margin-left:auto;
-    width:30px !important;
-    min-width:30px !important;
-    height:30px;
-    padding:0 !important;
-}
-@media(max-width:600px){
-    .channel-comments-modal-card{
-        width:calc(100vw - 14px);
-        max-height:calc(100vh - 14px);
-    }
-    .channel-comment-emoji-picker{
-        right:0;
-    }
-}
+.search-channel-result{cursor:pointer;}
 </style>
 
 </head>
@@ -4159,18 +3935,6 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 Уведомления о публикациях
 
             </label>
-
-            <div style="margin-top:12px;">
-                <div class="setting-title" style="margin-bottom:7px;">
-                    💬 Группа для обсуждений
-                </div>
-                <select id="channelDiscussionGroup">
-                    <option value="">Без подключённой группы</option>
-                </select>
-                <div style="color:var(--muted);font-size:11px;margin-top:6px;">
-                    Участники смогут обсуждать публикации в выбранной группе.
-                </div>
-            </div>
 
         </div>
 
@@ -6175,85 +5939,122 @@ async function updateCurrentChatHeader() {
 
 async function searchUsers() {
 
-    const query =
-        $("searchInput")
-            .value
-            .trim();
-
-    const box =
-        $("searchResults");
+    const query = $("searchInput").value.trim();
+    const box = $("searchResults");
 
     if (!query) {
-
         box.innerHTML = "";
-
         return;
     }
 
     try {
-
-        const response =
-            await fetch(
+        const [usersResponse, channelsResponse] = await Promise.all([
+            fetch(
                 "/users?current=" +
-                encodeURIComponent(
-                    currentUser.login
-                ) +
+                encodeURIComponent(currentUser.login) +
                 "&q=" +
-                encodeURIComponent(
-                    query
-                )
-            );
+                encodeURIComponent(query)
+            ),
+            fetch(
+                "/channel-search?login=" +
+                encodeURIComponent(currentUser.login) +
+                "&q=" +
+                encodeURIComponent(query)
+            )
+        ]);
 
-        const users =
-            await response.json();
+        const users = usersResponse.ok
+            ? await usersResponse.json()
+            : [];
+
+        const foundChannels = channelsResponse.ok
+            ? await channelsResponse.json()
+            : [];
 
         box.innerHTML = "";
 
-        users.forEach(
-            user => {
+        if (users.length) {
+            const title = document.createElement("div");
+            title.className = "search-section-title";
+            title.textContent = "Люди";
+            box.appendChild(title);
 
-                const item =
-                    document.createElement(
-                        "div"
-                    );
-
-                item.className =
-                    "person";
-
-                item.innerHTML =
-                    personHTML(user);
-
+            users.forEach(user => {
+                const item = document.createElement("div");
+                item.className = "person";
+                item.innerHTML = personHTML(user);
                 item.onclick = () => {
-
                     openUserProfile(user.login);
-
-                    $("searchInput")
-                        .value = "";
-
+                    $("searchInput").value = "";
                     box.innerHTML = "";
+                };
+                box.appendChild(item);
+            });
+        }
+
+        if (foundChannels.length) {
+            const title = document.createElement("div");
+            title.className = "search-section-title";
+            title.textContent = "Каналы";
+            box.appendChild(title);
+
+            foundChannels.forEach(channel => {
+                const item = document.createElement("div");
+                item.className = "person search-channel-result";
+
+                const avatar = channel.photo
+                    ? `<img src="${escapeHTML(channel.photo)}" alt="">`
+                    : vibeIcon("channel");
+
+                item.innerHTML = `
+                    <div class="avatar-wrap">
+                        <div class="avatar">${avatar}</div>
+                    </div>
+                    <div class="person-info">
+                        <div class="person-name">
+                            ${escapeHTML(channel.name || "Канал")}
+                        </div>
+                        <div class="person-login">
+                            ${Number(channel.subscriberCount || 0)} подписчиков
+                        </div>
+                    </div>
+                `;
+
+                item.onclick = async () => {
+                    $("searchInput").value = "";
+                    box.innerHTML = "";
+
+                    if (typeof openChannel === "function") {
+                        await openChannel(channel.id);
+                    } else {
+                        const local = channels.find(c => c.id === channel.id);
+                        if (local) {
+                            currentChannel = local;
+                            currentChat = null;
+                            await loadChannelPosts(true);
+                        }
+                    }
                 };
 
                 box.appendChild(item);
-            }
-        );
-
-        if (!users.length) {
-
-            box.innerHTML =
-                `
-                <div style="
-                    color:var(--muted);
-                    padding:12px;
-                    text-align:center;
-                ">
-                    Пользователь не найден
-                </div>
-                `;
+            });
         }
 
-    } catch {}
+        if (!users.length && !foundChannels.length) {
+            box.innerHTML = `
+                <div style="color:var(--muted);padding:12px;text-align:center;">
+                    Ничего не найдено
+                </div>
+            `;
+        }
+    } catch {
+        box.innerHTML = `
+            <div style="color:var(--muted);padding:12px;text-align:center;">
+                Не удалось выполнить поиск
+            </div>
+        `;
+    }
 }
-
 
 function personHTML(user,count=0) {
 
@@ -8822,14 +8623,10 @@ function updateChannelHeader() {
    CHANNEL PROFILE
 ========================================================= */
 
-async function openChannelProfile() {
+function openChannelProfile() {
 
     if (!currentChannel) {
         return;
-    }
-
-    if (!Array.isArray(groups) || !groups.length) {
-        await loadGroups();
     }
 
     const own =
@@ -8869,31 +8666,6 @@ async function openChannelProfile() {
             "hidden",
             !own
         );
-
-    const discussionSelect = $("channelDiscussionGroup");
-    if (discussionSelect) {
-        discussionSelect.innerHTML =
-            '<option value="">Без подключённой группы</option>';
-
-        const availableGroups = Array.isArray(groups)
-            ? groups
-            : [];
-
-        availableGroups.forEach(group => {
-            const option = document.createElement("option");
-            option.value = group.id;
-            option.textContent =
-                group.name +
-                " · " +
-                Number(group.memberCount || group.members?.length || 0) +
-                " участников";
-            discussionSelect.appendChild(option);
-        });
-
-        discussionSelect.value =
-            currentChannel.discussionGroupId || "";
-        discussionSelect.disabled = !own;
-    }
 
     $("channelProfileSaveButton")
         .classList
@@ -8957,9 +8729,6 @@ async function saveChannelProfile() {
         $("channelNotifications")
             .checked;
 
-    const discussionGroupId =
-        $("channelDiscussionGroup")?.value || "";
-
     if (!name) {
 
         alert(
@@ -8997,9 +8766,7 @@ async function saveChannelProfile() {
 
                             photo,
 
-                            notifications,
-
-                            discussionGroupId
+                            notifications
                         })
                 }
             );
@@ -9136,7 +8903,6 @@ async function loadChannelPosts(forceScroll=true) {
 
             const item = document.createElement("article");
             item.className = "channel-post";
-            item.dataset.postId = String(post.id || "");
 
             /*
              * Publications belong visually to the channel.
@@ -9163,9 +8929,7 @@ async function loadChannelPosts(forceScroll=true) {
             }
 
             const comments =
-                Array.isArray(post.comments)
-                    ? post.comments
-                    : [];
+                Array.isArray(post.comments) ? post.comments : [];
 
             const timeText = Number.isNaN(postDate.getTime())
                 ? ""
@@ -9209,10 +8973,78 @@ async function loadChannelPosts(forceScroll=true) {
                         ${comments.length}
                     </button>
                 </div>
+
+                <div class="channel-comments hidden"></div>
             `;
 
+            const commentsBox =
+                item.querySelector(".channel-comments");
+
+            const renderComments = () => {
+                commentsBox.innerHTML =
+                    comments.map(comment =>
+                        `<div class="channel-comment">
+                            <b>${escapeHTML(comment.name || comment.author || "")}</b>
+                            ${escapeHTML(comment.text || "")}
+                         </div>`
+                    ).join("") +
+                    `
+                    <div class="channel-comment-form">
+                        <input
+                            maxlength="300"
+                            placeholder="Написать комментарий…"
+                        >
+                        <button type="button">Отправить</button>
+                    </div>
+                    `;
+
+                commentsBox.classList.toggle("hidden");
+
+                const input = commentsBox.querySelector("input");
+                const button = commentsBox.querySelector("button");
+
+                if (!input || !button) return;
+
+                button.onclick = async () => {
+                    const text = input.value.trim();
+                    if (!text) return;
+
+                    try {
+                        const response = await fetch(
+                            "/channel-comment",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    channelId: currentChannel.id,
+                                    postId: post.id,
+                                    author: currentUser.login,
+                                    text
+                                })
+                            }
+                        );
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            comments.push(data.comment);
+                            renderComments();
+                        } else {
+                            alert(
+                                data.message ||
+                                "Не удалось отправить комментарий"
+                            );
+                        }
+                    } catch {
+                        alert("Ошибка отправки комментария");
+                    }
+                };
+            };
+
             item.querySelector(".channel-comment-toggle").onclick =
-                () => openChannelComments(post, comments);
+                renderComments;
 
             box.appendChild(item);
 
@@ -9238,355 +9070,6 @@ async function loadChannelPosts(forceScroll=true) {
             box.scrollTop = box.scrollHeight;
         }
     } catch {}
-}
-
-
-/* =========================================================
-   CHANNEL COMMENTS
-========================================================= */
-
-let pendingCommentAttachment = null;
-
-function closeChannelComments() {
-    const picker = $("channelCommentEmojiPicker");
-    if (picker) picker.classList.add("hidden");
-
-    pendingCommentAttachment = null;
-
-    const modal = $("channelCommentsModal");
-    if (modal) modal.classList.add("hidden");
-}
-
-function renderChannelCommentEmojiPicker() {
-    const grid = $("channelCommentEmojiGrid");
-    if (!grid) return;
-
-    grid.innerHTML = "";
-
-    emojis.forEach(emoji => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = emoji;
-
-        button.onclick = () => {
-            const input = $("channelCommentInput");
-            if (!input) return;
-
-            const start = input.selectionStart ?? input.value.length;
-            const end = input.selectionEnd ?? input.value.length;
-
-            input.value =
-                input.value.slice(0, start) +
-                emoji +
-                input.value.slice(end);
-
-            input.focus();
-            input.selectionStart =
-                input.selectionEnd =
-                    start + emoji.length;
-
-            $("channelCommentEmojiPicker")
-                ?.classList.add("hidden");
-        };
-
-        grid.appendChild(button);
-    });
-}
-
-function updateChannelCommentAttachmentPreview() {
-    const box = $("channelCommentAttachmentPreview");
-    const image = $("channelCommentAttachmentImage");
-    const name = $("channelCommentAttachmentName");
-
-    if (!box) return;
-
-    if (!pendingCommentAttachment) {
-        box.classList.add("hidden");
-        if (image) image.removeAttribute("src");
-        if (name) name.textContent = "";
-        return;
-    }
-
-    box.classList.remove("hidden");
-
-    if (name) {
-        name.textContent =
-            pendingCommentAttachment.file?.name ||
-            "Фото";
-    }
-
-    if (image) {
-        image.src = pendingCommentAttachment.data;
-    }
-}
-
-function pickChannelCommentPhoto() {
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "image/*";
-
-    input.onchange = () => {
-        const file = input.files?.[0];
-
-        if (!file) return;
-
-        if (!file.type.startsWith("image/")) {
-            alert("Можно прикреплять только изображения.");
-            return;
-        }
-
-        if (file.size > 12 * 1024 * 1024) {
-            alert("Фото слишком большое. Максимум 12 МБ.");
-            return;
-        }
-
-        const reader = new FileReader();
-
-        reader.onload = () => {
-            pendingCommentAttachment = {
-                file,
-                data: String(reader.result || ""),
-                mediaType: file.type || "image/*"
-            };
-
-            updateChannelCommentAttachmentPreview();
-        };
-
-        reader.readAsDataURL(file);
-    };
-
-    input.click();
-}
-
-function removeChannelCommentPhoto() {
-    pendingCommentAttachment = null;
-    updateChannelCommentAttachmentPreview();
-}
-
-function renderChannelCommentsList(comments) {
-    const list = $("channelCommentsList");
-    if (!list) return;
-
-    if (!comments.length) {
-        list.innerHTML =
-            `<div class="channel-comment-empty">
-                Пока комментариев нет.<br>
-                Будьте первым!
-             </div>`;
-        return;
-    }
-
-    list.innerHTML = comments.map(comment => {
-        const date = new Date(comment.time);
-
-        const time =
-            Number.isNaN(date.getTime())
-                ? ""
-                : date.toLocaleTimeString(
-                    siteLanguage === "en" ? "en-GB" : "ru-RU",
-                    {
-                        hour:"2-digit",
-                        minute:"2-digit"
-                    }
-                );
-
-        let mediaHTML = "";
-
-        if (
-            comment.media &&
-            (comment.mediaType || "").startsWith("image")
-        ) {
-            mediaHTML =
-                `<div class="channel-comment-media">
-                    <img
-                        src="${escapeHTML(comment.media)}"
-                        alt="Фото в комментарии"
-                    >
-                 </div>`;
-        }
-
-        return `
-            <div class="channel-comment-row">
-                <div class="channel-comment-avatar">
-                    ${vibeIcon("user")}
-                </div>
-
-                <div class="channel-comment-content">
-                    <div class="channel-comment-name">
-                        ${escapeHTML(comment.name || comment.author || "Пользователь")}
-                        <span class="channel-comment-time">
-                            ${escapeHTML(time)}
-                        </span>
-                    </div>
-
-                    ${
-                        comment.text
-                            ? `<div class="channel-comment-text">
-                                ${escapeHTML(comment.text)}
-                               </div>`
-                            : ""
-                    }
-
-                    ${mediaHTML}
-                </div>
-            </div>
-        `;
-    }).join("");
-
-    list.scrollTop = list.scrollHeight;
-}
-
-function openChannelComments(post, comments) {
-    window.activeChannelCommentPost = post;
-
-    const modal = $("channelCommentsModal");
-    const title = $("channelCommentsTitle");
-    const preview = $("channelCommentsPostPreview");
-    const input = $("channelCommentInput");
-
-    if (!modal || !preview || !input) return;
-
-    $("channelCommentEmojiPicker")
-        ?.classList.add("hidden");
-
-    pendingCommentAttachment = null;
-    updateChannelCommentAttachmentPreview();
-
-    title.textContent =
-        "Комментарии · " +
-        (currentChannel?.name || "Канал");
-
-    const avatar =
-        currentChannel?.photo
-            ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
-            : vibeIcon("channel");
-
-    const media =
-        post.media &&
-        (post.mediaType || "").startsWith("image")
-            ? `<div class="channel-comments-post-media">
-                <img src="${escapeHTML(post.media)}" alt="">
-               </div>`
-            : post.media &&
-              (post.mediaType || "").startsWith("video")
-                ? `<div class="channel-comments-post-media">
-                    <video
-                        src="${escapeHTML(post.media)}"
-                        controls
-                        playsinline
-                    ></video>
-                   </div>`
-                : "";
-
-    preview.innerHTML = `
-        <div class="channel-comments-post-title">
-            <div class="avatar">${avatar}</div>
-            <span>${escapeHTML(currentChannel?.name || "Канал")}</span>
-        </div>
-
-        ${
-            post.text
-                ? `<div class="channel-comments-post-text">
-                    ${escapeHTML(post.text)}
-                   </div>`
-                : ""
-        }
-
-        ${media}
-    `;
-
-    renderChannelCommentsList(comments);
-
-    input.value = "";
-
-    modal.classList.remove("hidden");
-
-    setTimeout(() => input.focus(), 80);
-}
-
-async function sendChannelComment() {
-    if (
-        !currentChannel ||
-        !currentUser ||
-        !window.activeChannelCommentPost
-    ) {
-        return;
-    }
-
-    const input = $("channelCommentInput");
-    if (!input) return;
-
-    const text = input.value.trim();
-
-    if (!text && !pendingCommentAttachment) {
-        return;
-    }
-
-    const post = window.activeChannelCommentPost;
-    const attachment = pendingCommentAttachment;
-
-    const button = $("channelCommentSendButton");
-    if (button) button.disabled = true;
-
-    try {
-        const response = await fetch(
-            "/channel-comment",
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify({
-                    channelId:currentChannel.id,
-                    postId:post.id,
-                    author:currentUser.login,
-                    text,
-                    media:attachment?.data || "",
-                    mediaType:attachment?.mediaType || ""
-                })
-            }
-        );
-
-        const data = await response.json();
-
-        if (!data.success) {
-            alert(
-                data.message ||
-                "Не удалось отправить комментарий"
-            );
-            return;
-        }
-
-        const comments =
-            Array.isArray(post.comments)
-                ? post.comments
-                : (post.comments = []);
-
-        comments.push(data.comment);
-
-        input.value = "";
-        pendingCommentAttachment = null;
-
-        updateChannelCommentAttachmentPreview();
-        renderChannelCommentsList(comments);
-
-        const countButton =
-            document.querySelector(
-                `.channel-post[data-post-id="${CSS.escape(String(post.id))}"] .channel-comment-toggle`
-            );
-
-        if (countButton) {
-            countButton.innerHTML =
-                vibeIcon("comment") +
-                " " +
-                comments.length;
-        }
-
-    } catch {
-        alert("Ошибка отправки комментария");
-    } finally {
-        if (button) button.disabled = false;
-    }
 }
 
 /* =========================================================
@@ -10389,26 +9872,6 @@ initChannelPhotoPickers();
 
 initEmojiPicker();
 
-if ($("channelCommentEmojiGrid")) {
-    renderChannelCommentEmojiPicker();
-}
-
-$("channelCommentInput")?.addEventListener("keydown", event => {
-    if (
-        event.key === "Enter" &&
-        !event.shiftKey
-    ) {
-        event.preventDefault();
-        sendChannelComment();
-    }
-});
-
-$("channelCommentsModal")?.addEventListener("click", event => {
-    if (event.target === $("channelCommentsModal")) {
-        closeChannelComments();
-    }
-});
-
 autoLogin();
 
 </script>
@@ -10426,74 +9889,6 @@ autoLogin();
     <button class="vibe-help-close" type="button" onclick="closeVibeHelp()">Понятно</button>
   </div>
 </div>
-<div id="channelCommentsModal" class="modal hidden">
-  <div class="modal-card channel-comments-modal-card">
-    <div class="modal-header">
-      <h3 id="channelCommentsTitle">Комментарии</h3>
-      <button
-        type="button"
-        class="modal-close"
-        onclick="closeChannelComments()"
-      >✕</button>
-    </div>
-
-    <div id="channelCommentsPostPreview" class="channel-comments-post-preview"></div>
-
-    <div id="channelCommentsList" class="channel-comments-list"></div>
-
-    <div id="channelCommentAttachmentPreview" class="channel-comment-attachment-preview hidden">
-      <img id="channelCommentAttachmentImage" alt="">
-      <div id="channelCommentAttachmentName"></div>
-      <button
-        type="button"
-        class="channel-comment-attachment-remove"
-        onclick="removeChannelCommentPhoto()"
-      >✕</button>
-    </div>
-
-    <div class="channel-comment-composer">
-      <button
-        type="button"
-        class="channel-comment-icon-btn"
-        title="Фото"
-        onclick="pickChannelCommentPhoto()"
-      ><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3.2 3 2.2-2.2 3.4 3.4"/></svg></button>
-
-      <div style="position:relative;">
-        <button
-          type="button"
-          class="channel-comment-icon-btn"
-          title="Смайлики"
-          onclick="$('channelCommentEmojiPicker').classList.toggle('hidden')"
-        ><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8.5 14.5c1.1 1.5 2.4 2.2 3.5 2.2s2.4-.7 3.5-2.2"/><path d="M9 9.5h.01M15 9.5h.01"/></svg></button>
-
-        <div
-          id="channelCommentEmojiPicker"
-          class="channel-comment-emoji-picker hidden"
-        >
-          <div id="channelCommentEmojiGrid" class="channel-comment-emoji-grid"></div>
-        </div>
-      </div>
-
-      <textarea
-        id="channelCommentInput"
-        class="channel-comment-input"
-        maxlength="300"
-        rows="1"
-        placeholder="Написать комментарий…"
-      ></textarea>
-
-      <button
-        id="channelCommentSendButton"
-        class="primary channel-comment-icon-btn"
-        type="button"
-        title="Отправить"
-        onclick="sendChannelComment()"
-      ><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 16 8-16 8 3-8-3-8Z"/><path d="M7 12h13"/></svg></button>
-    </div>
-  </div>
-</div>
-
 <div id="attachmentPreviewModal" class="modal hidden">
   <div class="attachment-preview-card">
     <div class="modal-header"><h3>Предпросмотр</h3><button type="button" onclick="cancelAttachmentPreview()">✕</button></div>

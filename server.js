@@ -227,11 +227,6 @@ function normalizeChannel(channel) {
         channel.photo = "";
     }
 
-    // Optional discussion group connected to this channel.
-    if (typeof channel.discussionGroupId !== "string") {
-        channel.discussionGroupId = "";
-    }
-
     // Never keep a truncated/invalid data URL as a channel avatar.
     if (channel.photo && channel.photo.startsWith("data:image/")) {
         const comma = channel.photo.indexOf(",");
@@ -260,6 +255,14 @@ function normalizeChannel(channel) {
         typeof channel.settings.notifications !== "boolean"
     ) {
         channel.settings.notifications = true;
+    }
+
+    if (typeof channel.settings.public !== "boolean") {
+        channel.settings.public = true;
+    }
+
+    if (channel.discussionGroupId) {
+        channel.settings.comments = true;
     }
 
     return channel;
@@ -3127,6 +3130,53 @@ const server =
                 }
 
                 /* =====================================================
+                   SEARCH PUBLIC CHANNELS
+                ===================================================== */
+
+                if (
+                    req.method === "GET" &&
+                    pathname === "/channel-search"
+                ) {
+                    const login = String(url.searchParams.get("login") || "");
+                    const query = String(url.searchParams.get("q") || "")
+                        .trim().toLowerCase();
+
+                    if (!query) {
+                        sendJSON(res, []);
+                        return;
+                    }
+
+                    const channels = readJSON(CHANNELS_FILE)
+                        .map(normalizeChannel);
+
+                    const result = channels
+                        .filter(channel => {
+                            if (channel.settings.public === false) return false;
+
+                            const haystack = [
+                                channel.name,
+                                channel.description,
+                                channel.id
+                            ].join(" ").toLowerCase();
+
+                            return haystack.includes(query);
+                        })
+                        .map(channel => ({
+                            ...channel,
+                            subscribed: Array.isArray(channel.subscribers)
+                                ? channel.subscribers.includes(login)
+                                : false,
+                            subscriberCount: Array.isArray(channel.subscribers)
+                                ? channel.subscribers.length
+                                : 0
+                        }));
+
+                    sendJSON(res, result);
+                    return;
+                }
+
+
+                /* =====================================================
                    CHANNELS GET
                 ===================================================== */
 
@@ -3321,6 +3371,9 @@ const server =
                                 true,
 
                             notifications:
+                                true,
+
+                            public:
                                 true
                         },
 
@@ -3467,51 +3520,6 @@ const server =
 
                         channel.settings.comments =
                             body.comments;
-                    }
-
-                    /*
-                     * A channel owner may connect a discussion group.
-                     * The owner must be an administrator of that group.
-                     */
-                    if (typeof body.discussionGroupId === "string") {
-                        const discussionGroupId =
-                            body.discussionGroupId.trim();
-
-                        if (discussionGroupId) {
-                            const group =
-                                getGroups().find(
-                                    item => item.id === discussionGroupId
-                                );
-
-                            if (!group) {
-                                sendJSON(
-                                    res,
-                                    {
-                                        success: false,
-                                        message: "Группа для обсуждений не найдена"
-                                    },
-                                    404
-                                );
-                                return;
-                            }
-
-                            normalizeGroup(group);
-
-                            if (!group.admins.includes(String(body.owner || ""))) {
-                                sendJSON(
-                                    res,
-                                    {
-                                        success: false,
-                                        message: "Вы должны быть администратором этой группы"
-                                    },
-                                    403
-                                );
-                                return;
-                            }
-                        }
-
-                        channel.discussionGroupId =
-                            discussionGroupId;
                     }
 
 
@@ -3782,99 +3790,21 @@ const server =
                     const channelId = String(body.channelId || "");
                     const postId = String(body.postId || "");
                     const author = String(body.author || "");
-                    const text = String(body.text || "").trim().slice(0, 300);
-                    const media =
-                        typeof body.media === "string"
-                            ? body.media.slice(0, 12_000_000)
-                            : "";
-                    const mediaType =
-                        typeof body.mediaType === "string"
-                            ? body.mediaType.slice(0, 120)
-                            : "";
-
+                    const text = String(body.text || "").trim().slice(0,300);
                     const channels = readJSON(CHANNELS_FILE);
                     const channel = channels.find(c => c.id === channelId);
-                    if (!channel) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Канал не найден"
-                        }, 404);
-                        return;
-                    }
-
-                    normalizeChannel(channel);
-
-                    if (channel.settings && channel.settings.comments === false) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Комментарии отключены"
-                        }, 403);
-                        return;
-                    }
-
-                    if (!findUser(author) || (!text && !media)) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Комментарий пустой"
-                        }, 400);
-                        return;
-                    }
-
-                    if (media && !media.startsWith("data:")) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Недопустимое вложение"
-                        }, 400);
-                        return;
-                    }
-
+                    if (!channel) { sendJSON(res,{success:false,message:"Канал не найден"},404); return; }
+                    if (channel.settings && channel.settings.comments === false) { sendJSON(res,{success:false,message:"Комментарии отключены"},403); return; }
+                    if (!findUser(author) || !text) { sendJSON(res,{success:false,message:"Комментарий пустой"},400); return; }
                     const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post =
-                        posts.find(
-                            p => p.id === postId && p.channelId === channelId
-                        );
-
-                    if (!post) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Публикация не найдена"
-                        }, 404);
-                        return;
-                    }
-
-                    if (!Array.isArray(post.comments)) {
-                        post.comments = [];
-                    }
-
-                    const u = findUser(author);
-
-                    const comment = {
-                        id:
-                            Date.now().toString() +
-                            Math.random().toString(36).slice(2),
-                        author,
-                        name: u.name || author,
-                        text,
-                        media: media || "",
-                        mediaType: mediaType || "",
-                        time: new Date().toISOString()
-                    };
-
+                    const post = posts.find(p => p.id === postId && p.channelId === channelId);
+                    if (!post) { sendJSON(res,{success:false,message:"Публикация не найдена"},404); return; }
+                    if (!Array.isArray(post.comments)) post.comments=[];
+                    const u=findUser(author);
+                    const comment={id:Date.now().toString()+Math.random().toString(36).slice(2),author,name:u.name||author,text,time:new Date().toISOString()};
                     post.comments.push(comment);
-
-                    saveJSON(
-                        CHANNEL_POSTS_FILE,
-                        posts
-                    );
-
-                    sendJSON(
-                        res,
-                        {
-                            success:true,
-                            comment
-                        }
-                    );
-
+                    saveJSON(CHANNEL_POSTS_FILE,posts);
+                    sendJSON(res,{success:true,comment});
                     return;
                 }
 
