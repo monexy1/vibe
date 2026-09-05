@@ -1851,6 +1851,9 @@ async function removeFriend(login) {
 }
 .birthday-input-wrap input {
     display: block;
+    width:100%;
+    min-width:0;
+    max-width:100%;
 }
 
 
@@ -1913,6 +1916,47 @@ async function removeFriend(login) {
     opacity:.9;
 }
 .group-sender { font-size:10px; font-weight:800; color:var(--accent); margin-bottom:3px; }
+
+
+/* --- Mobile and header fixes --- */
+.side-top {
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+.side-top .brand {
+    margin-right:4px;
+}
+#topCommunitiesButton,
+#topSettingsButton {
+    margin-left:0 !important;
+}
+@media (max-width:750px) {
+    .side-top {
+        gap:6px;
+        padding-left:2px;
+        padding-right:2px;
+    }
+    .side-top .brand {
+        margin-right:0;
+    }
+    .birthday-card,
+    .birthday-input-wrap {
+        width:100%;
+        max-width:100%;
+        overflow:hidden;
+    }
+    .birthday-input-wrap {
+        position:relative;
+    }
+    .birthday-input-wrap input {
+        width:100% !important;
+        min-width:0 !important;
+        max-width:100% !important;
+        padding-right:48px !important;
+        overflow:hidden;
+    }
+}
 
 </style>
 
@@ -2011,17 +2055,7 @@ async function removeFriend(login) {
         <aside class="sidebar">
 
             <div class="side-top">
-
-                <button
-                    class="icon-btn"
-                    id="topProfileButton"
-                    onclick="openProfile()"
-                    title="Профиль"
-                >
-                    👤
-                </button>
-
-                <div class="brand">
+<div class="brand">
                     Vibe
                 </div>
 
@@ -2041,7 +2075,6 @@ async function removeFriend(login) {
                     id="topSettingsButton"
                     onclick="openSettings()"
                     title="Настройки"
-                    style="margin-left:auto;"
                 >
                     ⚙️
                 </button>
@@ -2862,33 +2895,7 @@ async function removeFriend(login) {
                 </button>
 
             </div>
-
-
-            <div class="setting-section">
-
-                <div class="setting-title">
-                    🖼️ Фон профиля
-                </div>
-
-                <div class="settings-row">
-
-                    <div class="settings-row-icon">
-                        🎨
-                    </div>
-
-                    <div class="settings-row-content">
-
-                        <div class="settings-row-title">
-                            Персонализация
-                        </div>
-
-                        <div class="settings-row-description">
-                            Настрой фон, который будет отображаться в твоём профиле.
-                        </div>
-
-                    </div>
-
-                </div>
+</div>
 
             </div>
 
@@ -3201,10 +3208,11 @@ async function removeFriend(login) {
             placeholder="Описание канала"
         ></textarea>
 
-        <input
-            id="channelPhotoInput"
-            placeholder="Ссылка на фото или data:image..."
-        >
+        <input id="channelPhotoInput" type="hidden" value="">
+        <label class="file-upload-btn channel-photo-upload" for="channelPhotoFile">
+            📷 Выбрать фото канала
+            <input id="channelPhotoFile" type="file" accept="image/*" hidden>
+        </label>
 
         <div id="channelCreatePreview" class="profile-photo">
             📢
@@ -3274,10 +3282,11 @@ async function removeFriend(login) {
             placeholder="Описание канала"
         ></textarea>
 
-        <input
-            id="channelProfilePhoto"
-            placeholder="Ссылка на фото или data:image..."
-        >
+        <input id="channelProfilePhoto" type="hidden" value="">
+        <label class="file-upload-btn channel-photo-upload" for="channelProfilePhotoFile">
+            📷 Выбрать фото канала
+            <input id="channelProfilePhotoFile" type="file" accept="image/*" hidden>
+        </label>
 
         <div
             id="channelProfileOwnerSettings"
@@ -6261,7 +6270,6 @@ async function openProfile() {
     $("profileName").disabled = false;
     $("profileAbout").disabled = false;
     $("profilePhoto").disabled = false;
-    $("messageStyle").disabled = false;
     $("profileBirthDate").disabled = false;
     $("profileEmail").disabled = false;
 
@@ -7357,6 +7365,9 @@ async function toggleCurrentChannelSubscription() {
 ========================================================= */
 
 function openCreateChannel() {
+    if ($("channelPhotoInput")) $("channelPhotoInput").value = "";
+    if ($("channelPhotoFile")) $("channelPhotoFile").value = "";
+    if ($("channelCreatePreview")) $("channelCreatePreview").innerHTML = "📢";
 
     $("channelNameInput").value = "";
     $("channelDescriptionInput").value = "";
@@ -7393,6 +7404,41 @@ $("channelPhotoInput")
         }
     );
 
+
+
+function setupChannelPhotoPicker(fileId, valueId, previewId) {
+    const fileInput = $(fileId);
+    const valueInput = $(valueId);
+    if (!fileInput || !valueInput || fileInput.dataset.bound === "1") return;
+    fileInput.dataset.bound = "1";
+    fileInput.addEventListener("change", event => {
+        const file = event.target.files?.[0];
+        if (!file || !file.type.startsWith("image/")) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const img = new Image();
+            img.onload = () => {
+                const max = 700;
+                const scale = Math.min(1, max / Math.max(img.width, img.height));
+                const canvas = document.createElement("canvas");
+                canvas.width = Math.max(1, Math.round(img.width * scale));
+                canvas.height = Math.max(1, Math.round(img.height * scale));
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const data = canvas.toDataURL("image/jpeg", .82);
+                valueInput.value = data;
+                if (previewId && $(previewId)) $(previewId).innerHTML = `<img src="${escapeHTML(data)}">`;
+            };
+            img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function initChannelPhotoPickers() {
+    setupChannelPhotoPicker("channelPhotoFile", "channelPhotoInput", "channelCreatePreview");
+    setupChannelPhotoPicker("channelProfilePhotoFile", "channelProfilePhoto", "channelProfilePreview");
+}
 
 async function createChannel() {
 
@@ -8812,6 +8858,8 @@ document.addEventListener("click", function(event) {
         openSettings();
     }
 }, true);
+
+initChannelPhotoPickers();
 
 /* =========================================================
    INITIALIZATION
