@@ -11030,3 +11030,246 @@ autoLogin();
 </body>
 
 </html>
+<style>
+/* =========================================================
+   VIBE COMMUNITY / CHANNEL LIST — FINAL POLISH
+========================================================= */
+.channel-icon > svg,
+.community-list-avatar > svg,
+.community-action-icon > svg,
+.community-create-avatar > svg,
+.group-settings-photo > svg {
+    width: 24px !important;
+    height: 24px !important;
+    min-width: 24px !important;
+    min-height: 24px !important;
+    max-width: 70% !important;
+    max-height: 70% !important;
+    display: block !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+}
+
+/* Never let a fallback SVG turn into the giant black browser SVG. */
+.channel-icon,
+.community-list-avatar,
+.community-create-avatar,
+.group-settings-photo {
+    position: relative;
+    isolation: isolate;
+}
+.channel-icon > svg,
+.community-list-avatar > svg {
+    position: relative !important;
+    inset: auto !important;
+    overflow: visible !important;
+}
+
+/* Channels modal */
+#channelsModal { padding: 14px; }
+#channelsModal > .modal-card {
+    width: min(680px, calc(100vw - 28px));
+    max-height: min(820px, calc(100dvh - 28px));
+    padding: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: linear-gradient(145deg, var(--panel), var(--panel2));
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    box-shadow: 0 28px 80px rgba(0,0,0,.42);
+}
+#channelsModal .modal-header {
+    margin: 0;
+    padding: 0 0 14px;
+    border-bottom: 1px solid var(--border);
+}
+#channelsModal .modal-title {
+    font-size: 24px;
+    font-weight: 900;
+}
+#channelsModal > .modal-card > .primary {
+    min-height: 48px;
+    border-radius: 14px;
+    font-weight: 900;
+    font-size: 14px;
+}
+#channelsList.channels-list {
+    margin-top: 0 !important;
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 2px 3px 3px;
+}
+.channel-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    margin: 0 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    background: rgba(255,255,255,.025);
+    transition: transform .14s ease, border-color .14s ease, background .14s ease;
+}
+.channel-item:hover {
+    transform: translateY(-1px);
+    border-color: rgba(139,92,246,.55);
+    background: rgba(139,92,246,.055);
+}
+.channel-item-main { gap: 12px; }
+.channel-icon {
+    width: 56px !important;
+    height: 56px !important;
+    min-width: 56px !important;
+    border-radius: 17px !important;
+    background: linear-gradient(145deg, var(--accent), var(--accent2, var(--accent))) !important;
+    box-shadow: 0 8px 22px rgba(139,92,246,.18);
+}
+.channel-icon img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+.channel-info { min-width: 0; }
+.channel-name {
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+.channel-description {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.35;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.channel-description svg {
+    width: 13px !important;
+    height: 13px !important;
+    vertical-align: -2px;
+}
+.channel-action {
+    flex: 0 0 auto;
+    min-width: 94px;
+    min-height: 38px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 11px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+}
+.channel-action.subscribed {
+    background: var(--panel);
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+#channelsModal .modal-actions {
+    margin: 0;
+    padding-top: 2px;
+}
+#channelsModal .modal-actions button {
+    min-height: 44px;
+    font-weight: 800;
+}
+
+/* Communities modal — cleaner cards, no giant icon */
+#communitiesModal { padding: 14px; }
+#communitiesModal .communities-card {
+    width: min(680px, calc(100vw - 28px));
+    max-height: min(820px, calc(100dvh - 28px));
+    padding: 20px;
+    border-radius: 24px;
+    background: linear-gradient(145deg, var(--panel), var(--panel2));
+}
+#communitiesModal .communities-actions { grid-template-columns: 1fr 1fr; }
+#communitiesModal .community-action {
+    min-height: 68px;
+    border-radius: 16px;
+}
+#communitiesModal .communities-list { max-height: 52vh; padding: 2px; }
+#communitiesModal .community-list-card {
+    padding: 12px;
+    border-radius: 17px;
+    background: rgba(255,255,255,.025);
+}
+#communitiesModal .community-list-avatar {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 17px;
+}
+#communitiesModal .community-list-action { min-height: 38px; }
+#communitiesModal .community-list-actions { display:flex; align-items:center; gap:6px; }
+#communitiesModal .community-list-settings {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+}
+
+/* Mobile: preserve the desktop visual language, simply compress it. */
+@media (max-width: 750px) {
+    .sidebar { padding: 10px !important; }
+    .side-top { padding-bottom: 9px; margin-bottom: 10px; }
+    .brand { font-size: 24px; }
+    .brand::before { width: 32px; height: 32px; }
+    .search input { height: 44px; font-size: 14px; }
+    .person, .channel-item, .chat-item { padding: 10px; }
+    .channel-icon { width: 48px !important; height: 48px !important; min-width: 48px !important; border-radius: 14px !important; }
+    .channel-action { min-width: 82px; padding: 0 9px; }
+    .chat-head { min-height: 60px; }
+    .chat-name { font-size: 15px; }
+    .messages { padding: 10px 8px; }
+    .composer { padding: 7px !important; gap: 4px; }
+    .composer input { min-width: 0 !important; font-size: 16px; }
+    .composer-icon-btn, .composer-text-btn { width: 38px !important; min-width: 38px !important; height: 40px !important; flex-basis: 38px !important; }
+    .call-buttons button { width: 40px; height: 40px; }
+
+    #channelsModal, #communitiesModal { padding: 8px; }
+    #channelsModal > .modal-card,
+    #communitiesModal .communities-card {
+        width: 100%;
+        max-width: none;
+        height: calc(100dvh - 16px);
+        max-height: none;
+        padding: 14px;
+        border-radius: 20px;
+    }
+    #channelsModal .modal-title,
+    #communitiesModal .communities-title { font-size: 21px; }
+    #channelsModal .modal-header { padding-bottom: 11px; }
+    #channelsModal > .modal-card > .primary { min-height: 46px; }
+    #channelsList.channels-list { padding: 0; }
+    .channel-item { gap: 9px; padding: 10px; }
+    .channel-name { font-size: 14px; }
+    .channel-description { font-size: 10px; }
+    .channel-action { min-width: 78px; min-height: 36px; font-size: 11px; }
+    #communitiesModal .communities-actions { grid-template-columns: 1fr 1fr; gap: 7px; }
+    #communitiesModal .community-action { min-height: 62px; padding: 9px; }
+    #communitiesModal .community-action small { display:none; }
+    #communitiesModal .communities-list { max-height: none; flex: 1; }
+    #communitiesModal .community-list-card { padding: 10px; }
+    #communitiesModal .community-list-avatar { width: 48px; height: 48px; min-width: 48px; border-radius: 14px; }
+}
+
+@media (max-width: 420px) {
+    .brand { font-size: 22px; }
+    .icon-btn { width: 40px; height: 40px; }
+    .channel-action { min-width: 70px; padding: 0 7px; font-size: 10px; }
+    .channel-description { max-width: 130px; }
+    #communitiesModal .community-list-actions { gap: 4px; }
+    #communitiesModal .community-list-settings { width: 34px; height: 34px; }
+}
+</style>
