@@ -2713,7 +2713,7 @@ const server =
                     const text =
                         String(
                             body.text || ""
-                        ).trim();
+                        ).trim().slice(0, 5000);
 
 
                     const audio =
@@ -3111,7 +3111,7 @@ const server =
                 if (req.method === "POST" && pathname === "/group-members") {
                     const body = await getBody(req);
                     const login = String(body.login || "").trim();
-                    const target = String(body.target || "").trim();
+                    const target = String(body.target || "").trim().replace(/^@+/, "");
                     const groupId = String(body.groupId || "").trim();
                     const action = body.action === "remove" ? "remove" : "add";
                     const groups = getGroups();
@@ -3652,9 +3652,16 @@ const server =
                         typeof body.photo ===
                         "string"
                     ) {
-
-                        channel.photo =
-                            body.photo.trim();
+                        const photo = body.photo.trim();
+                        if (photo && !photo.startsWith("data:image/")) {
+                            sendJSON(res,{success:false,message:"Некорректное фото канала"},400);
+                            return;
+                        }
+                        if (photo.length > 4_000_000) {
+                            sendJSON(res,{success:false,message:"Фото канала слишком большое"},413);
+                            return;
+                        }
+                        channel.photo = photo;
                     }
 
 
@@ -4140,6 +4147,9 @@ const server =
                         media,
 
                         mediaType,
+                        views: 0,
+                        viewers: [],
+                        comments: [],
 
                         time:
                             new Date()
