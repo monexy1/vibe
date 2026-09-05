@@ -227,6 +227,14 @@ function normalizeChannel(channel) {
         channel.photo = "";
     }
 
+    // Never keep a truncated/invalid data URL as a channel avatar.
+    if (channel.photo && channel.photo.startsWith("data:image/")) {
+        const comma = channel.photo.indexOf(",");
+        if (comma < 0 || channel.photo.length < comma + 20) {
+            channel.photo = "";
+        }
+    }
+
     if (
         !channel.settings ||
         typeof channel.settings !== "object"
@@ -3234,7 +3242,7 @@ const server =
                             body.photo || ""
                         )
                             .trim()
-                            .slice(0, 2_500_000);
+                            .slice(0, 6_000_000);
 
 
                     if (
