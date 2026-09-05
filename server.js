@@ -69,6 +69,14 @@ function normalizeUser(user) {
         user.friendRequestsOutgoing = [];
     }
 
+    if (!Array.isArray(user.contacts)) {
+        user.contacts = [];
+    }
+
+    if (!Array.isArray(user.blockedUsers)) {
+        user.blockedUsers = [];
+    }
+
     if (
         !user.profile ||
         typeof user.profile !== "object"
@@ -505,7 +513,23 @@ function publicUser(
         hasOutgoingFriendRequest:
             user.friendRequestsOutgoing.includes(
                 viewerLogin
-            )
+            ),
+
+        isContact:
+            Array.isArray(user.contacts) &&
+            user.contacts.includes(viewerLogin),
+
+        isBlockedByViewer:
+            (() => {
+                const viewer = findUser(viewerLogin);
+                if (!viewer) return false;
+                normalizeUser(viewer);
+                return viewer.blockedUsers.includes(user.login);
+            })(),
+
+        hasBlockedViewer:
+            Array.isArray(user.blockedUsers) &&
+            user.blockedUsers.includes(viewerLogin)
     };
 
 
@@ -1618,6 +1642,73 @@ const server =
                     return;
                 }
 
+
+                /* =====================================================
+                   CONTACTS / BLOCKS
+                ===================================================== */
+
+                if (
+                    req.method === "POST" &&
+                    (pathname === "/contacts" || pathname === "/blocks")
+                ) {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const target = String(body.target || "").trim();
+                    const action = String(body.action || "add").trim();
+
+                    const users = getUsers();
+                    const user = users.find(item => item.login === login);
+                    const targetUser = users.find(item => item.login === target);
+
+                    if (!user || !targetUser) {
+                        sendJSON(res, {success:false, message:"Пользователь не найден"}, 404);
+                        return;
+                    }
+
+                    if (login === target) {
+                        sendJSON(res, {success:false, message:"Нельзя изменить это для самого себя"}, 400);
+                        return;
+                    }
+
+                    normalizeUser(user);
+                    normalizeUser(targetUser);
+
+                    const listName = pathname === "/blocks"
+                        ? "blockedUsers"
+                        : "contacts";
+
+                    if (action === "add") {
+                        if (!user[listName].includes(target)) {
+                            user[listName].push(target);
+                        }
+
+                        if (pathname === "/blocks") {
+                            user.contacts = user.contacts.filter(item => item !== target);
+                            user.friendRequestsIncoming = user.friendRequestsIncoming.filter(item => item !== target);
+                            user.friendRequestsOutgoing = user.friendRequestsOutgoing.filter(item => item !== target);
+                            targetUser.friendRequestsIncoming = targetUser.friendRequestsIncoming.filter(item => item !== login);
+                            targetUser.friendRequestsOutgoing = targetUser.friendRequestsOutgoing.filter(item => item !== login);
+                        }
+                    } else if (action === "remove") {
+                        user[listName] = user[listName].filter(item => item !== target);
+                    } else {
+                        sendJSON(res, {success:false, message:"Неизвестное действие"}, 400);
+                        return;
+                    }
+
+                    saveJSON(USERS_FILE, users);
+                    broadcastFriendState([login, target], {
+                        type:"contact-block-state-changed",
+                        login,
+                        target
+                    });
+
+                    sendJSON(res, {
+                        success:true,
+                        user:publicUser(user, login)
+                    });
+                    return;
+                }
 
                 /* =====================================================
                    FRIENDS GET

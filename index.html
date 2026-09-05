@@ -706,6 +706,33 @@ select:focus {
 .message-actions button:hover { background:var(--panel2); }
 .friend-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
 .friend-actions button { border:0; border-radius:9px; padding:6px 9px; background:var(--panel2); color:var(--text); }
+.profile-view-actions {
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:16px;
+}
+.profile-view-actions button {
+    flex:1;
+    min-width:140px;
+    border:0;
+    border-radius:12px;
+    padding:11px 12px;
+    background:var(--panel2);
+    color:var(--text);
+    cursor:pointer;
+}
+.profile-view-actions .primary {
+    background:var(--accent);
+    color:#fff;
+}
+.online-dot {
+    background:#9ca3af;
+}
+.online-dot.online {
+    background:#facc15;
+    box-shadow:0 0 0 2px var(--panel), 0 0 9px rgba(250,204,21,.55);
+}
 .friend-request-tabs { display:flex; gap:7px; margin-bottom:12px; }
 .friend-request-tabs button { flex:1; }
 .request-item { padding:10px; border:1px solid var(--border); border-radius:13px; margin-bottom:8px; }
@@ -2295,6 +2322,11 @@ async function removeFriend(login) {
                     class="profile-view-grid"
                 ></div>
 
+                <div
+                    id="profileViewActions"
+                    class="profile-view-actions hidden"
+                ></div>
+
             </div>
 
         </div>
@@ -2684,11 +2716,11 @@ async function removeFriend(login) {
                 >
 
                     <option value="ru">
-                        🇷🇺 Русский
+                        Русский
                     </option>
 
                     <option value="en">
-                        🇬🇧 English
+                        English
                     </option>
 
                 </select>
@@ -5099,9 +5131,7 @@ async function searchUsers() {
 
                 item.onclick = () => {
 
-                    openChat(
-                        user.login
-                    );
+                    openUserProfile(user.login);
 
                     $("searchInput")
                         .value = "";
@@ -5169,13 +5199,6 @@ function personHTML(user,count=0) {
         </div>
 
         ${count > 0 ? `<div class="chat-count">${count}</div>` : ""}
-        ${user.login !== currentUser?.login ? `
-            <div class="friend-actions" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
-                ${user.isFriend ? `<button onclick="removeFriend('${escapeHTML(user.login)}')">Удалить</button>` :
-                  user.hasIncomingFriendRequest ? `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','accept')">Принять</button><button onclick="changeFriendRequest('${escapeHTML(user.login)}','decline')">Отклонить</button>` :
-                  user.hasOutgoingFriendRequest ? `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','cancel')">Отменить</button>` :
-                  `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','send')">➕ В друзья</button>`}
-            </div>` : ""}
     `;
 }
 
@@ -6143,6 +6166,10 @@ async function openProfile() {
         .classList
         .add("hidden");
 
+    $("profileViewActions")
+        ?.classList
+        .add("hidden");
+
     $("profileEditContent")
         .classList
         .remove("hidden");
@@ -6232,6 +6259,94 @@ async function openProfile() {
 }
 
 
+async function updateProfileViewActions(user) {
+    const box = $("profileViewActions");
+    if (!box) return;
+
+    box.classList.remove("hidden");
+
+    const isContact = user.isContact === true;
+    const isBlocked = user.isBlockedByViewer === true;
+
+    box.innerHTML = `
+        <button class="primary" type="button" id="profileContactButton">
+            ${isContact ? "✓ В контактах" : "➕ Добавить в контакты"}
+        </button>
+        <button type="button" id="profileBlockButton">
+            ${isBlocked ? "🔓 Разблокировать" : "🚫 Заблокировать"}
+        </button>
+        <button type="button" id="profileMessageButton">
+            💬 Написать сообщение
+        </button>
+    `;
+
+    $("profileContactButton").onclick = () =>
+        changeContact(user.login, isContact ? "remove" : "add");
+
+    $("profileBlockButton").onclick = () =>
+        changeBlock(user.login, isBlocked ? "remove" : "add");
+
+    $("profileMessageButton").onclick = () => {
+        closeProfile();
+        openChat(user.login);
+    };
+}
+
+async function changeContact(target, action) {
+    if (!currentUser || !target) return;
+
+    try {
+        const response = await fetch("/contacts", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                login:currentUser.login,
+                target,
+                action
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            alert(data.message || "Не удалось изменить контакты");
+            return;
+        }
+
+        await Promise.allSettled([loadFriends(), loadChats()]);
+        await openUserProfile(target);
+    } catch {
+        alert("Ошибка соединения с сервером");
+    }
+}
+
+async function changeBlock(target, action) {
+    if (!currentUser || !target) return;
+
+    try {
+        const response = await fetch("/blocks", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                login:currentUser.login,
+                target,
+                action
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            alert(data.message || "Не удалось изменить блокировку");
+            return;
+        }
+
+        await openUserProfile(target);
+    } catch {
+        alert("Ошибка соединения с сервером");
+    }
+}
+
 async function openUserProfile(login) {
 
     const user =
@@ -6278,6 +6393,10 @@ async function openUserProfile(login) {
     $("profileButtons")
         .classList
         .add("hidden");
+
+    $("profileViewActions")
+        .classList
+        .remove("hidden");
 
 
     const privacy =
@@ -6400,6 +6519,17 @@ async function openUserProfile(login) {
         .textContent =
         "@" + user.login;
 
+    const oldProfileOnline = $("profileViewOnline");
+    if (oldProfileOnline) oldProfileOnline.remove();
+
+    const onlineLine = document.createElement("div");
+    onlineLine.id = "profileViewOnline";
+    onlineLine.className = "profile-display-login";
+    onlineLine.style.marginTop = "4px";
+    onlineLine.innerHTML =
+        `<span class="online-dot ${user.online === true ? "online" : ""}" style="display:inline-block;position:relative;right:auto;bottom:auto;vertical-align:middle;margin-right:5px;"></span>${user.online === true ? "В сети" : "Не в сети"}`;
+    $("profileViewLogin").after(onlineLine);
+
 
     /*
         О себе
@@ -6455,6 +6585,8 @@ async function openUserProfile(login) {
         Email чужого профиля никогда не показываем.
     */
 
+
+    await updateProfileViewActions(user);
 
     $("profileModal")
         .classList
