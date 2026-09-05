@@ -174,11 +174,14 @@ function normalizeUser(user) {
 
     /* Новые настройки */
 
-    if (
-        typeof user.profile.privacy.allowFriendRequests !==
-        "boolean"
-    ) {
-        user.profile.privacy.allowFriendRequests = true;
+    const friendRequestPrivacy = [
+        "everyone",
+        "friends",
+        "nobody"
+    ];
+
+    if (!friendRequestPrivacy.includes(user.profile.privacy.allowFriendRequests)) {
+        user.profile.privacy.allowFriendRequests = "everyone";
     }
 
     if (
@@ -974,7 +977,7 @@ const server =
                                     "everyone",
 
                                 allowFriendRequests:
-                                    true,
+                                    "everyone",
 
                                 showOnline:
                                     true
@@ -1563,16 +1566,18 @@ const server =
 
 
                         if (
-                            typeof body.privacy
-                                .allowFriendRequests ===
-                            "boolean"
+                            ["everyone", "friends", "nobody"].includes(
+                                body.privacy.allowFriendRequests
+                            )
                         ) {
+                            user.profile.privacy.allowFriendRequests =
+                                body.privacy.allowFriendRequests;
+                        }
 
-                            user.profile
-                                .privacy
-                                .allowFriendRequests =
-                                body.privacy
-                                    .allowFriendRequests;
+                        // Backward compatibility with old boolean data.
+                        if (typeof body.privacy.allowFriendRequests === "boolean") {
+                            user.profile.privacy.allowFriendRequests =
+                                body.privacy.allowFriendRequests ? "everyone" : "nobody";
                         }
 
 
@@ -1883,23 +1888,22 @@ const server =
                         }
 
 
-                        if (
-                            targetUser.profile
-                                .privacy
-                                .allowFriendRequests !==
-                            true
-                        ) {
+                        const requestPrivacy =
+                            targetUser.profile.privacy.allowFriendRequests || "everyone";
 
+                        if (
+                            requestPrivacy === "nobody" ||
+                            (requestPrivacy === "friends" && !areFriends(login, target))
+                        ) {
                             sendJSON(
                                 res,
                                 {
                                     success: false,
                                     message:
-                                        "Этот пользователь запретил заявки в друзья"
+                                        "Этот пользователь ограничил заявки в друзья"
                                 },
                                 403
                             );
-
                             return;
                         }
 
@@ -1970,13 +1974,11 @@ const server =
                         );
 
 
+                        broadcastFriendState([login, target], { type:"friend-state-changed" });
+
                         sendJSON(
                             res,
-                            {
-                                success: true,
-                                message:
-                                    "Заявка отправлена"
-                            }
+                            { success:true, message:"Заявка отправлена" }
                         );
 
                         return;
@@ -2069,14 +2071,8 @@ const server =
                         );
 
 
-                        sendJSON(
-                            res,
-                            {
-                                success: true,
-                                message:
-                                    "Заявка принята"
-                            }
-                        );
+                        broadcastFriendState([login, target], { type:"friend-state-changed" });
+                        sendJSON(res, { success:true, message:"Заявка принята" });
 
                         return;
                     }
@@ -2125,14 +2121,8 @@ const server =
                         );
 
 
-                        sendJSON(
-                            res,
-                            {
-                                success: true,
-                                message:
-                                    "Заявка отклонена"
-                            }
-                        );
+                        broadcastFriendState([login, target], { type:"friend-state-changed" });
+                        sendJSON(res, { success:true, message:"Заявка отклонена" });
 
                         return;
                     }
@@ -2182,14 +2172,8 @@ const server =
                         );
 
 
-                        sendJSON(
-                            res,
-                            {
-                                success: true,
-                                message:
-                                    "Заявка отменена"
-                            }
-                        );
+                        broadcastFriendState([login, target], { type:"friend-state-changed" });
+                        sendJSON(res, { success:true, message:"Заявка отменена" });
 
                         return;
                     }
@@ -2446,7 +2430,15 @@ const server =
 
                                         lastMessageType:
                                             last.type ||
-                                            "text"
+                                            "text",
+
+                                        messageCount:
+                                            messages.filter(m =>
+                                                m.from === other &&
+                                                m.to === login &&
+                                                !m.deletedForAll &&
+                                                !(Array.isArray(m.deletedFor) && m.deletedFor.includes(login))
+                                            ).length
                                     };
                                 }
                             )
@@ -2731,6 +2723,51 @@ const server =
                         }
                     );
 
+                    return;
+                }
+
+
+                /* =====================================================
+                   DELETE MESSAGE
+                ===================================================== */
+
+                if (
+                    req.method === "POST" &&
+                    pathname === "/delete-message"
+                ) {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const messageId = String(body.messageId || "").trim();
+                    const mode = body.mode === "all" ? "all" : "self";
+                    const messages = readJSON(MESSAGES_FILE);
+                    const message = messages.find(m => m.id === messageId);
+
+                    if (!login || !message) {
+                        sendJSON(res, { success:false, message:"Сообщение не найдено" }, 404);
+                        return;
+                    }
+
+                    if (message.from !== login && message.to !== login) {
+                        sendJSON(res, { success:false, message:"Нет доступа" }, 403);
+                        return;
+                    }
+
+                    if (mode === "all") {
+                        if (message.from !== login) {
+                            sendJSON(res, { success:false, message:"Удалить у всех может только отправитель" }, 403);
+                            return;
+                        }
+                        message.deletedForAll = true;
+                    } else {
+                        if (!Array.isArray(message.deletedFor)) message.deletedFor = [];
+                        if (!message.deletedFor.includes(login)) message.deletedFor.push(login);
+                    }
+
+                    saveJSON(MESSAGES_FILE, messages);
+                    sendToUser(message.from === login ? message.to : message.from, {
+                        type:"message-deleted", messageId, mode, by:login
+                    });
+                    sendJSON(res, { success:true, message });
                     return;
                 }
 
@@ -3537,6 +3574,11 @@ const wss =
     });
 
 
+function broadcastFriendState(logins, data) {
+    [...new Set(logins.filter(Boolean))].forEach(login => sendToUser(login, data));
+}
+
+
 function sendToUser(
     login,
     data
@@ -3578,25 +3620,10 @@ function broadcastOnlineStatus(
             }
 
 
-            if (
-                areFriends(
-                    user.login,
-                    login
-                )
-            ) {
-
-                sendToUser(
-                    user.login,
-                    {
-                        type:
-                            "online-status",
-
-                        login,
-
-                        online
-                    }
-                );
-            }
+            if (user.login === login) return;
+            const owner = findUser(login);
+            const visible = owner && owner.profile && owner.profile.privacy && owner.profile.privacy.showOnline !== false;
+            sendToUser(user.login, { type:"online-status", login, online: visible ? online : false });
         }
     );
 }

@@ -678,6 +678,42 @@ select:focus {
     font-size: 20px;
 }
 
+.voice-btn {
+    width:48px !important;
+    background:var(--panel2) !important;
+    color:var(--text) !important;
+    font-size:18px;
+}
+
+.voice-btn.recording {
+    background:#ef4444 !important;
+    color:white !important;
+}
+
+.message-actions {
+    position:fixed;
+    z-index:1000;
+    min-width:190px;
+    padding:6px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--panel);
+    box-shadow:0 18px 50px rgba(0,0,0,.35);
+}
+.message-actions button {
+    display:block; width:100%; padding:10px 12px; border:0; background:transparent; color:var(--text); text-align:left; border-radius:9px;
+}
+.message-actions button:hover { background:var(--panel2); }
+.friend-actions { display:flex; gap:6px; flex-wrap:wrap; margin-top:7px; }
+.friend-actions button { border:0; border-radius:9px; padding:6px 9px; background:var(--panel2); color:var(--text); }
+.friend-request-tabs { display:flex; gap:7px; margin-bottom:12px; }
+.friend-request-tabs button { flex:1; }
+.request-item { padding:10px; border:1px solid var(--border); border-radius:13px; margin-bottom:8px; }
+.request-item .person { border:0; padding:0; }
+.voice-message { display:flex; align-items:center; gap:9px; min-width:180px; }
+.voice-message button { width:38px !important; height:38px; border:0; border-radius:50%; background:rgba(255,255,255,.18); color:inherit; }
+.voice-wave { flex:1; height:5px; border-radius:10px; background:currentColor; opacity:.25; }
+
 /* =========================================================
    EMOJI
 ========================================================= */
@@ -906,6 +942,116 @@ select:focus {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+/* =========================================================
+   FRIEND REQUESTS / PRIVACY
+========================================================= */
+
+let friendRequestsData = { incoming: [], outgoing: [] };
+let friendRequestsTab = "incoming";
+
+async function loadFriendRequests() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch("/friend-requests?login=" + encodeURIComponent(currentUser.login));
+        const data = await response.json();
+        if (data.success) {
+            friendRequestsData = data;
+            renderFriendRequests();
+        }
+    } catch {}
+}
+
+function openFriendRequests() {
+    $("friendRequestsModal").classList.remove("hidden");
+    loadFriendRequests();
+}
+
+function switchFriendRequestsTab(tab) {
+    friendRequestsTab = tab;
+    $("incomingRequestsTab").classList.toggle("primary", tab === "incoming");
+    $("outgoingRequestsTab").classList.toggle("primary", tab === "outgoing");
+    renderFriendRequests();
+}
+
+function renderFriendRequests() {
+    const box = $("friendRequestsList");
+    const list = friendRequestsData[friendRequestsTab] || [];
+    box.innerHTML = "";
+    if (!list.length) {
+        box.innerHTML = `<div class="empty-chat" style="height:140px;">Нет заявок</div>`;
+        return;
+    }
+    list.forEach(user => {
+        const item = document.createElement("div");
+        item.className = "request-item";
+        item.innerHTML = `<div class="person" style="cursor:pointer">${personHTML(user)}</div>`;
+        const actions = document.createElement("div");
+        actions.className = "friend-actions";
+        if (friendRequestsTab === "incoming") {
+            actions.innerHTML = `<button>✅ Принять</button><button>❌ Отклонить</button>`;
+            actions.children[0].onclick = () => changeFriendRequest(user.login, "accept");
+            actions.children[1].onclick = () => changeFriendRequest(user.login, "decline");
+        } else {
+            actions.innerHTML = `<button>↩️ Отменить</button>`;
+            actions.children[0].onclick = () => changeFriendRequest(user.login, "cancel");
+        }
+        item.appendChild(actions);
+        item.querySelector(".person").onclick = () => openUserProfile(user.login);
+        box.appendChild(item);
+    });
+}
+
+async function changeFriendRequest(target, action) {
+    try {
+        const response = await fetch("/friend-requests", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({ login:currentUser.login, target, action })
+        });
+        const data = await response.json();
+        if (!data.success) { alert(data.message || "Ошибка"); return; }
+        await Promise.all([loadFriendRequests(), loadFriends(), loadChats()]);
+        await searchUsers();
+    } catch { alert("Ошибка сервера"); }
+}
+
+async function sendFriendRequest(target) { return changeFriendRequest(target, "send"); }
+
+async function savePrivacySettings() {
+    if (!currentUser) return;
+    try {
+        const response = await fetch("/profile", {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({ login:currentUser.login, privacy:{
+                allowFriendRequests:$("friendRequestPrivacy").value,
+                showOnline:$("showOnlinePrivacy").checked
+            }})
+        });
+        const data = await response.json();
+        if (data.success) {
+            currentUser = data.user;
+            localStorage.setItem("vibeUser", JSON.stringify(currentUser));
+            alert("Настройки приватности сохранены");
+        } else alert(data.message || "Ошибка сохранения");
+    } catch { alert("Ошибка сервера"); }
+}
+
+function refreshPrivacyUI(user) {
+    if (!user) return;
+    if ($("friendRequestPrivacy")) $("friendRequestPrivacy").value = user.privacy?.allowFriendRequests || "everyone";
+    if ($("showOnlinePrivacy")) $("showOnlinePrivacy").checked = user.privacy?.showOnline !== false;
+}
+
+async function removeFriend(login) {
+    if (!currentUser) return;
+    if (!confirm("Удалить пользователя из друзей?")) return;
+    try {
+        const response = await fetch("/friends", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({login:currentUser.login, friend:login, action:"remove"}) });
+        const data = await response.json();
+        if (!data.success) { alert(data.message || "Ошибка"); return; }
+        await Promise.all([loadFriends(), loadChats(), searchUsers()]);
+    } catch { alert("Ошибка сервера"); }
 }
 
 /* =========================================================
@@ -1723,6 +1869,8 @@ select:focus {
 
             <div class="bottom-buttons">
 
+                <button onclick="openFriendRequests()">👥 Заявки в друзья</button>
+
                 <button onclick="openChannels()">
                     📢 Каналы
                 </button>
@@ -1822,6 +1970,8 @@ select:focus {
                     😊
                 </button>
 
+                <button id="voiceRecordButton" class="voice-btn" onclick="toggleVoiceRecording()" title="Голосовое">🎙️</button>
+
                 <button onclick="sendMessage()">
                     ➤
                 </button>
@@ -1832,6 +1982,24 @@ select:focus {
 
     </div>
 
+</div>
+
+
+<!-- =========================================================
+     FRIEND REQUESTS
+========================================================= -->
+<div id="friendRequestsModal" class="modal hidden">
+    <div class="modal-card">
+        <div class="modal-header">
+            <div class="modal-title">👥 Заявки в друзья</div>
+            <button class="modal-close" onclick="closeModal('friendRequestsModal')">✕</button>
+        </div>
+        <div class="friend-request-tabs">
+            <button id="incomingRequestsTab" class="primary" onclick="switchFriendRequestsTab('incoming')">Входящие</button>
+            <button id="outgoingRequestsTab" onclick="switchFriendRequestsTab('outgoing')">Исходящие</button>
+        </div>
+        <div id="friendRequestsList"></div>
+    </div>
 </div>
 
 
@@ -2072,7 +2240,8 @@ select:focus {
 
                 <input
                     id="profilePhoto"
-                    placeholder="Ссылка на фото или data:image..."
+                    type="hidden"
+                    aria-hidden="true"
                 >
 
                 <label class="file-upload-btn">
@@ -2425,6 +2594,28 @@ select:focus {
 
                 </select>
 
+            </div>
+
+
+            <div class="setting-section">
+
+                <div class="setting-title">
+                    👥 Заявки в друзья
+                </div>
+
+                <label class="setting-label">Кто может отправлять мне заявки</label>
+                <select id="friendRequestPrivacy">
+                    <option value="everyone">🌎 Все</option>
+                    <option value="friends">👥 Друзья</option>
+                    <option value="nobody">🚫 Никто</option>
+                </select>
+
+                <label style="display:flex;gap:9px;align-items:center;margin-top:12px;">
+                    <input id="showOnlinePrivacy" type="checkbox" style="width:auto;margin:0;">
+                    Показывать мой онлайн-статус
+                </label>
+
+                <button class="secondary" style="margin-top:12px;" onclick="savePrivacySettings()">Сохранить приватность</button>
             </div>
 
 
@@ -3170,11 +3361,11 @@ function applyLanguage() {
             t.write;
     }
 
-    $("siteLanguage").value =
-        siteLanguage;
+    $("siteLanguage").value = siteLanguage;
+    $("siteLanguage").title = siteLanguage === "ru" ? "🇷🇺 Русский" : "🇬🇧 English";
 
-    $("authLanguage").value =
-        siteLanguage;
+    $("authLanguage").value = siteLanguage;
+    $("authLanguage").title = siteLanguage === "ru" ? "🇷🇺 Русский" : "🇬🇧 English";
 
     $("registerLanguage").value =
         siteLanguage;
@@ -3537,6 +3728,13 @@ document.addEventListener(
     }
 );
 
+
+$("messageInput").addEventListener("input", () => {
+    if (!currentChat || currentChannel) return;
+    sendSocket({type:"typing",to:currentChat,typing:true});
+    clearTimeout(typingStopTimer);
+    typingStopTimer = setTimeout(() => sendSocket({type:"typing",to:currentChat,typing:false}), 900);
+});
 
 /* =========================================================
    READ COUNTS
@@ -4285,8 +4483,8 @@ function openSettings() {
     $("settingsLogin").textContent =
         "@" + currentUser.login;
 
-    $("siteLanguage").value =
-        siteLanguage;
+    $("siteLanguage").value = siteLanguage;
+    $("siteLanguage").title = siteLanguage === "ru" ? "🇷🇺 Русский" : "🇬🇧 English";
 
     $("siteTheme").value =
         extra.theme ||
@@ -4551,6 +4749,39 @@ function sendSocket(data) {
 
 function handleSocketMessage(data) {
 
+    if (data.type === "friend-state-changed") {
+        loadFriends(); loadChats(); loadFriendRequests();
+        return;
+    }
+
+    if (data.type === "online-status") {
+        updateOnlineState(data.login, data.online);
+        return;
+    }
+
+    if (data.type === "typing") {
+        if (currentChat === data.from && !currentChannel) {
+            $("chatStatus").textContent = data.typing ? "печатает…" : (data.online ? "онлайн" : "офлайн");
+            if (data.typing) {
+                clearTimeout(window._typingReset);
+                window._typingReset = setTimeout(() => updateCurrentChatHeader(), 2200);
+            }
+        }
+        return;
+    }
+
+    if (data.type === "recording-voice") {
+        if (currentChat === data.from && !currentChannel) {
+            $("chatStatus").textContent = data.recording ? "записывает голосовое…" : "онлайн";
+        }
+        return;
+    }
+
+    if (data.type === "message-deleted") {
+        loadMessages(false); loadChats();
+        return;
+    }
+
     if (
         data.type === "new-message"
     ) {
@@ -4687,6 +4918,22 @@ function handleSocketMessage(data) {
 }
 
 
+function updateOnlineState(login, online) {
+    friends.forEach(user => { if (user.login === login) user.online = online; });
+    chats.forEach(chat => { if (chat.login === login && chat.user) chat.user.online = online; });
+    if (currentChat === login && !currentChannel) updateCurrentChatHeader();
+    renderChats();
+}
+
+async function updateCurrentChatHeader() {
+    if (!currentChat || currentChannel) return;
+    const user = await getUser(currentChat);
+    if (!user) return;
+    $("chatName").textContent = user.name || user.login;
+    $("chatAvatar").innerHTML = user.photo ? `<img src="${escapeHTML(user.photo)}">` : "👤";
+    $("chatStatus").textContent = user.online ? "онлайн" : "офлайн";
+}
+
 /* =========================================================
    SEARCH
 ========================================================= */
@@ -4804,15 +5051,14 @@ function personHTML(user,count=0) {
 
         </div>
 
-        ${
-            count > 0
-                ? `
-                    <div class="chat-count">
-                        ${count}
-                    </div>
-                  `
-                : ""
-        }
+        ${count > 0 ? `<div class="chat-count">${count}</div>` : ""}
+        ${user.login !== currentUser?.login ? `
+            <div class="friend-actions" onclick="event.stopPropagation()">
+                ${user.isFriend ? `<button onclick="removeFriend('${escapeHTML(user.login)}')">Удалить</button>` :
+                  user.hasIncomingFriendRequest ? `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','accept')">Принять</button><button onclick="changeFriendRequest('${escapeHTML(user.login)}','decline')">Отклонить</button>` :
+                  user.hasOutgoingFriendRequest ? `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','cancel')">Отменить</button>` :
+                  `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','send')">➕ В друзья</button>`}
+            </div>` : ""}
     `;
 }
 
@@ -5222,7 +5468,7 @@ async function openChat(login) {
             user.login;
 
         $("chatStatus").textContent =
-            "@" + user.login;
+            user.online ? "онлайн" : "офлайн";
 
         $("chatAvatar").innerHTML =
             user.photo
@@ -5395,18 +5641,21 @@ async function loadMessages(forceScroll=false) {
                         }
                     );
 
-                bubble.innerHTML =
-                    `
-                    <div>
-                        ${escapeHTML(
-                            message.text
-                        )}
-                    </div>
-
-                    <div class="message-time">
-                        ${time}
-                    </div>
-                    `;
+                if (message.type === "voice" && message.audio) {
+                    bubble.innerHTML = `
+                        <div class="voice-message">
+                            <button type="button" onclick="playVoiceMessage(this, '${escapeHTML(message.audio)}')">▶️</button>
+                            <div class="voice-wave"></div>
+                            <span>${formatVoiceDuration(message.duration)}</span>
+                        </div>
+                        <div class="message-time">${time}</div>`;
+                } else {
+                    bubble.innerHTML = `
+                        <div>${escapeHTML(message.text || "")}</div>
+                        <div class="message-time">${time}</div>`;
+                }
+                bubble.dataset.messageId = message.id;
+                bubble.dataset.messageFrom = message.from;
 
                 row.appendChild(bubble);
 
@@ -5426,6 +5675,144 @@ async function loadMessages(forceScroll=false) {
     } catch {}
 }
 
+
+let selectedMessageForAction = null;
+let typingStopTimer = null;
+let mediaRecorder = null;
+let voiceChunks = [];
+let voiceRecordingStartedAt = 0;
+let voiceStream = null;
+
+function getMessageFromBubble(target) {
+    const bubble = target.closest(".message");
+    if (!bubble) return null;
+    return { id:bubble.dataset.messageId, from:bubble.dataset.messageFrom, bubble };
+}
+
+function closeMessageActions() {
+    document.querySelector(".message-actions")?.remove();
+}
+
+function openMessageActions(messageInfo, x, y) {
+    closeMessageActions();
+    selectedMessageForAction = messageInfo;
+    const menu = document.createElement("div");
+    menu.className = "message-actions";
+    menu.style.left = Math.min(x, innerWidth - 205) + "px";
+    menu.style.top = Math.min(y, innerHeight - 220) + "px";
+    menu.innerHTML = `
+      <button onclick="copySelectedMessage()">📋 Копировать</button>
+      <button onclick="replySelectedMessage()">↩️ Ответить</button>
+      <button onclick="forwardSelectedMessage()">↗️ Переслать</button>
+      <button onclick="deleteSelectedMessage('self')">🗑️ Удалить у себя</button>
+      ${messageInfo.from === currentUser.login ? `<button onclick="deleteSelectedMessage('all')">🗑️ Удалить у всех</button>` : ""}`;
+    document.body.appendChild(menu);
+}
+
+async function copySelectedMessage() {
+    closeMessageActions();
+    if (!selectedMessageForAction) return;
+    const text = selectedMessageForAction.bubble.querySelector("div")?.textContent || "";
+    try { await navigator.clipboard.writeText(text); } catch {}
+}
+
+function replySelectedMessage() {
+    closeMessageActions();
+    if (!selectedMessageForAction) return;
+    const text = selectedMessageForAction.bubble.querySelector("div")?.textContent || "";
+    $("messageInput").value = "↩️ " + text.slice(0, 140) + "\n";
+    $("messageInput").focus();
+}
+
+async function forwardSelectedMessage() {
+    closeMessageActions();
+    if (!selectedMessageForAction) return;
+    const target = prompt("Введите логин пользователя, которому переслать сообщение:");
+    if (!target) return;
+    const text = selectedMessageForAction.bubble.querySelector("div")?.textContent || "";
+    try {
+        const r = await fetch("/send-message", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from:currentUser.login,to:target,text:"↗️ " + text})});
+        const d = await r.json(); if (!d.success) alert(d.message || "Ошибка пересылки");
+    } catch { alert("Ошибка пересылки"); }
+}
+
+async function deleteSelectedMessage(mode) {
+    closeMessageActions();
+    if (!selectedMessageForAction) return;
+    if (mode === "all" && !confirm("Удалить сообщение у всех?")) return;
+    try {
+        const r = await fetch("/delete-message", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:currentUser.login,messageId:selectedMessageForAction.id,mode})});
+        const d = await r.json();
+        if (!d.success) { alert(d.message || "Ошибка удаления"); return; }
+        await loadMessages(false); await loadChats();
+    } catch { alert("Ошибка удаления"); }
+}
+
+document.addEventListener("contextmenu", event => {
+    const info = getMessageFromBubble(event.target);
+    if (!info) return;
+    event.preventDefault();
+    openMessageActions(info, event.clientX, event.clientY);
+});
+
+document.addEventListener("pointerdown", event => {
+    const info = getMessageFromBubble(event.target);
+    if (!info || event.pointerType !== "touch") return;
+    clearTimeout(window._messageLongPress);
+    window._messageLongPress = setTimeout(() => openMessageActions(info, event.clientX || innerWidth/2, event.clientY || innerHeight/2), 550);
+});
+document.addEventListener("pointerup", () => clearTimeout(window._messageLongPress));
+document.addEventListener("pointercancel", () => clearTimeout(window._messageLongPress));
+document.addEventListener("click", event => { if (!event.target.closest(".message-actions")) closeMessageActions(); });
+
+function formatVoiceDuration(seconds) {
+    const n = Math.max(0, Number(seconds) || 0);
+    return Math.floor(n / 60).toString().padStart(2,"0") + ":" + Math.floor(n % 60).toString().padStart(2,"0");
+}
+
+function playVoiceMessage(button, audioData) {
+    document.querySelectorAll("audio.vibe-voice-audio").forEach(a => { a.pause(); a.remove(); });
+    const audio = document.createElement("audio");
+    audio.className = "vibe-voice-audio";
+    audio.src = audioData;
+    audio.onended = () => button.textContent = "▶️";
+    document.body.appendChild(audio);
+    audio.play().then(() => button.textContent = "⏸️").catch(() => {});
+}
+
+async function toggleVoiceRecording() {
+    if (mediaRecorder && mediaRecorder.state === "recording") { mediaRecorder.stop(); return; }
+    if (!currentUser || !currentChat || currentChannel) return;
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { alert("Запись голосовых не поддерживается этим браузером"); return; }
+    try {
+        voiceStream = await navigator.mediaDevices.getUserMedia({audio:true});
+        const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find(t => MediaRecorder.isTypeSupported(t));
+        mediaRecorder = new MediaRecorder(voiceStream, preferred ? {mimeType:preferred} : undefined);
+        voiceChunks = []; voiceRecordingStartedAt = Date.now();
+        $("voiceRecordButton").classList.add("recording"); $("voiceRecordButton").textContent = "⏹️";
+        sendSocket({type:"recording-voice",to:currentChat,recording:true});
+        mediaRecorder.ondataavailable = e => { if (e.data.size) voiceChunks.push(e.data); };
+        mediaRecorder.onstop = async () => {
+            const duration = Math.round((Date.now()-voiceRecordingStartedAt)/1000);
+            const blob = new Blob(voiceChunks, {type:mediaRecorder.mimeType || "audio/webm"});
+            voiceStream?.getTracks().forEach(t=>t.stop());
+            voiceStream = null; $("voiceRecordButton").classList.remove("recording"); $("voiceRecordButton").textContent="🎙️";
+            sendSocket({type:"recording-voice",to:currentChat,recording:false});
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    const r = await fetch("/send-message", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({from:currentUser.login,to:currentChat,type:"voice",audio:reader.result,duration})});
+                    const d = await r.json();
+                    if (!d.success) alert(d.message || "Не удалось отправить голосовое");
+                    else { await loadMessages(true); await loadChats(); await markChatAsRead(currentChat); }
+                } catch { alert("Ошибка отправки голосового"); }
+            };
+            reader.readAsDataURL(blob);
+            mediaRecorder = null;
+        };
+        mediaRecorder.start();
+    } catch { alert("Не удалось получить доступ к микрофону"); }
+}
 
 /* =========================================================
    SEND MESSAGE
@@ -5606,6 +5993,8 @@ async function openProfile() {
         user.privacy?.about ||
         extra.privacyAbout ||
         "everyone";
+
+    refreshPrivacyUI(user);
 
 
     selectedProfileBackground =
@@ -6163,7 +6552,13 @@ async function saveProfile() {
 
                                 about:
                                     $("privacyAbout")
-                                        .value
+                                        .value,
+
+                                allowFriendRequests:
+                                    $("friendRequestPrivacy")?.value || "everyone",
+
+                                showOnline:
+                                    $("showOnlinePrivacy")?.checked !== false
                             }
                         })
                 }
@@ -6359,11 +6754,9 @@ function renderChannelsList() {
                     </div>
 
                     <div class="channel-description">
-                        ${escapeHTML(
-                            channel.description ||
-                            "Канал Vibe"
-                        )}
+                        ${escapeHTML(channel.description || "Канал Vibe")}
                     </div>
+                    <div class="channel-description">👥 ${Number(channel.subscriberCount || channel.subscribers?.length || 0)} подписчиков</div>
 
                 </div>
                 `;
@@ -6669,8 +7062,7 @@ async function openChannel(channel) {
         "📢 " + channel.name;
 
     $("chatStatus").textContent =
-        channel.description ||
-        "Канал Vibe";
+        (channel.description || "Канал Vibe") + " · 👥 " + Number(channel.subscriberCount || channel.subscribers?.length || 0);
 
     const input =
         $("messageInput");
