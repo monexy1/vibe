@@ -1004,16 +1004,30 @@ function renderFriendRequests() {
 }
 
 async function changeFriendRequest(target, action) {
+    if (!currentUser || !target) return;
     try {
         const response = await fetch("/friend-requests", {
-            method:"POST", headers:{"Content-Type":"application/json"},
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
             body:JSON.stringify({ login:currentUser.login, target, action })
         });
         const data = await response.json();
-        if (!data.success) { alert(data.message || "Ошибка"); return; }
-        await Promise.all([loadFriendRequests(), loadFriends(), loadChats()]);
-        await searchUsers();
-    } catch { alert("Ошибка сервера"); }
+        if (!response.ok || !data.success) {
+            alert(data.message || "Не удалось изменить заявку");
+            return;
+        }
+        await Promise.allSettled([
+            loadFriendRequests(),
+            loadFriends(),
+            loadChats(),
+            searchUsers()
+        ]);
+        if (typeof openUserProfile === "function" && profileViewLogin === target) {
+            await openUserProfile(target);
+        }
+    } catch (e) {
+        alert("Ошибка соединения с сервером");
+    }
 }
 
 async function sendFriendRequest(target) { return changeFriendRequest(target, "send"); }
@@ -1724,6 +1738,95 @@ async function removeFriend(login) {
     }
 }
 
+
+
+/* Language selectors: real flag-like badge instead of Windows "RU/GB" emoji letters */
+#authLanguage, #registerLanguage, #siteLanguage {
+    appearance: none;
+    -webkit-appearance: none;
+    background-repeat: no-repeat;
+    background-position: 14px center;
+    background-size: 22px 15px;
+    padding-left: 48px !important;
+    cursor: pointer;
+}
+#authLanguage, #registerLanguage, #siteLanguage {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'%3E%3Crect width='30' height='20' fill='%23fff'/%3E%3Crect y='6.67' width='30' height='6.67' fill='%230039A6'/%3E%3Crect y='13.33' width='30' height='6.67' fill='%23D52B1E'/%3E%3C/svg%3E");
+}
+
+
+
+.avatar-wrap {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 46px;
+}
+.avatar-wrap .avatar {
+    width: 46px;
+    height: 46px;
+}
+.online-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--panel);
+    background: #8a8f98;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.15);
+}
+.online-dot.online {
+    background: #f2c94c;
+}
+
+
+
+.reply-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px;
+    padding: 9px 11px;
+    border-left: 3px solid var(--accent);
+    border-radius: 10px;
+    background: var(--panel2);
+    max-width: 100%;
+}
+.reply-preview.hidden { display:none; }
+.reply-preview-main { min-width:0; flex:1; }
+.reply-preview-title { font-size:11px; font-weight:800; color:var(--accent); margin-bottom:2px; }
+.reply-preview-text { font-size:12px; color:var(--muted); overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.reply-preview-close { flex:0 0 auto; }
+.message-reply {
+    margin-bottom: 7px;
+    padding: 5px 8px;
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    background: rgba(139,92,246,.10);
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.25;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+
+
+.birthday-card,
+.birthday-input-wrap,
+.birthday-input-wrap input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.birthday-input-wrap input {
+    display: block;
+}
+
 </style>
 
 </head>
@@ -1749,13 +1852,8 @@ async function removeFriend(login) {
 
             <select id="authLanguage" onchange="changeAuthLanguage()">
 
-                <option value="ru">
-                    🇷🇺 Русский
-                </option>
-
-                <option value="en">
-                    🇬🇧 English
-                </option>
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
 
             </select>
 
@@ -1956,6 +2054,14 @@ async function removeFriend(login) {
 
                 </div>
 
+                <div id="replyPreview" class="reply-preview hidden">
+                    <div class="reply-preview-main">
+                        <div class="reply-preview-title">↩️ Ответ на сообщение</div>
+                        <div id="replyPreviewText" class="reply-preview-text"></div>
+                    </div>
+                    <button type="button" class="reply-preview-close" onclick="clearReplyTarget()">✕</button>
+                </div>
+
                 <input
                     id="messageInput"
                     type="text"
@@ -2027,15 +2133,7 @@ async function removeFriend(login) {
 
         </div>
 
-        <select id="registerLanguage">
-
-            <option value="ru">
-                🇷🇺 Русский
-            </option>
-
-            <option value="en">
-                🇬🇧 English
-            </option>
+        <select id="registerLanguage"><option value="ru">Русский</option><option value="en">English</option>
 
         </select>
 
@@ -2242,9 +2340,10 @@ async function removeFriend(login) {
                     id="profilePhoto"
                     type="hidden"
                     aria-hidden="true"
+                    tabindex="-1"
                 >
 
-                <label class="file-upload-btn">
+                <label class="file-upload-btn" for="profilePhotoFile">
                     📷 Выбрать фото с устройства
 
                     <input
@@ -3267,6 +3366,7 @@ let currentChannel = null;
 let socket = null;
 
 let peerConnection = null;
+let pendingIceCandidates = [];
 let localStream = null;
 
 let incomingCall = null;
@@ -3328,6 +3428,15 @@ let siteLanguage =
     "ru";
 
 
+function updateLanguageFlag(select) {
+    if (!select) return;
+    const isEnglish = select.value === "en";
+    const svg = isEnglish
+        ? "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'%3E%3Crect width='60' height='40' fill='%23fff'/%3E%3Cpath d='M0 0h6l54 36v4h-6L0 4zM54 0h6v4L6 40H0v-4z' fill='%23C8102E'/%3E%3Cpath d='M25 0h10v40H25zM0 15h60v10H0z' fill='%23fff'/%3E%3Cpath d='M27 0h6v40h-6zM0 17h60v6H0z' fill='%23C8102E'/%3E%3C/svg%3E"
+        : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 20'%3E%3Crect width='30' height='20' fill='%23fff'/%3E%3Crect y='6.67' width='30' height='6.67' fill='%230039A6'/%3E%3Crect y='13.33' width='30' height='6.67' fill='%23D52B1E'/%3E%3C/svg%3E";
+    select.style.backgroundImage = `url("${svg}")`;
+}
+
 function applyLanguage() {
 
     const t =
@@ -3369,6 +3478,10 @@ function applyLanguage() {
 
     $("registerLanguage").value =
         siteLanguage;
+
+    updateLanguageFlag($("siteLanguage"));
+    updateLanguageFlag($("authLanguage"));
+    updateLanguageFlag($("registerLanguage"));
 }
 
 
@@ -4878,18 +4991,14 @@ function handleSocketMessage(data) {
 
     if (data.type === "ice-candidate") {
 
-        if (
-            peerConnection &&
-            data.candidate
-        ) {
+        if (!data.candidate) return;
 
-            peerConnection
-                .addIceCandidate(
-                    new RTCIceCandidate(
-                        data.candidate
-                    )
-                )
-                .catch(() => {});
+        if (peerConnection?.remoteDescription) {
+            peerConnection.addIceCandidate(
+                new RTCIceCandidate(data.candidate)
+            ).catch(() => {});
+        } else {
+            pendingIceCandidates.push(data.candidate);
         }
 
         return;
@@ -5029,9 +5138,17 @@ function personHTML(user,count=0) {
             ? `<img src="${escapeHTML(user.photo)}">`
             : "👤";
 
+    const onlineDot =
+        user.login !== currentUser?.login
+            ? `<span class="online-dot ${user.online ? "online" : ""}" title="${user.online ? "В сети" : "Не в сети"}"></span>`
+            : "";
+
     return `
-        <div class="avatar">
-            ${avatar}
+        <div class="avatar-wrap">
+            <div class="avatar">
+                ${avatar}
+            </div>
+            ${onlineDot}
         </div>
 
         <div class="person-info">
@@ -5053,7 +5170,7 @@ function personHTML(user,count=0) {
 
         ${count > 0 ? `<div class="chat-count">${count}</div>` : ""}
         ${user.login !== currentUser?.login ? `
-            <div class="friend-actions" onclick="event.stopPropagation()">
+            <div class="friend-actions" onclick="event.stopPropagation()" onpointerdown="event.stopPropagation()">
                 ${user.isFriend ? `<button onclick="removeFriend('${escapeHTML(user.login)}')">Удалить</button>` :
                   user.hasIncomingFriendRequest ? `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','accept')">Принять</button><button onclick="changeFriendRequest('${escapeHTML(user.login)}','decline')">Отклонить</button>` :
                   user.hasOutgoingFriendRequest ? `<button onclick="changeFriendRequest('${escapeHTML(user.login)}','cancel')">Отменить</button>` :
@@ -5512,14 +5629,16 @@ function openCurrentChatProfile() {
    USERS
 ========================================================= */
 
-async function getUser(login) {
+async function getUser(login, viewer = currentUser?.login || "") {
 
     try {
 
         const response =
             await fetch(
                 "/profile?login=" +
-                encodeURIComponent(login)
+                encodeURIComponent(login) +
+                "&viewer=" +
+                encodeURIComponent(viewer)
             );
 
         const data =
@@ -5641,16 +5760,26 @@ async function loadMessages(forceScroll=false) {
                         }
                     );
 
+                const replySource = message.replyTo;
+                const replyText = replySource
+                    ? String(replySource.text || "").replace(/\s+/g, " ").trim()
+                    : "";
+                const replyHtml = replySource
+                    ? `<div class="message-reply">↩️ ${escapeHTML(replyText.length > 70 ? replyText.slice(0,70) + "..." : replyText)}</div>`
+                    : "";
+
                 if (message.type === "voice" && message.audio) {
                     bubble.innerHTML = `
+                        ${replyHtml}
                         <div class="voice-message">
-                            <button type="button" onclick="playVoiceMessage(this, '${escapeHTML(message.audio)}')">▶️</button>
+                            <button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button>
                             <div class="voice-wave"></div>
                             <span>${formatVoiceDuration(message.duration)}</span>
                         </div>
                         <div class="message-time">${time}</div>`;
                 } else {
                     bubble.innerHTML = `
+                        ${replyHtml}
                         <div>${escapeHTML(message.text || "")}</div>
                         <div class="message-time">${time}</div>`;
                 }
@@ -5675,6 +5804,29 @@ async function loadMessages(forceScroll=false) {
     } catch {}
 }
 
+
+let replyTargetMessage = null;
+function clearReplyTarget() {
+    replyTargetMessage = null;
+    $("replyPreview")?.classList.add("hidden");
+    if ($("replyPreviewText")) $("replyPreviewText").textContent = "";
+}
+function setReplyTarget(message) {
+    if (!message) return;
+    replyTargetMessage = {
+        id: message.id,
+        from: message.from,
+        text: message.text || (message.type === "voice" ? "🎙️ Голосовое сообщение" : "")
+    };
+    const preview = $("replyPreview");
+    const text = $("replyPreviewText");
+    if (preview && text) {
+        const compact = replyTargetMessage.text.replace(/\s+/g, " ").trim();
+        text.textContent = compact.length > 70 ? compact.slice(0,70) + "..." : compact;
+        preview.classList.remove("hidden");
+    }
+    $("messageInput")?.focus();
+}
 
 let selectedMessageForAction = null;
 let typingStopTimer = null;
@@ -5716,12 +5868,26 @@ async function copySelectedMessage() {
     try { await navigator.clipboard.writeText(text); } catch {}
 }
 
-function replySelectedMessage() {
+async function replySelectedMessage() {
+    const info = selectedMessageForAction;
     closeMessageActions();
-    if (!selectedMessageForAction) return;
-    const text = selectedMessageForAction.bubble.querySelector("div")?.textContent || "";
-    $("messageInput").value = "↩️ " + text.slice(0, 140) + "\n";
-    $("messageInput").focus();
+    if (!info) return;
+    let message = null;
+    try {
+        const r = await fetch("/message?messageId=" + encodeURIComponent(info.id));
+        if (r.ok) {
+            const d = await r.json();
+            if (d.success) message = d.message;
+        }
+    } catch {}
+    if (!message) {
+        message = {
+            id: info.id,
+            from: info.from,
+            text: info.bubble.querySelector(".message-reply + div, .message > div")?.textContent || ""
+        };
+    }
+    setReplyTarget(message);
 }
 
 async function forwardSelectedMessage() {
@@ -5770,6 +5936,12 @@ function formatVoiceDuration(seconds) {
     return Math.floor(n / 60).toString().padStart(2,"0") + ":" + Math.floor(n % 60).toString().padStart(2,"0");
 }
 
+document.addEventListener("click", event => {
+    const btn = event.target.closest(".voice-play-btn");
+    if (!btn) return;
+    playVoiceMessage(btn, btn.dataset.audio || "");
+});
+
 function playVoiceMessage(button, audioData) {
     document.querySelectorAll("audio.vibe-voice-audio").forEach(a => { a.pause(); a.remove(); });
     const audio = document.createElement("audio");
@@ -5786,8 +5958,16 @@ async function toggleVoiceRecording() {
     if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { alert("Запись голосовых не поддерживается этим браузером"); return; }
     try {
         voiceStream = await navigator.mediaDevices.getUserMedia({audio:true});
-        const preferred = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find(t => MediaRecorder.isTypeSupported(t));
-        mediaRecorder = new MediaRecorder(voiceStream, preferred ? {mimeType:preferred} : undefined);
+        const preferred = [
+            "audio/webm;codecs=opus",
+            "audio/webm",
+            "audio/ogg;codecs=opus",
+            "audio/mp4"
+        ].find(t => typeof MediaRecorder.isTypeSupported === "function" && MediaRecorder.isTypeSupported(t));
+        mediaRecorder = new MediaRecorder(
+            voiceStream,
+            preferred ? {mimeType: preferred} : undefined
+        );
         voiceChunks = []; voiceRecordingStartedAt = Date.now();
         $("voiceRecordButton").classList.add("recording"); $("voiceRecordButton").textContent = "⏹️";
         sendSocket({type:"recording-voice",to:currentChat,recording:true});
@@ -5810,8 +5990,14 @@ async function toggleVoiceRecording() {
             reader.readAsDataURL(blob);
             mediaRecorder = null;
         };
-        mediaRecorder.start();
-    } catch { alert("Не удалось получить доступ к микрофону"); }
+        mediaRecorder.start(250);
+    } catch (e) {
+        voiceStream?.getTracks().forEach(t => t.stop());
+        voiceStream = null;
+        $("voiceRecordButton")?.classList.remove("recording");
+        $("voiceRecordButton").textContent = "🎙️";
+        alert("Не удалось получить доступ к микрофону. Проверь разрешение микрофона для сайта.");
+    }
 }
 
 /* =========================================================
@@ -5847,6 +6033,12 @@ async function sendMessage() {
     */
 
     input.value = "";
+    const replyTo = replyTargetMessage ? {
+        id: replyTargetMessage.id,
+        from: replyTargetMessage.from,
+        text: replyTargetMessage.text
+    } : null;
+    clearReplyTarget();
 
     try {
 
@@ -5869,7 +6061,8 @@ async function sendMessage() {
                             to:
                                 currentChat,
 
-                            text
+                            text,
+                            replyTo
                         })
                 }
             );
@@ -5895,6 +6088,7 @@ async function sendMessage() {
         } else {
 
             input.value = text;
+            if (replyTo) setReplyTarget(replyTo);
 
             alert(
                 data.message ||
@@ -5905,6 +6099,7 @@ async function sendMessage() {
     } catch {
 
         input.value = text;
+        if (replyTo) setReplyTarget(replyTo);
 
         alert(
             "Ошибка отправки сообщения"
@@ -7690,6 +7885,7 @@ async function startCall(video) {
         return;
     }
 
+    pendingIceCandidates = [];
     activeCallUser =
         currentChat;
 
@@ -7819,6 +8015,13 @@ function createPeerConnection() {
                 startCallTimer();
             }
         };
+
+    pc.oniceconnectionstatechange = () => {
+        const state = pc.iceConnectionState;
+        if (state === "checking") $("callStatus").textContent = "Поиск соединения...";
+        if (state === "connected" || state === "completed") $("callStatus").textContent = "Соединение установлено";
+        if (state === "failed") $("callStatus").textContent = "Не удалось установить соединение";
+    };
 
     pc.onconnectionstatechange =
         () => {
@@ -7978,6 +8181,7 @@ async function acceptIncomingCall() {
         return;
     }
 
+    pendingIceCandidates = [];
     activeCallUser =
         incomingCall.from;
 
@@ -8019,6 +8223,12 @@ async function acceptIncomingCall() {
                     incomingCall.offer
                 )
             );
+
+        for (const candidate of pendingIceCandidates.splice(0)) {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch {}
+        }
 
         const answer =
             await peerConnection
@@ -8097,6 +8307,12 @@ async function handleAnswer(answer) {
                     answer
                 )
             );
+
+        for (const candidate of pendingIceCandidates.splice(0)) {
+            try {
+                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch {}
+        }
 
         startCallTimer();
 

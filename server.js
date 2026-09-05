@@ -2564,6 +2564,17 @@ const server =
                             : "";
 
 
+                    const replyTo =
+                        body.replyTo &&
+                        typeof body.replyTo === "object" &&
+                        body.replyTo.id
+                            ? {
+                                id: String(body.replyTo.id),
+                                from: String(body.replyTo.from || ""),
+                                text: String(body.replyTo.text || "").slice(0, 500)
+                              }
+                            : null;
+
                     const duration =
                         type === "voice" &&
                         Number.isFinite(
@@ -2682,6 +2693,8 @@ const server =
                                 ? duration
                                 : 0,
 
+                        replyTo,
+
                         time:
                             new Date()
                                 .toISOString()
@@ -2740,7 +2753,7 @@ const server =
                     const messageId = String(body.messageId || "").trim();
                     const mode = body.mode === "all" ? "all" : "self";
                     const messages = readJSON(MESSAGES_FILE);
-                    const message = messages.find(m => m.id === messageId);
+                    const message = messages.find(m => String(m.id) === messageId);
 
                     if (!login || !message) {
                         sendJSON(res, { success:false, message:"Сообщение не найдено" }, 404);
@@ -2764,7 +2777,10 @@ const server =
                     }
 
                     saveJSON(MESSAGES_FILE, messages);
-                    sendToUser(message.from === login ? message.to : message.from, {
+                    sendToUser(message.from, {
+                        type:"message-deleted", messageId, mode, by:login
+                    });
+                    sendToUser(message.to, {
                         type:"message-deleted", messageId, mode, by:login
                     });
                     sendJSON(res, { success:true, message });
