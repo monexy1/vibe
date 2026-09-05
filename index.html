@@ -2291,7 +2291,7 @@ button:active { transform:scale(.98); }
     flex-wrap:nowrap;
 }
 .composer-tools{
-    display:flex;
+    display:none;
     align-items:center;
     gap:5px;
     flex:0 0 auto;
@@ -3301,14 +3301,49 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     <button type="button" class="reply-preview-close" onclick="clearReplyTarget()">✕</button>
                 </div>
 
-                <button id="mobileAttachmentButton" class="composer-icon-btn mobile-attachment-button" type="button" onclick="toggleMobileAttachmentMenu()" title="Вложения" aria-label="Вложения">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21.4 11.6 12 21a6 6 0 0 1-8.5-8.5l9.9-9.9a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.4-8.4"/></svg>
+                <button id="mobileAttachmentButton" class="composer-icon-btn mobile-attachment-button" type="button"
+        onclick="toggleMobileAttachmentMenu()" title="Вложения" aria-label="Вложения">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M21.4 11.6 12 21a6 6 0 0 1-8.5-8.5l9.9-9.9a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.4-8.4"/>
+    </svg>
 </button>
-<div id="mobileAttachmentMenu" class="mobile-attachment-menu hidden">
-    <button type="button" onclick="pickChatAttachment('photo'); closeMobileAttachmentMenu()"><span>▧</span> Фото</button>
-    <button type="button" onclick="pickChatAttachment('video'); closeMobileAttachmentMenu()"><span>▶</span> Видео</button>
-    <button type="button" onclick="pickChatAttachment('gif'); closeMobileAttachmentMenu()"><span>GIF</span> GIF</button>
-    <button type="button" onclick="openPollComposer(); closeMobileAttachmentMenu()"><span>☷</span> Опрос</button>
+
+<div id="mobileAttachmentMenu" class="mobile-attachment-menu hidden" role="menu" aria-label="Вложения">
+    <button type="button" class="attachment-menu-item"
+            onclick="pickChatAttachment('media'); closeMobileAttachmentMenu()" role="menuitem">
+        <span class="attachment-menu-icon">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/>
+                <circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L9 18"/>
+            </svg>
+        </span>
+        <span class="attachment-menu-label">Фото или видео</span>
+    </button>
+
+    <button type="button" class="attachment-menu-item"
+            onclick="pickChatAttachment('file'); closeMobileAttachmentMenu()" role="menuitem">
+        <span class="attachment-menu-icon">
+            <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/>
+                <path d="M14 3v5h5M9 13h6M9 17h6"/>
+            </svg>
+        </span>
+        <span class="attachment-menu-label">Документ</span>
+    </button>
+
+    <button type="button" class="attachment-menu-item"
+            onclick="pickChatAttachment('gif'); closeMobileAttachmentMenu()" role="menuitem">
+        <span class="attachment-menu-icon attachment-menu-gif">GIF</span>
+        <span class="attachment-menu-label">GIF</span>
+    </button>
+
+    <button type="button" class="attachment-menu-item"
+            onclick="openPollComposer(); closeMobileAttachmentMenu()" role="menuitem">
+        <span class="attachment-menu-icon">
+            <svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/>
+                <path d="M8 9h8M8 12h5M8 15h7"/>
+            </svg>
+        </span>
+        <span class="attachment-menu-label">Опрос</span>
+    </button>
 </div>
 
 <div class="composer-tools">
@@ -7566,7 +7601,12 @@ function pickChatAttachment(kind) {
     if (!currentUser || (!currentChat && !currentGroup && !currentChannel)) return;
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = kind === "photo" ? "image/*" : (kind === "gif" ? "image/gif" : "*/*");
+    input.accept =
+        kind === "media" ? "image/*,video/*" :
+        kind === "photo" ? "image/*" :
+        kind === "video" ? "video/*" :
+        kind === "gif" ? "image/gif" :
+        "*/*";
     input.onchange = () => {
         const file = input.files?.[0];
         if (!file) return;
@@ -7619,6 +7659,15 @@ function toggleMobileAttachmentMenu() {
 function closeMobileAttachmentMenu() {
     $("mobileAttachmentMenu")?.classList.add("hidden");
 }
+
+document.addEventListener("click", function(event) {
+    const menu = $("mobileAttachmentMenu");
+    const button = $("mobileAttachmentButton");
+    if (!menu || menu.classList.contains("hidden")) return;
+    if (!menu.contains(event.target) && !button?.contains(event.target)) {
+        menu.classList.add("hidden");
+    }
+});
 function openPollComposer() {
     $("pollQuestion").value = "";
     $("pollOption1").value = "";
@@ -11399,21 +11448,101 @@ autoLogin();
 }
 
 
-/* MOBILE HELP + ATTACHMENT MENU */
-.mobile-attachment-button { display:none !important; }
+/* ===== ATTACHMENT MENU =====
+   One compact Telegram-like list on desktop and mobile.
+*/
+.mobile-attachment-button {
+    display:inline-flex !important;
+    flex:0 0 48px;
+    width:48px !important;
+    height:48px !important;
+    min-width:48px !important;
+    min-height:48px !important;
+    padding:0 !important;
+    align-items:center;
+    justify-content:center;
+    border-radius:13px !important;
+    position:relative;
+    z-index:1201;
+}
+.mobile-attachment-button svg {
+    width:23px !important;
+    height:23px !important;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.9;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
 .mobile-attachment-menu {
-    position:absolute; left:8px; bottom:calc(100% + 9px); z-index:1200;
-    display:grid; grid-template-columns:repeat(2,minmax(105px,1fr)); gap:7px;
-    padding:9px; border:1px solid var(--border); border-radius:15px;
-    background:var(--panel); box-shadow:0 14px 35px rgba(0,0,0,.35);
+    position:absolute;
+    left:9px;
+    bottom:calc(100% + 8px);
+    z-index:1200;
+    width:258px;
+    max-width:calc(100vw - 18px);
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding:7px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--panel);
+    box-shadow:0 18px 45px rgba(0,0,0,.45);
 }
 .mobile-attachment-menu.hidden { display:none !important; }
-.mobile-attachment-menu button {
-    border:0; border-radius:11px; background:var(--panel2); color:var(--text);
-    min-height:42px; padding:8px 11px; font-weight:700; cursor:pointer;
+
+.attachment-menu-item {
+    width:100%;
+    min-height:47px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:7px 10px;
+    border:0;
+    border-radius:11px;
+    background:transparent;
+    color:var(--text);
+    text-align:left;
+    font:inherit;
+    font-weight:600;
+    cursor:pointer;
+    transition:background .15s ease;
 }
-.mobile-attachment-menu button:hover { background:var(--accent); }
-.mobile-attachment-menu button span { color:var(--accent); margin-right:5px; }
+.attachment-menu-item:hover,
+.attachment-menu-item:focus-visible {
+    background:var(--panel2);
+    outline:none;
+}
+.attachment-menu-icon {
+    width:27px;
+    height:27px;
+    min-width:27px;
+    display:grid;
+    place-items:center;
+    color:var(--text);
+}
+.attachment-menu-icon svg {
+    width:21px;
+    height:21px;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.7;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+.attachment-menu-gif {
+    color:var(--accent);
+    font-size:12px;
+    font-weight:900;
+    border:1px solid currentColor;
+    border-radius:6px;
+}
+.attachment-menu-label {
+    min-width:0;
+    font-size:14px;
+    line-height:1.2;
+}
 .vibe-poll-card input { width:100%; margin-top:9px; }
 .vibe-poll-actions { display:flex; gap:9px; margin-top:14px; }
 .vibe-poll-actions button { flex:1; min-height:44px; border:0; border-radius:12px; font-weight:800; cursor:pointer; }
@@ -11430,24 +11559,42 @@ autoLogin();
     .mobile-help-button .vibe-icon, .mobile-help-button .vibe-icon svg {
         width:24px !important; height:24px !important;
     }
-    .composer { position:relative; gap:7px; padding:8px 9px !important; }
+    .composer {
+        position:relative;
+        gap:7px;
+        padding:8px 9px !important;
+    }
     .composer-tools { display:none !important; }
-    .mobile-attachment-button {
-        display:inline-flex !important; flex:0 0 48px; width:48px !important; height:48px !important;
-        padding:0 !important; align-items:center; justify-content:center;
+    #messageInput {
+        min-width:0 !important;
+        flex:1 1 auto !important;
+        width:auto !important;
     }
-    .mobile-attachment-button svg {
-        width:22px !important; height:22px !important; fill:none; stroke:currentColor;
-        stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+    .mobile-attachment-menu {
+        left:0;
+        bottom:calc(100% + 7px);
+        width:270px;
+        max-width:calc(100vw - 16px);
     }
-    #messageInput { min-width:0 !important; flex:1 1 auto !important; width:auto !important; }
 }
 @media (max-width:420px) {
     .mobile-help-button {
         width:46px !important; height:46px !important; min-width:46px !important; max-width:46px !important;
         min-height:46px !important; max-height:46px !important;
     }
-    .mobile-attachment-button { flex-basis:44px; width:44px !important; height:44px !important; }
-    .mobile-attachment-menu { grid-template-columns:1fr 1fr; min-width:220px; }
+    .mobile-attachment-button {
+        flex-basis:44px;
+        width:44px !important;
+        height:44px !important;
+        min-width:44px !important;
+        min-height:44px !important;
+    }
+    .mobile-attachment-menu {
+        width:252px;
+    }
+    .attachment-menu-item {
+        min-height:44px;
+        padding:6px 9px;
+    }
 }
 </style>
