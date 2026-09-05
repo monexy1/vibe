@@ -261,6 +261,10 @@ function normalizeChannel(channel) {
         channel.settings.public = true;
     }
 
+    if (typeof channel.discussionGroupId !== "string") {
+        channel.discussionGroupId = "";
+    }
+
     if (channel.discussionGroupId) {
         channel.settings.comments = true;
     }
@@ -3058,15 +3062,21 @@ const server =
                 if (req.method === "GET" && pathname === "/group-messages") {
                     const groupId = String(url.searchParams.get("groupId") || "");
                     const login = String(url.searchParams.get("login") || "");
+                    const postId = String(url.searchParams.get("postId") || "");
                     const group = getGroups().find(g => g.id === groupId);
                     if (!group || !group.members.includes(login)) {
                         sendJSON(res, [], 403);
                         return;
                     }
                     const messages = readJSON(MESSAGES_FILE)
-                        .filter(m => m.groupId === groupId && !(
-                            Array.isArray(m.deletedFor) && m.deletedFor.includes(login)
-                        ) && !m.deletedForAll);
+                        .filter(m =>
+                            m.groupId === groupId &&
+                            (!postId || String(m.postId || "") === postId) &&
+                            !(
+                                Array.isArray(m.deletedFor) && m.deletedFor.includes(login)
+                            ) &&
+                            !m.deletedForAll
+                        );
                     sendJSON(res, messages);
                     return;
                 }
@@ -3087,6 +3097,7 @@ const server =
                     const attachment = type === "attachment" && typeof body.attachment === "string" ? body.attachment : "";
                     const attachmentType = type === "attachment" ? String(body.attachmentType || "").slice(0,120) : "";
                     const attachmentName = type === "attachment" ? String(body.attachmentName || "Файл").slice(0,180) : "";
+                    const postId = String(body.postId || "").trim().slice(0,180);
                     const replyTo = body.replyTo && body.replyTo.id ? {
                         id:String(body.replyTo.id),
                         from:String(body.replyTo.from || ""),
@@ -3107,6 +3118,7 @@ const server =
                         id:Date.now().toString() + Math.random().toString(36).slice(2),
                         from, to:"",
                         groupId, type,
+                        postId,
                         text:type === "text" ? text : "",
                         audio:type === "voice" ? audio : "",
                         duration:type === "voice" ? duration : 0,
@@ -3520,6 +3532,60 @@ const server =
 
                         channel.settings.comments =
                             body.comments;
+                    }
+
+                    if (typeof body.public === "boolean") {
+                        channel.settings.public = body.public;
+                    }
+
+                    /*
+                     * A discussion group is optional. Only a group in which
+                     * the channel owner is an admin can be attached.
+                     * One group may belong to only one channel.
+                     */
+                    if (typeof body.discussionGroupId === "string") {
+                        const discussionGroupId = body.discussionGroupId.trim();
+
+                        if (!discussionGroupId) {
+                            channel.discussionGroupId = "";
+                        } else {
+                            const groups = getGroups();
+                            const group = groups.find(g => g.id === discussionGroupId);
+
+                            if (!group) {
+                                sendJSON(res, {
+                                    success:false,
+                                    message:"Группа не найдена или недоступна"
+                                }, 404);
+                                return;
+                            }
+
+                            normalizeGroup(group);
+
+                            if (!group.admins.includes(channel.owner)) {
+                                sendJSON(res, {
+                                    success:false,
+                                    message:"Владелец канала должен быть администратором этой группы"
+                                }, 403);
+                                return;
+                            }
+
+                            const alreadyLinked = channels.find(other =>
+                                other.id !== channel.id &&
+                                other.discussionGroupId === discussionGroupId
+                            );
+
+                            if (alreadyLinked) {
+                                sendJSON(res, {
+                                    success:false,
+                                    message:"Эта группа уже подключена к другому каналу"
+                                }, 409);
+                                return;
+                            }
+
+                            channel.discussionGroupId = discussionGroupId;
+                            channel.settings.comments = true;
+                        }
                     }
 
 

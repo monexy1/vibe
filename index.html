@@ -1024,6 +1024,119 @@ select:focus {
     object-fit: cover;
 }
 
+
+/* =========================================================
+   CHANNEL SETTINGS — VIBE
+========================================================= */
+.channel-settings-card{
+    width:min(620px,100%);
+    max-height:min(92dvh,820px);
+    padding:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+}
+.channel-settings-hero{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    padding:20px 22px 18px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,rgba(139,92,246,.10),rgba(139,92,246,.02));
+}
+.channel-settings-title-wrap{display:flex;align-items:center;gap:13px;min-width:0}
+.channel-settings-icon{
+    width:48px;height:48px;min-width:48px;border-radius:15px;
+    display:grid;place-items:center;background:var(--accent);color:#fff;
+    box-shadow:0 8px 24px rgba(139,92,246,.28);
+}
+.channel-settings-icon svg{width:23px;height:23px}
+.channel-settings-title{font-size:20px;font-weight:900;line-height:1.15}
+.channel-settings-subtitle{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.35}
+.channel-settings-section{
+    margin:14px 18px 0;
+    padding:15px;
+    border:1px solid var(--border);
+    border-radius:17px;
+    background:rgba(255,255,255,.018);
+}
+.channel-settings-section-title{
+    display:flex;align-items:center;gap:9px;
+    font-size:14px;font-weight:900;margin-bottom:14px;
+}
+.channel-settings-section-icon{
+    width:32px;height:32px;border-radius:10px;
+    display:grid;place-items:center;background:rgba(139,92,246,.14);color:var(--accent);
+}
+.channel-settings-section-icon svg{width:17px;height:17px}
+.channel-settings-photo-row{display:flex;gap:14px;align-items:center;margin-bottom:15px}
+.channel-settings-photo{width:78px;height:78px;min-width:78px;margin:0;border-radius:20px;font-size:25px}
+.channel-settings-photo-info{min-width:0;display:flex;flex-direction:column;gap:4px}
+.channel-settings-photo-info b{font-size:13px}
+.channel-settings-photo-info span{font-size:11px;color:var(--muted);line-height:1.35}
+.channel-settings-upload{
+    width:max-content;display:inline-flex;align-items:center;gap:7px;
+    margin-top:5px;padding:8px 11px;border-radius:10px;
+    background:rgba(139,92,246,.14);color:var(--text);cursor:pointer;
+    font-size:12px;font-weight:800;border:1px solid rgba(139,92,246,.20);
+}
+.channel-settings-upload:hover{background:rgba(139,92,246,.22)}
+.channel-settings-upload svg{width:15px;height:15px}
+.channel-settings-label{
+    display:block;margin:11px 0 6px;color:var(--muted);font-size:11px;font-weight:700;
+}
+.channel-settings-input{
+    width:100%!important;margin:0!important;padding:11px 12px!important;
+    border:1px solid var(--border)!important;border-radius:12px!important;
+    background:var(--panel2)!important;color:var(--text)!important;
+    outline:none!important;
+}
+.channel-settings-textarea{min-height:82px!important;resize:vertical!important}
+.channel-setting-switch{
+    display:flex;align-items:center;gap:11px;
+    padding:11px 0;border-top:1px solid rgba(255,255,255,.045);
+    cursor:pointer;
+}
+.channel-setting-switch:first-of-type{border-top:0}
+.channel-setting-switch input{position:absolute;opacity:0;pointer-events:none}
+.channel-setting-switch-ui{
+    width:40px;height:23px;min-width:40px;border-radius:999px;
+    background:rgba(255,255,255,.10);border:1px solid var(--border);
+    position:relative;transition:.18s;
+}
+.channel-setting-switch-ui:after{
+    content:"";position:absolute;left:3px;top:3px;width:15px;height:15px;border-radius:50%;
+    background:#fff;transition:.18s;box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+.channel-setting-switch input:checked + .channel-setting-switch-ui{background:var(--accent);border-color:transparent}
+.channel-setting-switch input:checked + .channel-setting-switch-ui:after{transform:translateX(17px)}
+.channel-setting-switch b{display:block;font-size:12px}
+.channel-setting-switch small{display:block;margin-top:3px;color:var(--muted);font-size:10px;line-height:1.3}
+.channel-discussion-hint{
+    padding:10px 11px;margin-bottom:12px;border-radius:11px;
+    background:rgba(139,92,246,.08);color:var(--muted);font-size:11px;line-height:1.45;
+}
+.channel-discussion-status{
+    display:flex;align-items:center;gap:6px;margin-top:8px;
+    color:var(--muted);font-size:10px;
+}
+.channel-discussion-status.connected{color:#86efac}
+.channel-discussion-status svg{width:14px;height:14px}
+.channel-readonly-note{
+    margin:14px 18px 0;padding:10px 12px;border-radius:12px;
+    background:rgba(139,92,246,.08);color:var(--muted);font-size:11px;
+}
+.channel-settings-actions{padding:14px 18px 18px;margin-top:0}
+.channel-settings-actions button{min-height:43px;font-weight:800}
+@media(max-width:560px){
+    .channel-settings-card{max-height:calc(100dvh - 20px);border-radius:18px}
+    .channel-settings-hero{padding:16px}
+    .channel-settings-section{margin:11px 12px 0;padding:13px}
+    .channel-settings-actions{padding:12px}
+    .channel-settings-photo{width:68px;height:68px;min-width:68px}
+    .channel-settings-title{font-size:18px}
+}
+
 /* =========================================================
    FRIEND REQUESTS / PRIVACY
 ========================================================= */
@@ -3877,89 +3990,115 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 ========================================================= -->
 
 <div id="channelProfileModal" class="modal hidden">
+    <div class="modal-card channel-settings-card">
 
-    <div class="modal-card">
+        <div class="channel-settings-hero">
+            <div class="channel-settings-title-wrap">
+                <div class="channel-settings-icon">◈</div>
+                <div>
+                    <div class="channel-settings-title">Настройки канала</div>
+                    <div class="channel-settings-subtitle">Управляй названием, оформлением и комментариями</div>
+                </div>
+            </div>
+            <button class="modal-close" onclick="closeModal('channelProfileModal')" aria-label="Закрыть">✕</button>
+        </div>
 
-        <div class="modal-header">
-
-            <div class="modal-title">
-                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span> Профиль канала
+        <div class="channel-settings-section">
+            <div class="channel-settings-section-title">
+                <span class="channel-settings-section-icon">✎</span>
+                Основная информация
             </div>
 
-            <button
-                class="modal-close"
-                onclick="closeModal('channelProfileModal')"
-            >
-                ✕
-            </button>
-
-        </div>
-
-        <div id="channelProfilePreview" class="profile-photo">
-            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span>
-        </div>
-
-        <input
-            id="channelProfileName"
-            placeholder="Название канала"
-        >
-
-        <textarea
-            id="channelProfileDescription"
-            placeholder="Описание канала"
-        ></textarea>
-
-        <input id="channelProfilePhoto" type="hidden" value="">
-        <label class="file-upload-btn channel-photo-upload" for="channelProfilePhotoFile">
-            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3.2 3 2.2-2.2 3.4 3.4"/></svg></span> Выбрать фото канала
-            <input id="channelProfilePhotoFile" type="file" accept="image/*" hidden>
-        </label>
-
-        <div
-            id="channelProfileOwnerSettings"
-            class="hidden setting-section"
-        >
-
-            <div class="setting-title">
-                Настройки владельца
+            <div class="channel-settings-photo-row">
+                <div id="channelProfilePreview" class="profile-photo channel-settings-photo">
+                    ◈
+                </div>
+                <div class="channel-settings-photo-info">
+                    <b>Аватар канала</b>
+                    <span>Показывается в списке каналов и возле публикаций.</span>
+                    <input id="channelProfilePhoto" type="hidden" value="">
+                    <label class="channel-settings-upload" for="channelProfilePhotoFile">
+                        ▣ Выбрать фото
+                        <input id="channelProfilePhotoFile" type="file" accept="image/*" hidden>
+                    </label>
+                </div>
             </div>
 
-            <label style="display:flex;gap:8px;align-items:center;">
+            <label class="channel-settings-label">Название</label>
+            <input id="channelProfileName" class="channel-settings-input" placeholder="Название канала">
 
-                <input
-                    id="channelNotifications"
-                    type="checkbox"
-                    style="width:auto;margin:0;"
-                >
-
-                Уведомления о публикациях
-
-            </label>
-
+            <label class="channel-settings-label">Описание</label>
+            <textarea id="channelProfileDescription" class="channel-settings-input channel-settings-textarea" placeholder="Короткое описание канала"></textarea>
         </div>
 
-        <div class="modal-actions">
+        <div id="channelProfileOwnerSettings" class="hidden">
+            <div class="channel-settings-section">
+                <div class="channel-settings-section-title">
+                    <span class="channel-settings-section-icon">⚙</span>
+                    Настройки канала
+                </div>
 
-            <button
-                class="primary"
-                id="channelProfileSaveButton"
-                onclick="saveChannelProfile()"
-            >
-                Сохранить
-            </button>
+                <label class="channel-setting-switch">
+                    <input id="channelNotifications" type="checkbox">
+                    <span class="channel-setting-switch-ui"></span>
+                    <span>
+                        <b>Уведомления о публикациях</b>
+                        <small>Получать уведомления о новых постах.</small>
+                    </span>
+                </label>
 
-            <button
-                onclick="closeModal('channelProfileModal')"
-            >
-                Закрыть
-            </button>
+                <label class="channel-setting-switch">
+                    <input id="channelCommentsEnabled" type="checkbox">
+                    <span class="channel-setting-switch-ui"></span>
+                    <span>
+                        <b>Комментарии к публикациям</b>
+                        <small>Разрешить подписчикам обсуждать посты.</small>
+                    </span>
+                </label>
 
+                <label class="channel-setting-switch">
+                    <input id="channelPublic" type="checkbox">
+                    <span class="channel-setting-switch-ui"></span>
+                    <span>
+                        <b>Публичный канал</b>
+                        <small>Канал можно найти через обычный поиск.</small>
+                    </span>
+                </label>
+            </div>
+
+            <div class="channel-settings-section channel-discussion-section">
+                <div class="channel-settings-section-title">
+                    <span class="channel-settings-section-icon">◌</span>
+                    Обсуждение публикаций
+                </div>
+
+                <div class="channel-discussion-hint">
+                    Подключи группу — её участники смогут обсуждать публикации канала. У каждого поста будет своё обсуждение.
+                </div>
+
+                <label class="channel-settings-label">Группа для комментариев</label>
+                <select id="channelDiscussionGroup" class="channel-settings-input">
+                    <option value="">Не подключена</option>
+                </select>
+
+                <div id="channelDiscussionStatus" class="channel-discussion-status">
+                    ⓘ Группа не подключена
+                </div>
+            </div>
         </div>
 
+        <div id="channelProfileReadOnly" class="channel-readonly-note hidden">
+            ⓘ Только владелец канала может изменять эти настройки.
+        </div>
+
+        <div class="modal-actions channel-settings-actions">
+            <button class="primary" id="channelProfileSaveButton" onclick="saveChannelProfile()">
+                Сохранить изменения
+            </button>
+            <button onclick="closeModal('channelProfileModal')">Закрыть</button>
+        </div>
     </div>
-
 </div>
-
 
 <!-- =========================================================
      INCOMING CALL
@@ -8623,185 +8762,165 @@ function updateChannelHeader() {
    CHANNEL PROFILE
 ========================================================= */
 
-function openChannelProfile() {
+async function loadChannelDiscussionGroups(selectedId="") {
+    const select = $("channelDiscussionGroup");
+    if (!select || !currentUser) return;
 
-    if (!currentChannel) {
-        return;
+    select.innerHTML = `<option value="">Не подключена</option>`;
+
+    try {
+        const response = await fetch("/groups?login=" + encodeURIComponent(currentUser.login));
+        const list = response.ok ? await response.json() : [];
+
+        const adminGroups = list.filter(group =>
+            Array.isArray(group.admins) && group.admins.includes(currentUser.login)
+        );
+
+        if (!adminGroups.length && !selectedId) {
+            const option = document.createElement("option");
+            option.value = "";
+            option.textContent = "Нет доступных групп";
+            option.disabled = true;
+            select.appendChild(option);
+        }
+
+        adminGroups.forEach(group => {
+            const option = document.createElement("option");
+            option.value = group.id;
+            option.textContent = group.name + " · " + Number(group.memberCount || group.members?.length || 0) + " участников";
+            select.appendChild(option);
+        });
+
+        if (selectedId && !adminGroups.some(group => group.id === selectedId)) {
+            const option = document.createElement("option");
+            option.value = selectedId;
+            option.textContent = "Подключённая группа";
+            option.selected = true;
+            select.appendChild(option);
+        }
+
+        select.value = selectedId || "";
+        updateChannelDiscussionStatus();
+    } catch {
+        select.value = "";
+        updateChannelDiscussionStatus();
     }
-
-    const own =
-        currentChannel.owner ===
-        currentUser.login;
-
-    $("channelProfileName").value =
-        currentChannel.name || "";
-
-    $("channelProfileDescription").value =
-        currentChannel.description || "";
-
-    $("channelProfilePhoto").value =
-        currentChannel.photo || "";
-
-    const channelProfileFile = $("channelProfilePhotoFile");
-    if (channelProfileFile) channelProfileFile.value = "";
-
-    $("channelProfilePreview")
-        .innerHTML =
-        currentChannel.photo
-            ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
-            : vibeIcon("channel");
-
-    $("channelProfileName").disabled =
-        !own;
-
-    $("channelProfileDescription").disabled =
-        !own;
-
-    $("channelProfilePhoto").disabled =
-        !own;
-
-    $("channelProfileOwnerSettings")
-        .classList
-        .toggle(
-            "hidden",
-            !own
-        );
-
-    $("channelProfileSaveButton")
-        .classList
-        .toggle(
-            "hidden",
-            !own
-        );
-
-    $("channelProfileModal")
-        .classList
-        .remove("hidden");
 }
 
+function updateChannelDiscussionStatus() {
+    const select = $("channelDiscussionGroup");
+    const status = $("channelDiscussionStatus");
+    if (!select || !status) return;
 
-$("channelProfilePhoto")
-    .addEventListener(
-        "input",
-        event => {
+    const groupId = select.value;
+    if (!groupId) {
+        status.classList.remove("connected");
+        status.innerHTML = `${vibeIcon("info")} Группа не подключена`;
+        return;
+    }
 
-            const photo =
-                event.target.value.trim();
+    const name = select.options[select.selectedIndex]?.textContent || "Группа";
+    status.classList.add("connected");
+    status.innerHTML = `${vibeIcon("check")} Подключена: ${escapeHTML(name)}`;
+}
 
-            $("channelProfilePreview")
-                .innerHTML =
-                photo
-                    ? `<img src="${escapeHTML(photo)}">`
-                    : vibeIcon("channel");
-        }
-    );
+async function openChannelProfile() {
+    if (!currentChannel || !currentUser) return;
 
+    const own = currentChannel.owner === currentUser.login;
+
+    $("channelProfileName").value = currentChannel.name || "";
+    $("channelProfileDescription").value = currentChannel.description || "";
+    $("channelProfilePhoto").value = currentChannel.photo || "";
+
+    const file = $("channelProfilePhotoFile");
+    if (file) file.value = "";
+
+    $("channelProfilePreview").innerHTML = currentChannel.photo
+        ? `<img src="${escapeHTML(currentChannel.photo)}" alt="Аватар канала">`
+        : vibeIcon("channel");
+
+    $("channelProfileName").disabled = !own;
+    $("channelProfileDescription").disabled = !own;
+
+    const ownerSettings = $("channelProfileOwnerSettings");
+    ownerSettings?.classList.toggle("hidden", !own);
+
+    $("channelProfileSaveButton")?.classList.toggle("hidden", !own);
+    $("channelProfileReadOnly")?.classList.toggle("hidden", own);
+
+    if ($("channelNotifications")) {
+        $("channelNotifications").checked = currentChannel.settings?.notifications !== false;
+    }
+    if ($("channelCommentsEnabled")) {
+        $("channelCommentsEnabled").checked = currentChannel.settings?.comments !== false;
+    }
+    if ($("channelPublic")) {
+        $("channelPublic").checked = currentChannel.settings?.public !== false;
+    }
+
+    await loadChannelDiscussionGroups(currentChannel.discussionGroupId || "");
+
+    $("channelProfileModal").classList.remove("hidden");
+}
+
+$("channelDiscussionGroup")?.addEventListener("change", updateChannelDiscussionStatus);
 
 async function saveChannelProfile() {
+    if (!currentChannel || !currentUser) return;
 
-    if (!currentChannel) {
+    if (currentChannel.owner !== currentUser.login) {
+        alert("Только владелец может изменять канал");
         return;
     }
 
-    if (
-        currentChannel.owner !==
-        currentUser.login
-    ) {
-        return;
-    }
-
-    const name =
-        $("channelProfileName")
-            .value
-            .trim();
-
-    const description =
-        $("channelProfileDescription")
-            .value
-            .trim();
-
-    const photo =
-        $("channelProfilePhoto")
-            .value
-            .trim();
-
-    const notifications =
-        $("channelNotifications")
-            .checked;
+    const name = $("channelProfileName").value.trim();
+    const description = $("channelProfileDescription").value.trim();
+    const photo = $("channelProfilePhoto").value.trim();
+    const notifications = $("channelNotifications")?.checked !== false;
+    const comments = $("channelCommentsEnabled")?.checked !== false;
+    const isPublic = $("channelPublic")?.checked !== false;
+    const discussionGroupId = $("channelDiscussionGroup")?.value || "";
 
     if (!name) {
-
-        alert(
-            "Введите название канала"
-        );
-
+        alert("Введите название канала");
         return;
     }
 
     try {
+        const response = await fetch("/channel-update", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                channelId:currentChannel.id,
+                owner:currentUser.login,
+                name,
+                description,
+                photo,
+                notifications,
+                comments,
+                public:isPublic,
+                discussionGroupId
+            })
+        });
 
-        const response =
-            await fetch(
-                "/channel-update",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-
-                            channelId:
-                                currentChannel.id,
-
-                            owner:
-                                currentUser.login,
-
-                            name,
-
-                            description,
-
-                            photo,
-
-                            notifications
-                        })
-                }
-            );
-
-        const data =
-            await response.json();
+        const data = await response.json();
 
         if (!data.success) {
-
-            alert(data.message);
-
+            alert(data.message || "Не удалось сохранить настройки");
             return;
         }
 
-        currentChannel =
-            data.channel;
-
-        closeModal(
-            "channelProfileModal"
-        );
+        currentChannel = data.channel;
+        closeModal("channelProfileModal");
 
         updateChannelHeader();
-
         await loadChannels();
-
         await loadChannelPosts(false);
-
     } catch {
-
-        alert(
-            "Ошибка сохранения канала"
-        );
+        alert("Ошибка сохранения канала");
     }
 }
-
 
 /* =========================================================
    MARK CHANNEL READ
