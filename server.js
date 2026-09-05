@@ -225,6 +225,10 @@ function normalizeChannel(channel) {
 
     if (typeof channel.photo !== "string") {
         channel.photo = "";
+    } else {
+        channel.photo = channel.photo.trim();
+        // Channel avatars are stored as compressed data URLs. Never keep an accidentally huge value.
+        if (channel.photo.length > 1_200_000) channel.photo = "";
     }
 
     if (
@@ -3302,7 +3306,7 @@ const server =
                         settings: {
 
                             comments:
-                                true,
+                                false,
 
                             notifications:
                                 true
@@ -3317,6 +3321,7 @@ const server =
                     channels.push(channel);
 
 
+                    normalizeChannel(channel);
                     saveJSON(
                         CHANNELS_FILE,
                         channels
@@ -3429,8 +3434,8 @@ const server =
                         "string"
                     ) {
 
-                        channel.photo =
-                            body.photo.trim();
+                        const nextPhoto = body.photo.trim();
+                        channel.photo = nextPhoto.length <= 1_200_000 ? nextPhoto : "";
                     }
 
 
@@ -3659,10 +3664,6 @@ const server =
 
                                         ...post,
 
-                                        views:Number(post.views||0),
-
-                                        comments:Array.isArray(post.comments) ? post.comments : [],
-
                                         authorUser:
                                             author
                                                 ? publicUser(
@@ -3692,52 +3693,6 @@ const server =
                     return;
                 }
 
-
-
-                /* =====================================================
-                   CHANNEL POST VIEW
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-post-view") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "");
-                    const postId = String(body.postId || "");
-                    const viewer = String(body.viewer || "");
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = posts.find(p => p.id === postId && p.channelId === channelId);
-                    if (!post) { sendJSON(res,{success:false,message:"Публикация не найдена"},404); return; }
-                    post.views = Number(post.views || 0);
-                    if (!post.viewers) post.viewers = [];
-                    if (viewer && !post.viewers.includes(viewer)) { post.viewers.push(viewer); post.views++; }
-                    saveJSON(CHANNEL_POSTS_FILE, posts);
-                    sendJSON(res,{success:true,views:post.views});
-                    return;
-                }
-
-                /* =====================================================
-                   CHANNEL COMMENT
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-comment") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "");
-                    const postId = String(body.postId || "");
-                    const author = String(body.author || "");
-                    const text = String(body.text || "").trim().slice(0,300);
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => c.id === channelId);
-                    if (!channel) { sendJSON(res,{success:false,message:"Канал не найден"},404); return; }
-                    if (channel.settings && channel.settings.comments === false) { sendJSON(res,{success:false,message:"Комментарии отключены"},403); return; }
-                    if (!findUser(author) || !text) { sendJSON(res,{success:false,message:"Комментарий пустой"},400); return; }
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = posts.find(p => p.id === postId && p.channelId === channelId);
-                    if (!post) { sendJSON(res,{success:false,message:"Публикация не найдена"},404); return; }
-                    if (!Array.isArray(post.comments)) post.comments=[];
-                    const u=findUser(author);
-                    const comment={id:Date.now().toString()+Math.random().toString(36).slice(2),author,name:u.name||author,text,time:new Date().toISOString()};
-                    post.comments.push(comment);
-                    saveJSON(CHANNEL_POSTS_FILE,posts);
-                    sendJSON(res,{success:true,comment});
-                    return;
-                }
 
                 /* =====================================================
                    CHANNEL POST
