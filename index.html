@@ -778,6 +778,60 @@ select:focus {
     background: var(--panel2);
 }
 
+
+/* =========================================================
+   CHAT SELECTION STATE
+   The chat header and composer are shown only after a chat,
+   group or channel has actually been selected.
+========================================================= */
+.chat.no-selection > .chat-head,
+.chat.no-selection > .composer {
+    display: none !important;
+}
+
+.chat.no-selection .messages {
+    padding: 0;
+}
+
+.chat.no-selection .welcome-panel {
+    min-height: 100%;
+}
+
+/* Channel publications are a left-aligned feed, not centered cards. */
+.channel-post {
+    width: min(820px, 100%);
+    margin: 0 0 12px 0 !important;
+    align-self: flex-start;
+}
+
+.channel-posts {
+    display: block !important;
+}
+
+.channel-banner {
+    display: none !important;
+}
+
+.channel-empty-state {
+    display: none !important;
+}
+
+/* Keep channel media clean; never paint a giant black media box. */
+.channel-post-media,
+.channel-post-media img,
+.channel-post-media video {
+    background: transparent !important;
+}
+
+/* =========================================================
+   HARD SAFETY: no accidental decorative black overlay in chat
+========================================================= */
+.chat > .profile-view-background,
+.chat > .profile-hero,
+.chat > .background-preview {
+    display: none !important;
+}
+
 /* =========================================================
    CHANNEL
 ========================================================= */
@@ -4626,6 +4680,29 @@ function isMobileView() {
 }
 
 
+
+function setChatSelectionState(selected) {
+    const chat = document.querySelector(".chat");
+    if (!chat) return;
+
+    chat.classList.toggle("no-selection", !selected);
+
+    if (!selected) {
+        $("chatName").textContent = "Выберите чат";
+        $("chatStatus").textContent = "Vibe";
+        $("chatAvatar").innerHTML = vibeIcon("comment");
+        $("callButtons")?.classList.add("hidden");
+        $("emojiPicker")?.classList.add("hidden");
+
+        const input = $("messageInput");
+        if (input) {
+            input.value = "";
+            input.disabled = true;
+            input.placeholder = translations[siteLanguage]?.write || "Написать сообщение...";
+        }
+    }
+}
+
 function openMobileChatView() {
 
     if (!isMobileView()) {
@@ -4639,6 +4716,8 @@ function openMobileChatView() {
 
 
 function closeMobileChat() {
+
+    setChatSelectionState(false);
 
     $("app")
         .classList
@@ -5250,6 +5329,9 @@ function showApp() {
         .classList
         .remove("booting");
 
+    // Nothing is selected immediately after login.
+    setChatSelectionState(false);
+
     connectSocket();
 
     loadFriends();
@@ -5299,6 +5381,7 @@ function logout() {
     currentUser = null;
     currentChat = "";
     currentChannel = null;
+    setChatSelectionState(false);
 
     chats = [];
     friends = [];
@@ -6326,6 +6409,7 @@ async function markChatAsRead(login) {
 
 async function openChat(login) {
 
+    setChatSelectionState(true);
     currentGroup = null;
     currentChannel = null;
     currentChat = login;
@@ -7823,6 +7907,7 @@ async function createGroup() {
 }
 
 async function openGroup(group) {
+    setChatSelectionState(true);
     currentGroup = group;
     currentChannel = null;
     $("attachmentPhotoButton")?.classList.remove("hidden");
@@ -8371,6 +8456,7 @@ async function createChannel() {
 
 async function openChannel(channel) {
 
+    setChatSelectionState(true);
     currentGroup = null;
     currentChannel = channel;
 
@@ -8508,6 +8594,9 @@ function openChannelProfile() {
 
     $("channelProfilePhoto").value =
         currentChannel.photo || "";
+
+    const channelProfileFile = $("channelProfilePhotoFile");
+    if (channelProfileFile) channelProfileFile.value = "";
 
     $("channelProfilePreview")
         .innerHTML =
@@ -8706,111 +8795,234 @@ async function markChannelAsRead(channelId) {
 ========================================================= */
 
 async function loadChannelPosts(forceScroll=true) {
-    if(!currentChannel) return;
-    try{
-        const response=await fetch("/channel-posts?channelId="+encodeURIComponent(currentChannel.id)+"&viewer="+encodeURIComponent(currentUser?.login||""));
-        if(!response.ok) return;
-        const posts=await response.json();
-        const box=$("messages");
-        const wasNearBottom=box.scrollHeight-box.scrollTop-box.clientHeight<100;
-        box.innerHTML="";
-        const banner=document.createElement("div");
-        banner.className="channel-banner";
-        banner.innerHTML=`<b><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 4l8 3.5-8 3-8-3Z"/><path d="M4 7.5V16l8 4 8-4V7.5M8 10v5.5M16 10v5.5"/></svg> ${escapeHTML(currentChannel.name)}</b><span>${escapeHTML(currentChannel.description||"Канал Vibe")}</span>`;
-        box.appendChild(banner);
-        if(!posts.length){const empty=document.createElement("div");empty.className="empty-chat";empty.style.height="calc(100% - 70px)";empty.textContent="В канале пока нет публикаций";box.appendChild(empty);return;}
+    if (!currentChannel) return;
+
+    try {
+        const response = await fetch(
+            "/channel-posts?channelId=" +
+            encodeURIComponent(currentChannel.id) +
+            "&viewer=" +
+            encodeURIComponent(currentUser?.login || "")
+        );
+
+        if (!response.ok) return;
+
+        const posts = await response.json();
+        const box = $("messages");
+        const wasNearBottom =
+            box.scrollHeight - box.scrollTop - box.clientHeight < 100;
+
+        box.innerHTML = "";
+
+        /*
+         * A newly created channel is intentionally empty.
+         * Do not create a fake/banner publication here.
+         */
+        if (!posts.length) {
+            box.scrollTop = 0;
+            return;
+        }
+
         let previousDateKey = "";
 
         const formatChannelDate = time => {
             const date = new Date(time);
             if (Number.isNaN(date.getTime())) return "";
+
             return new Intl.DateTimeFormat(
                 siteLanguage === "en" ? "en-GB" : "ru-RU",
-                {day:"numeric", month:"long"}
+                {
+                    day: "numeric",
+                    month: "long"
+                }
             ).format(date);
         };
 
-        posts.forEach(post=>{
+        posts.forEach(post => {
             const postDate = new Date(post.time);
+
             const dateKey = Number.isNaN(postDate.getTime())
                 ? ""
-                : `${postDate.getFullYear()}-${postDate.getMonth()+1}-${postDate.getDate()}`;
+                : `${postDate.getFullYear()}-${postDate.getMonth() + 1}-${postDate.getDate()}`;
 
             if (dateKey && dateKey !== previousDateKey) {
                 const divider = document.createElement("div");
                 divider.className = "channel-date-divider";
-                divider.innerHTML = `<span>${escapeHTML(formatChannelDate(post.time))}</span>`;
+                divider.innerHTML =
+                    `<span>${escapeHTML(formatChannelDate(post.time))}</span>`;
                 box.appendChild(divider);
                 previousDateKey = dateKey;
             }
 
-            const item=document.createElement("article");
-            item.className="channel-post";
+            const item = document.createElement("article");
+            item.className = "channel-post";
 
-            // A channel publication belongs to the channel, not to the
-            // personal account that pressed Publish.
-            const channelAvatar=currentChannel.photo
+            /*
+             * Publications belong visually to the channel.
+             * The owner login is never shown as the publication author.
+             */
+            const channelAvatar = currentChannel.photo
                 ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
                 : vibeIcon("channel");
 
-            let mediaHTML="";
-            if(post.media){
-                if((post.mediaType||"").startsWith("image")) {
-                    mediaHTML=`<div class="channel-post-media"><img src="${escapeHTML(post.media)}" alt=""></div>`;
-                } else if((post.mediaType||"").startsWith("video")) {
-                    mediaHTML=`<div class="channel-post-media"><video src="${escapeHTML(post.media)}" controls playsinline></video></div>`;
+            let mediaHTML = "";
+
+            if (post.media) {
+                if ((post.mediaType || "").startsWith("image")) {
+                    mediaHTML =
+                        `<div class="channel-post-media">
+                            <img src="${escapeHTML(post.media)}" alt="">
+                         </div>`;
+                } else if ((post.mediaType || "").startsWith("video")) {
+                    mediaHTML =
+                        `<div class="channel-post-media">
+                            <video src="${escapeHTML(post.media)}" controls playsinline></video>
+                         </div>`;
                 }
             }
 
-            const comments=Array.isArray(post.comments)?post.comments:[];
+            const comments =
+                Array.isArray(post.comments) ? post.comments : [];
 
-            item.innerHTML=`
-              <div class="channel-post-head">
-                <div class="avatar">${channelAvatar}</div>
-                <div class="channel-post-head-main">
-                  <div class="channel-post-channel-name">${escapeHTML(currentChannel.name)}</div>
+            const timeText = Number.isNaN(postDate.getTime())
+                ? ""
+                : postDate.toLocaleTimeString(
+                    siteLanguage === "en" ? "en-GB" : "ru-RU",
+                    { hour: "2-digit", minute: "2-digit" }
+                );
+
+            item.innerHTML = `
+                <div class="channel-post-head">
+                    <div class="avatar">${channelAvatar}</div>
+
+                    <div class="channel-post-head-main">
+                        <div class="channel-post-channel-name">
+                            ${escapeHTML(currentChannel.name || "Канал")}
+                        </div>
+                    </div>
                 </div>
-              </div>
-              <div class="channel-post-body">
-                ${post.text?`<div class="channel-post-text">${escapeHTML(post.text)}</div>`:""}
-                ${mediaHTML}
-              </div>
-              <div class="channel-post-meta">
-                <span>${postDate.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span>
-                <span class="channel-post-views">${vibeIcon("eye")} ${Number(post.views||0)}</span>
-                <button type="button" class="channel-comment-toggle">
-                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 7.8 7.8 0 0 1-3.6-.9L4 20l1.5-4.2A7.4 7.4 0 0 1 5 11.5 7.5 7.5 0 0 1 12.5 4 7.5 7.5 0 0 1 20 11.5Z"/></svg>
-                  ${comments.length}
-                </button>
-              </div>
-              <div class="channel-comments hidden"></div>`;
 
-            const commentsBox=item.querySelector(".channel-comments");
-            const renderComments=()=>{
-                commentsBox.innerHTML=comments.map(c=>`<div class="channel-comment"><b>${escapeHTML(c.name||c.author)}</b>${escapeHTML(c.text||"")}</div>`).join("")
-                    +`<div class="channel-comment-form"><input maxlength="300" placeholder="Написать комментарий…"><button type="button">Отправить</button></div>`;
+                <div class="channel-post-body">
+                    ${post.text
+                        ? `<div class="channel-post-text">${escapeHTML(post.text)}</div>`
+                        : ""}
+                    ${mediaHTML}
+                </div>
+
+                <div class="channel-post-meta">
+                    <span>${escapeHTML(timeText)}</span>
+
+                    <span class="channel-post-views">
+                        ${vibeIcon("eye")}
+                        ${Number(post.views || 0)}
+                    </span>
+
+                    <button
+                        type="button"
+                        class="channel-comment-toggle"
+                        title="Комментарии"
+                    >
+                        ${vibeIcon("comment")}
+                        ${comments.length}
+                    </button>
+                </div>
+
+                <div class="channel-comments hidden"></div>
+            `;
+
+            const commentsBox =
+                item.querySelector(".channel-comments");
+
+            const renderComments = () => {
+                commentsBox.innerHTML =
+                    comments.map(comment =>
+                        `<div class="channel-comment">
+                            <b>${escapeHTML(comment.name || comment.author || "")}</b>
+                            ${escapeHTML(comment.text || "")}
+                         </div>`
+                    ).join("") +
+                    `
+                    <div class="channel-comment-form">
+                        <input
+                            maxlength="300"
+                            placeholder="Написать комментарий…"
+                        >
+                        <button type="button">Отправить</button>
+                    </div>
+                    `;
+
                 commentsBox.classList.toggle("hidden");
-                const input=commentsBox.querySelector("input");
-                const btn=commentsBox.querySelector("button");
-                if(!input||!btn)return;
-                btn.onclick=async()=>{
-                    const text=input.value.trim();
-                    if(!text)return;
-                    const r=await fetch("/channel-comment",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,postId:post.id,author:currentUser.login,text})});
-                    const d=await r.json();
-                    if(d.success){comments.push(d.comment);renderComments();}
-                    else alert(d.message||"Не удалось отправить комментарий");
+
+                const input = commentsBox.querySelector("input");
+                const button = commentsBox.querySelector("button");
+
+                if (!input || !button) return;
+
+                button.onclick = async () => {
+                    const text = input.value.trim();
+                    if (!text) return;
+
+                    try {
+                        const response = await fetch(
+                            "/channel-comment",
+                            {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "application/json"
+                                },
+                                body: JSON.stringify({
+                                    channelId: currentChannel.id,
+                                    postId: post.id,
+                                    author: currentUser.login,
+                                    text
+                                })
+                            }
+                        );
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            comments.push(data.comment);
+                            renderComments();
+                        } else {
+                            alert(
+                                data.message ||
+                                "Не удалось отправить комментарий"
+                            );
+                        }
+                    } catch {
+                        alert("Ошибка отправки комментария");
+                    }
                 };
             };
 
-            item.querySelector(".channel-comment-toggle").onclick=renderComments;
+            item.querySelector(".channel-comment-toggle").onclick =
+                renderComments;
+
             box.appendChild(item);
 
-            fetch("/channel-post-view",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,postId:post.id,viewer:currentUser?.login||""})}).catch(()=>{});
-            if(post.views===undefined) post.views=0;
+            fetch(
+                "/channel-post-view",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        channelId: currentChannel.id,
+                        postId: post.id,
+                        viewer: currentUser?.login || ""
+                    })
+                }
+            ).catch(() => {});
+
+            if (post.views === undefined) post.views = 0;
         });
-        if(forceScroll||wasNearBottom) box.scrollTop=box.scrollHeight;
-    }catch{}
+
+        if (forceScroll || wasNearBottom) {
+            box.scrollTop = box.scrollHeight;
+        }
+    } catch {}
 }
 
 /* =========================================================

@@ -230,7 +230,10 @@ function normalizeChannel(channel) {
     // Never keep a truncated/invalid data URL as a channel avatar.
     if (channel.photo && channel.photo.startsWith("data:image/")) {
         const comma = channel.photo.indexOf(",");
-        if (comma < 0 || channel.photo.length < comma + 20) {
+        if (
+            comma < 0 ||
+            channel.photo.length < comma + 20
+        ) {
             channel.photo = "";
         }
     }
