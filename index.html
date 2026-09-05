@@ -1954,6 +1954,7 @@ async function removeFriend(login) {
 
                 <button
                     class="icon-btn"
+                    id="topProfileButton"
                     onclick="openProfile()"
                     title="Профиль"
                 >
@@ -1968,6 +1969,7 @@ async function removeFriend(login) {
 
                 <button
                     class="icon-btn"
+                    id="topSettingsButton"
                     onclick="openSettings()"
                     title="Настройки"
                     style="margin-left:auto;"
@@ -2694,7 +2696,7 @@ async function removeFriend(login) {
 
                     <button
                         class="settings-action"
-                        onclick="closeModal('settingsModal');openProfile();"
+                        onclick="closeModal('settingsModal'); openProfile();"
                     >
                         Открыть
                     </button>
@@ -2862,7 +2864,7 @@ async function removeFriend(login) {
                 <button
                     class="primary"
                     style="margin-top:12px;"
-                    onclick="closeModal('settingsModal');openProfile();"
+                    onclick="closeModal('settingsModal'); openProfile();"
                 >
                     Настроить профиль
                 </button>
@@ -4617,6 +4619,13 @@ function switchSettingsTab(tab) {
 function openSettings() {
 
     if (!currentUser) {
+        try {
+            const saved = localStorage.getItem("vibeUser");
+            if (saved) currentUser = JSON.parse(saved);
+        } catch {}
+    }
+
+    if (!currentUser) {
         return;
     }
 
@@ -4628,8 +4637,17 @@ function openSettings() {
     $("settingsLogin").textContent =
         "@" + currentUser.login;
 
-    $("siteLanguage").value = siteLanguage;
-    $("siteLanguage").title = siteLanguage === "ru" ? "🇷🇺 Русский" : "🇬🇧 English";
+    $("siteLanguage").value =
+        siteLanguage;
+
+    $("siteLanguage").title =
+        siteLanguage === "ru"
+            ? "🇷🇺 Русский"
+            : "🇬🇧 English";
+
+    updateLanguageFlag(
+        $("siteLanguage")
+    );
 
     $("siteTheme").value =
         extra.theme ||
@@ -6138,26 +6156,21 @@ async function sendMessage() {
 async function openProfile() {
 
     if (!currentUser) {
+        try {
+            const saved = localStorage.getItem("vibeUser");
+            if (saved) currentUser = JSON.parse(saved);
+        } catch {}
+    }
+
+    if (!currentUser) {
         return;
     }
 
     profileViewLogin =
         currentUser.login;
 
-    const user =
-        await getUser(
-            currentUser.login
-        );
-
-    if (!user) {
-        return;
-    }
-
-    const extra =
-        getExtraProfile(
-            currentUser.login
-        );
-
+    /* Open the editor immediately. A failed /profile request must
+       not make the button appear to do nothing. */
     $("profileModalTitle")
         .textContent =
         "Мой профиль";
@@ -6173,6 +6186,28 @@ async function openProfile() {
     $("profileEditContent")
         .classList
         .remove("hidden");
+
+    $("profileButtons")
+        .classList
+        .remove("hidden");
+
+    $("profileModal")
+        .classList
+        .remove("hidden");
+
+    let user =
+        await getUser(
+            currentUser.login
+        );
+
+    if (!user) {
+        user = currentUser;
+    }
+
+    const extra =
+        getExtraProfile(
+            currentUser.login
+        );
 
     $("profileName").value =
         user.name || "";
@@ -6218,7 +6253,6 @@ async function openProfile() {
 
     refreshPrivacyUI(user);
 
-
     selectedProfileBackground =
         user.background ||
         extra.background ||
@@ -6227,7 +6261,6 @@ async function openProfile() {
     selectProfileBackground(
         selectedProfileBackground
     );
-
 
     $("profileName").disabled = false;
     $("profileAbout").disabled = false;
@@ -6252,11 +6285,8 @@ async function openProfile() {
         user.photo || "";
 
     updateProfilePreview();
-
-    $("profileModal")
-        .classList
-        .remove("hidden");
 }
+
 
 
 async function updateProfileViewActions(user) {
@@ -8664,6 +8694,22 @@ document.querySelectorAll(".modal")
         }
     );
 
+
+/* Reliable top navigation handlers */
+document.addEventListener("click", function(event) {
+    const profileButton = event.target.closest("#topProfileButton");
+    if (profileButton) {
+        event.preventDefault();
+        openProfile();
+        return;
+    }
+
+    const settingsButton = event.target.closest("#topSettingsButton");
+    if (settingsButton) {
+        event.preventDefault();
+        openSettings();
+    }
+}, true);
 
 /* =========================================================
    INITIALIZATION

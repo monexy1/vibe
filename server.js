@@ -516,8 +516,12 @@ function publicUser(
             ),
 
         isContact:
-            Array.isArray(user.contacts) &&
-            user.contacts.includes(viewerLogin),
+            (() => {
+                const viewer = findUser(viewerLogin);
+                if (!viewer) return false;
+                normalizeUser(viewer);
+                return viewer.contacts.includes(user.login);
+            })(),
 
         isBlockedByViewer:
             (() => {
