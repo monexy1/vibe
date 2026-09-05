@@ -81,10 +81,7 @@ body {
     color: var(--text);
 }
 
-body.booting > #authScreen,
-body.booting > #app {
-    display: none !important;
-}
+
 
 button,
 input,
@@ -1921,14 +1918,14 @@ async function removeFriend(login) {
 
 </head>
 
-<body class="booting">
+<body>
 
 
 <!-- =========================================================
      AUTH
 ========================================================= -->
 
-<div id="authScreen" class="auth hidden">
+<div id="authScreen" class="auth">
 
     <div class="auth-card">
 
