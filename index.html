@@ -9224,32 +9224,25 @@ async function loadChannelPosts(forceScroll=true) {
                         ${Number(post.views || 0)}
                     </span>
 
-                    ${(
-                        currentChannel &&
-                        currentChannel.discussionGroupId &&
-                        currentChannel.settings?.comments !== false
-                    ) ? `
                     <button
                         type="button"
                         class="channel-comment-toggle"
-                        data-post-id="${escapeHTML(post.id || "")}"
                         title="Комментарии"
-                        aria-label="Открыть комментарии"
+                        data-comment-post-id="${escapeHTML(String(post.id || ""))}"
                     >
                         ${vibeIcon("comment")}
                         ${comments.length}
                     </button>
-                    ` : ""}
                 </div>
 
             `;
 
             const commentButton = item.querySelector(".channel-comment-toggle");
             if (commentButton) {
-                commentButton.onclick = (event) => {
+                commentButton.onclick = event => {
                     event.preventDefault();
                     event.stopPropagation();
-                    openChannelDiscussion(post);
+                    openChannelDiscussionById(post.id);
                 };
             }
 
@@ -9283,82 +9276,63 @@ async function loadChannelPosts(forceScroll=true) {
 /* =========================================================
    CHANNEL DISCUSSION / COMMENTS SCREEN
 ========================================================= */
-// Fallback handler for dynamically rendered channel posts.
-// The button also receives a direct onclick handler above.
+// Fallback delegated handler for dynamically rendered channel posts.
 document.addEventListener("click", event => {
     const button = event.target.closest?.(".channel-comment-toggle");
     if (!button) return;
-
-    const postId = button.dataset?.postId ||
-        button.closest(".channel-post")?.dataset?.postId;
-
+    const postId = button.dataset.commentPostId;
     if (!postId) return;
-
-    const post = (window.__vibeChannelPosts || []).find(
-        p => String(p.id) === String(postId)
-    );
-
-    if (!post) return;
-
     event.preventDefault();
     event.stopPropagation();
-    openChannelDiscussion(post);
+    openChannelDiscussionById(postId);
 });
 
 let channelDiscussionPost = null;
 let channelDiscussionAttachment = null;
 
+// Open the discussion by post id. This is intentionally independent from
+// the current DOM tree, because channel posts are frequently re-rendered.
+function openChannelDiscussionById(postId) {
+    if (!postId) return;
+
+    const posts = Array.isArray(window.__vibeChannelPosts)
+        ? window.__vibeChannelPosts
+        : [];
+
+    const post = posts.find(p => String(p.id) === String(postId));
+    if (!post || !currentChannel) return;
+
+    openChannelDiscussion(post);
+}
+
+
 function openChannelDiscussion(post) {
-    if (!post || !currentChannel || !currentUser) return;
-
-    // A discussion screen is available only for channels with a linked group.
-    if (
-        !currentChannel.discussionGroupId ||
-        currentChannel.settings?.comments === false
-    ) {
-        return;
-    }
-
-    const screen = $("channelDiscussionScreen");
-    if (!screen) {
-        console.error("Vibe: channelDiscussionScreen is missing");
-        return;
-    }
+    if (!post || !currentChannel) return;
 
     channelDiscussionPost = post;
     channelDiscussionAttachment = null;
 
-    const title = $("channelDiscussionTitle");
-    const subtitle = $("channelDiscussionSubtitle");
-    const avatar = $("channelDiscussionHeaderAvatar");
+    const screen = $("channelDiscussionScreen");
+    if (!screen) return;
 
-    if (title) title.textContent = currentChannel.name || "Обсуждение";
-    if (subtitle) subtitle.textContent = "Комментарии";
+    $("channelDiscussionTitle").textContent = currentChannel.name || "Обсуждение";
+    $("channelDiscussionSubtitle").textContent = "Комментарии";
+    const avatar = $("channelDiscussionHeaderAvatar");
     if (avatar) {
         avatar.innerHTML = currentChannel.photo
             ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
             : vibeIcon("channel");
     }
 
-    const input = $("channelDiscussionInput");
-    if (input) input.value = "";
-
+    $("channelDiscussionInput").value = "";
     $("channelDiscussionEmoji")?.classList.add("hidden");
     $("channelDiscussionAttachmentPreview")?.classList.add("hidden");
 
     renderChannelDiscussionMessages();
-
-    // Show the discussion as a real full-screen Vibe tab.
     screen.classList.remove("hidden");
     screen.setAttribute("aria-hidden", "false");
     document.body.classList.add("channel-discussion-open");
-    document.body.style.overflow = "hidden";
-
-    requestAnimationFrame(() => {
-        const messages = $("channelDiscussionMessages");
-        if (messages) messages.scrollTop = messages.scrollHeight;
-        $("channelDiscussionInput")?.focus();
-    });
+    setTimeout(() => $("channelDiscussionInput")?.focus(), 80);
 }
 
 function closeChannelDiscussion() {
@@ -9425,17 +9399,9 @@ function renderChannelDiscussionMessages() {
         const row = document.createElement("div");
         row.className = "channel-discussion-message" + (mine ? " mine" : "");
 
-        const commentUser = (groups || [])
-            .flatMap(group => Array.isArray(group.members) ? group.members : [])
-            .find(member => {
-                const login = typeof member === "string" ? member : member?.login;
-                return String(login || "") === String(comment.author || "");
-            });
-
-        const avatarPhoto = commentUser?.photo || "";
-        const avatar = avatarPhoto
-            ? `<img src="${escapeHTML(avatarPhoto)}" alt="">`
-            : vibeIcon("user");
+        const avatar = currentChannel?.photo
+            ? `<img src="${escapeHTML(currentChannel.photo)}" alt="">`
+            : vibeIcon("channel");
 
         let media = "";
         const mediaType = String(comment.mediaType || "");
