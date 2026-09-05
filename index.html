@@ -2149,7 +2149,7 @@ button:active { transform:scale(.98); }
                 <input
                     id="searchInput"
                     type="text"
-                    placeholder="Поиск людей..."
+                    placeholder="Поиск людей, групп и каналов..."
                     oninput="searchUsers()"
                 >
 
@@ -2214,10 +2214,7 @@ button:active { transform:scale(.98); }
 
             <div id="messages" class="messages">
 
-                <div class="empty-chat">
-                    Выберите чат,<br>
-                    чтобы начать общение
-                </div>
+                <div class="vibe-home"><div class="vibe-home-logo">V</div><h2>Добро пожаловать в Vibe</h2><p>Найди пользователя, группу или канал через поиск.</p><div class="vibe-home-grid"><button onclick="openHelp()">Инструкция</button><button onclick="openSettings()">Настройки</button></div></div>
 
             </div>
 
@@ -4610,7 +4607,9 @@ async function autoLogin() {
             }
         }
 
-    } catch {}
+    } catch {
+        try { const cached=localStorage.getItem("vibeUser"); const u=cached?JSON.parse(cached):null; if(u&&u.login){currentUser=u;showApp();return;} } catch {}
+    }
 
     const savedLogin =
         localStorage.getItem(
@@ -9008,6 +9007,28 @@ autoLogin();
 
 </script>
 
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+window.openHelp=function(){let m=$("vibeHelpModal");if(!m){m=document.createElement("div");m.id="vibeHelpModal";m.className="modal";m.innerHTML='<div class="modal-card"><div class="modal-header"><div class="modal-title">Инструкция Vibe</div><button class="modal-close" onclick="this.closest(\'.modal\').classList.add(\'hidden\')">✕</button></div><div class="help-list"><div><b>Чаты</b><span>Ищи людей через поиск.</span></div><div><b>Группы</b><span>Общий чат для участников.</span></div><div><b>Каналы</b><span>Публикации, опросы и GIF.</span></div><div><b>Обои</b><span>Выбери фон прямо в чате.</span></div><div><b>Настройки</b><span>Тема и приватность находятся там.</span></div></div></div>';document.body.appendChild(m)}m.classList.remove("hidden")};
+window.openChatWallpaperPicker=function(){if(!window.currentChat)return;const i=document.createElement("input");i.type="file";i.accept="image/*";i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{localStorage.setItem("vibeWallpaper_"+currentChat,r.result);applyChatWallpaper(currentChat)};r.readAsDataURL(f)};i.click()};
+window.applyChatWallpaper=function(login){const c=document.querySelector("main.chat"),s=localStorage.getItem("vibeWallpaper_"+login);if(!c)return;if(s){c.style.setProperty("--chat-wallpaper",'url("'+s+'")');c.classList.add("wallpaper-active")}else c.classList.remove("wallpaper-active")};
+const sb=$("topSettingsButton");if(sb&&!$("vibeHelpButton")){const b=document.createElement("button");b.id="vibeHelpButton";b.className="icon-btn";b.textContent="?";b.title="Инструкция";b.onclick=openHelp;sb.parentElement.insertBefore(b,sb)}
+const cb=$("callButtons");if(cb&&!$("vibeWallpaperButton")){const b=document.createElement("button");b.id="vibeWallpaperButton";b.className="icon-btn";b.textContent="◌";b.title="Обои";b.onclick=openChatWallpaperPicker;cb.parentElement.insertBefore(b,cb)}
+if(typeof window.openChat==="function"){const old=window.openChat;window.openChat=async function(login){const r=await old(login);applyChatWallpaper(login);return r}}
+window.streakKey=(a,b)=>"vibeStreak_"+[a,b].sort().join("__");window.getChatStreak=o=>{try{return JSON.parse(localStorage.getItem(streakKey(currentUser.login,o))||'{"days":0}').days||0}catch{return 0}};window.updateChatStreak=o=>{const k=streakKey(currentUser.login,o),d=JSON.parse(localStorage.getItem(k)||'{"days":0,"last":""}'),t=new Date().toISOString().slice(0,10),p=new Date();p.setDate(p.getDate()-1);if(d.last!==t){d.days=d.last===p.toISOString().slice(0,10)?d.days+1:1;d.last=t;localStorage.setItem(k,JSON.stringify(d))}};
+if(typeof window.sendMessage==="function"){const oldSend=window.sendMessage;window.sendMessage=async function(){const r=await oldSend();if(window.currentChat)updateChatStreak(currentChat);return r}}
+window.openPollCreator=function(){if(!currentChannel||currentChannel.owner!==currentUser.login)return;let m=$("vibePollModal");if(!m){m=document.createElement("div");m.id="vibePollModal";m.className="modal";m.innerHTML='<div class="modal-card"><div class="modal-header"><div class="modal-title">Опрос</div><button class="modal-close" onclick="this.closest(\'.modal\').classList.add(\'hidden\')">✕</button></div><input id="vibePollQuestion" placeholder="Вопрос"><div id="vibePollOptions"></div><button onclick="addVibePollOption()">+ Вариант</button><button class="primary" onclick="createVibePoll()">Создать</button></div>';document.body.appendChild(m)}$("vibePollQuestion").value="";$("vibePollOptions").innerHTML="";addVibePollOption();addVibePollOption();m.classList.remove("hidden")};
+window.addVibePollOption=function(){const i=document.createElement("input");i.className="vibePollOption";i.placeholder="Вариант";$("vibePollOptions").appendChild(i)};
+window.createVibePoll=async function(){const q=$("vibePollQuestion").value.trim(),o=[...document.querySelectorAll(".vibePollOption")].map(x=>x.value.trim()).filter(Boolean);if(!q||o.length<2)return;const r=await fetch("/channel-post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,author:currentUser.login,text:q,type:"poll",options:o})}),d=await r.json();if(d.success){$("vibePollModal").classList.add("hidden");loadChannelPosts(true)}};
+window.handleVibeGif=function(e){const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{const x=await fetch("/channel-post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,author:currentUser.login,text:"",type:"gif",media:r.result,mediaType:f.type})});if((await x.json()).success)loadChannelPosts(true)};r.readAsDataURL(f)};
+window.ensureVibeChannelTools=function(){if(!currentChannel||currentChannel.owner!==currentUser.login)return;const inp=$("messageInput");if(!inp)return;if(!$("vibePollButton")){const b=document.createElement("button");b.id="vibePollButton";b.className="composer-tool";b.textContent="▣";b.title="Опрос";b.onclick=openPollCreator;inp.parentNode.insertBefore(b,inp.nextSibling)}if(!$("vibeGifButton")){const l=document.createElement("label");l.id="vibeGifButton";l.className="composer-tool";l.textContent="GIF";const i=document.createElement("input");i.type="file";i.accept="image/gif";i.hidden=true;i.onchange=handleVibeGif;l.appendChild(i);inp.parentNode.insertBefore(l,$("vibePollButton").nextSibling)}};
+if(typeof window.openChannel==="function"){const old=window.openChannel;window.openChannel=async function(ch){const r=await old(ch);ensureVibeChannelTools();return r}}
+window.addEventListener("load",()=>{if($("searchInput"))$("searchInput").setAttribute("placeholder","Поиск людей, групп и каналов...")});
+const st=document.createElement("style");st.textContent='.vibe-home{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px}.vibe-home-logo{width:80px;height:80px;border-radius:24px;display:grid;place-items:center;font-size:44px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2))}.vibe-home p{color:var(--muted);max-width:500px}.vibe-home-grid{display:flex;gap:10px;flex-wrap:wrap}.vibe-home-grid button,.directory-result{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:12px}.help-list{display:grid;gap:8px}.help-list>div{padding:12px;border-radius:12px;background:var(--panel2)}.help-list span{display:block;color:var(--muted);font-size:12px}.custom-theme-controls{display:grid;gap:8px}.composer-tool{border:0;border-radius:10px;background:var(--panel2);color:var(--text);padding:8px}.channel-post-poll{display:grid;gap:7px}.poll-option{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:10px;border-radius:10px;text-align:left}.channel-post-gif{max-width:100%;border-radius:12px}.chat.wallpaper-active #messages{background-image:var(--chat-wallpaper);background-size:cover;background-position:center}.directory-result{display:flex;justify-content:space-between;align-items:center;margin-top:6px}';document.head.appendChild(st);
+})();
+</script>
 </body>
 
 </html>

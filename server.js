@@ -10,6 +10,7 @@ const MESSAGES_FILE = path.join(__dirname, "messages.json");
 const CHANNELS_FILE = path.join(__dirname, "channels.json");
 const CHANNEL_POSTS_FILE = path.join(__dirname, "channel-posts.json");
 const GROUPS_FILE = path.join(__dirname, "groups.json");
+const INVITES_FILE = path.join(__dirname, "invites.json");
 
 const MAX_BODY_SIZE = 20 * 1024 * 1024;
 
@@ -32,6 +33,7 @@ ensureFile(MESSAGES_FILE, []);
 ensureFile(CHANNELS_FILE, []);
 ensureFile(CHANNEL_POSTS_FILE, []);
 ensureFile(GROUPS_FILE, []);
+ensureFile(INVITES_FILE, []);
 
 
 function readJSON(file) {
@@ -223,6 +225,8 @@ function normalizeChannel(channel) {
         channel.description = "";
     }
 
+    if (!["public","private"].includes(channel.visibility)) channel.visibility="public";
+
     if (typeof channel.photo !== "string") {
         channel.photo = "";
     }
@@ -261,6 +265,7 @@ function normalizeGroup(group) {
     if (typeof group.name !== "string") group.name = "Группа";
     if (typeof group.description !== "string") group.description = "";
     if (typeof group.photo !== "string") group.photo = "";
+    if (!["public","private"].includes(group.visibility)) group.visibility="public";
     return group;
 }
 
@@ -3823,6 +3828,36 @@ const server =
                     return;
                 }
 
+
+                /* DIRECTORY / INVITES / POLLS */
+                if (req.method === "GET" && pathname === "/directory") {
+                    const q=String(url.searchParams.get("q")||"").trim().toLowerCase();
+                    const groups=getGroups().map(normalizeGroup).filter(g=>g.visibility==="public"&&(!q||g.name.toLowerCase().includes(q)));
+                    const channels=readJSON(CHANNELS_FILE).map(normalizeChannel).filter(c=>c.visibility==="public"&&(!q||c.name.toLowerCase().includes(q)));
+                    sendJSON(res,{groups,channels}); return;
+                }
+                if (req.method === "GET" && pathname === "/invites") {
+                    const login=String(url.searchParams.get("login")||"");
+                    sendJSON(res,readJSON(INVITES_FILE).filter(x=>x.to===login&&x.status==="pending")); return;
+                }
+                if (req.method === "POST" && pathname === "/invites") {
+                    const b=await getBody(req),from=String(b.from||"").trim(),to=String(b.to||"").trim(),id=String(b.targetId||"").trim(),type=b.targetType==="channel"?"channel":"group";
+                    if(!findUser(from)||!findUser(to)){sendJSON(res,{success:false,message:"Пользователь не найден"},404);return;}
+                    const target=type==="group"?getGroups().find(x=>x.id===id):readJSON(CHANNELS_FILE).find(x=>x.id===id);
+                    if(!target){sendJSON(res,{success:false,message:"Не найдено"},404);return;}
+                    const inv=readJSON(INVITES);inv.push({id:"inv_"+Date.now(),from,to,targetId:id,targetType:type,targetName:target.name,status:"pending"});saveJSON(INVITES_FILE,inv);sendJSON(res,{success:true});return;
+                }
+                if (req.method === "POST" && pathname === "/invite-action") {
+                    const b=await getBody(req),invites=readJSON(INVITES_FILE),inv=invites.find(x=>x.id===String(b.id||"")&&x.to===String(b.login||"")&&x.status==="pending");
+                    if(!inv){sendJSON(res,{success:false,message:"Приглашение не найдено"},404);return;}
+                    if(b.action!=="decline"){if(inv.targetType==="group"){const gs=getGroups(),g=gs.find(x=>x.id===inv.targetId);if(g&&!g.members.includes(inv.to)){g.members.push(inv.to);saveJSON(GROUPS_FILE,gs);}}else{const cs=readJSON(CHANNELS_FILE),c=cs.find(x=>x.id===inv.targetId);if(c&&!c.subscribers.includes(inv.to)){c.subscribers.push(inv.to);saveJSON(CHANNELS_FILE,cs);}}}
+                    inv.status=b.action==="decline"?"declined":"accepted";saveJSON(INVITES_FILE,invites);sendJSON(res,{success:true});return;
+                }
+                if (req.method === "POST" && pathname === "/channel-vote") {
+                    const b=await getBody(req),posts=readJSON(CHANNEL_POSTS_FILE),p=posts.find(x=>x.id===String(b.postId||"")&&x.type==="poll"),login=String(b.login||""),i=Number(b.optionIndex);
+                    if(!p||!Number.isInteger(i)||i<0||i>=(p.options||[]).length){sendJSON(res,{success:false,message:"Опрос не найден"},400);return;}
+                    p.votes=p.votes||{};Object.keys(p.votes).forEach(k=>{if(Array.isArray(p.votes[k]))p.votes[k]=p.votes[k].filter(x=>x!==login)});if(!Array.isArray(p.votes[i]))p.votes[i]=[];p.votes[i].push(login);saveJSON(CHANNEL_POSTS_FILE,posts);sendJSON(res,{success:true});return;
+                }
 
                 /* =====================================================
                    404
