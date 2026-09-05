@@ -2353,6 +2353,34 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 .channel-post{padding:0;overflow:hidden;background:linear-gradient(145deg,var(--panel),var(--panel2));border:1px solid var(--border);border-radius:19px;margin-bottom:14px;box-shadow:0 8px 28px rgba(0,0,0,.10)}
 .channel-post-head{display:flex;align-items:center;gap:10px;padding:14px 15px 10px}.channel-post-head .avatar{width:38px;height:38px;min-width:38px}.channel-post-head-main{min-width:0;flex:1}.channel-post-channel-name{font-size:13px;font-weight:900}.channel-post-author-name{font-size:11px;color:var(--muted);margin-top:2px}.channel-post-body{padding:0 15px 12px}.channel-post-text{font-size:14px;line-height:1.55;margin:4px 0 12px}.channel-post img,.channel-post video{width:100%;max-height:520px;object-fit:contain;border-radius:14px;background:#05070c;display:block}.channel-post-meta{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:11px;padding:10px 15px 13px;border-top:1px solid var(--border)}.channel-post-meta button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:3px 5px}.channel-post-meta button:hover{color:var(--text)}.channel-post-views{margin-left:auto}.channel-comments{border-top:1px solid var(--border);padding:10px 15px 13px}.channel-comment{font-size:12px;margin:7px 0}.channel-comment b{margin-right:5px}.channel-comment-form{display:flex;gap:7px;margin-top:9px}.channel-comment-form input{min-width:0;flex:1}
 
+
+/* Vibe unified UI icons. Composer controls are intentionally untouched. */
+.vibe-icon{
+    width:1.15em;
+    height:1.15em;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    flex:0 0 auto;
+    vertical-align:-.18em;
+    color:currentColor;
+}
+.vibe-icon svg{
+    width:100%;
+    height:100%;
+    fill:none;
+    stroke:currentColor;
+    stroke-width:1.8;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+}
+.icon-btn .vibe-icon{width:20px;height:20px}
+.modal-title .vibe-icon{width:20px;height:20px}
+.settings-icon .vibe-icon{width:22px;height:22px}
+.action-icon .vibe-icon{width:19px;height:19px}
+.message-context-menu .vibe-icon{width:17px;height:17px}
+.channel-post-meta .vibe-icon{width:15px;height:15px;vertical-align:-.2em}
+
 </style>
 
 </head>
@@ -2407,7 +2435,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 onclick="togglePasswordVisibility('passwordInput',this)"
                 title="Показать пароль"
             >
-                👁️
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
             </button>
 
         </div>
@@ -2462,7 +2490,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     onclick="openCommunities()"
                     title="Группы и каналы"
                 >
-                    💬
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 3v-3.2a2 2 0 0 1-3-1.8v-8a2 2 0 0 1 2-2Z"/></svg></span>
                 </button>
 
                 <button
@@ -2471,7 +2499,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     onclick="openSettings()"
                     title="Настройки"
                 >
-                    ⚙️
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24"><path d="M12 3.7 13.4 5l1.9-.4.9 1.7 1.8.8-.2 2 1.3 1.5-1.3 1.5.2 2-1.8.8-.9 1.7-1.9-.4-1.4 1.3-1.4-1.3-1.9.4-.9-1.7-1.8-.8.2-2L5 10.6l1.2-1.5-.2-2 1.8-.8.9-1.7 1.9.4L12 3.7Z"/><circle cx="12" cy="10.6" r="2.7"/></svg></span>
                 </button>
 
             </div>
@@ -2511,7 +2539,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     onclick="openCurrentChatProfile()"
                     style="cursor:pointer;"
                 >
-                    💬
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 3v-3.2a2 2 0 0 1-3-1.8v-8a2 2 0 0 1 2-2Z"/></svg></span>
                 </div>
 
                 <div
@@ -2532,11 +2560,11 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 <div id="callButtons" class="call-buttons">
 
                     <button onclick="startCall(false)">
-                        📞
+                        <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 4.5 9.5 7 8 9.5c1.1 2.2 2.3 3.4 4.5 4.5l2.5-1.5 2.5 2.3c.7.7.6 1.9-.2 2.5l-1.2.9c-.8.6-1.8.7-2.7.3-5.4-2.4-8.5-5.5-10.9-10.9-.4-.9-.3-1.9.3-2.7l.9-1.2c.6-.8 1.8-.9 2.5-.2Z"/></svg></span>
                     </button>
 
                     <button onclick="startCall(true)">
-                        📹
+                        <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="13" height="12" rx="2"/><path d="m16.5 10 4-2v8l-4-2z"/></svg></span>
                     </button>
 
                 </div>
@@ -2658,7 +2686,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 <div id="friendRequestsModal" class="modal hidden">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">👥 Заявки в друзья</div>
+            <div class="modal-title"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg></span> Заявки в друзья</div>
             <button class="modal-close" onclick="closeModal('friendRequestsModal')">✕</button>
         </div>
         <div class="friend-request-tabs">
@@ -2719,7 +2747,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 onclick="togglePasswordVisibility('registerPassword',this)"
                 title="Показать пароль"
             >
-                👁️
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
             </button>
 
         </div>
@@ -2732,7 +2760,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="birthday-card">
 
             <div class="birthday-card-title">
-                🎂 Дата рождения
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 9.5h16"/></svg></span> Дата рождения
             </div>
 
             <div class="birthday-card-description">
@@ -2831,7 +2859,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                         id="profileViewPhoto"
                         class="profile-photo"
                     >
-                        👤
+                        <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span>
                     </div>
 
                 </div>
@@ -2874,7 +2902,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 id="profilePreview"
                 class="profile-photo"
             >
-                👤
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span>
             </div>
 
             <div class="profile-edit-section">
@@ -2910,7 +2938,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 >
 
                 <label class="file-upload-btn" for="profilePhotoFile">
-                    📷 Выбрать фото с устройства
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3.2 3 2.2-2.2 3.4 3.4"/></svg></span> Выбрать фото с устройства
 
                     <input
                         id="profilePhotoFile"
@@ -2927,7 +2955,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="profile-edit-section">
 
                 <div class="profile-edit-section-title">
-                    🎂 Дополнительные данные
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 9.5h16"/></svg></span> Дополнительные данные
                 </div>
 
                 <label class="setting-label">
@@ -2954,7 +2982,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             >
 
                 <div class="profile-edit-section-title">
-                    🎨 Фон профиля
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 0 0 0 16h1.1c1.2 0 1.9-1.4 1.2-2.4-.6-.9.1-2.1 1.2-2.1H17a5 5 0 0 0 5-5C22 7 17.5 4 12 4Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="9.5" cy="7.5" r="1"/><circle cx="13" cy="6.7" r="1"/></svg></span> Фон профиля
                 </div>
 
                 <div
@@ -3135,7 +3163,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="modal-header">
 
             <div class="modal-title">
-                ⚙️ Настройки
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.7 13.4 5l1.9-.4.9 1.7 1.8.8-.2 2 1.3 1.5-1.3 1.5.2 2-1.8.8-.9 1.7-1.9-.4-1.4 1.3-1.4-1.3-1.9.4-.9-1.7-1.8-.8.2-2L5 10.6l1.2-1.5-.2-2 1.8-.8.9-1.7 1.9.4L12 3.7Z"/><circle cx="12" cy="10.6" r="2.7"/></svg></span> Настройки
             </div>
 
             <button
@@ -3156,14 +3184,14 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 class="active"
                 onclick="switchSettingsTab('profile')"
             >
-                👤 Профиль
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span> Профиль
             </button>
 
             <button
                 id="settingsDataTab"
                 onclick="switchSettingsTab('data')"
             >
-                🔐 Данные
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><circle cx="12" cy="15" r="1"/></svg></span> Данные
             </button>
 
         </div>
@@ -3179,13 +3207,13 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="setting-section">
 
                 <div class="setting-title">
-                    👤 Профиль
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span> Профиль
                 </div>
 
                 <div class="settings-row">
 
                     <div class="settings-row-icon">
-                        👤
+                        <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span>
                     </div>
 
                     <div class="settings-row-content">
@@ -3216,7 +3244,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="setting-section">
 
                 <div class="setting-title">
-                    🌐 Язык
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.8 9h16.4M3.8 15h16.4M12 3.5c2.2 2.3 3.3 5.1 3.3 8.5s-1.1 6.2-3.3 8.5c-2.2-2.3-3.3-5.1-3.3-8.5S9.8 5.8 12 3.5Z"/></svg></span> Язык
                 </div>
 
                 <select
@@ -3240,13 +3268,13 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="setting-section">
 
                 <div class="setting-title">
-                    👥 Заявки в друзья
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg></span> Заявки в друзья
                 </div>
 
                 <label class="setting-label">Кто может отправлять мне заявки</label>
                 <select id="friendRequestPrivacy">
                     <option value="everyone">🌎 Все</option>
-                    <option value="friends">👥 Друзья</option>
+                    <option value="friends"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg></span> Друзья</option>
                     <option value="nobody">🚫 Никто</option>
                 </select>
 
@@ -3262,7 +3290,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="setting-section">
 
                 <div class="setting-title">
-                    🎨 Тема приложения
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 0 0 0 16h1.1c1.2 0 1.9-1.4 1.2-2.4-.6-.9.1-2.1 1.2-2.1H17a5 5 0 0 0 5-5C22 7 17.5 4 12 4Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="9.5" cy="7.5" r="1"/><circle cx="13" cy="6.7" r="1"/></svg></span> Тема приложения
                 </div>
 
                 <select
@@ -3308,13 +3336,13 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="setting-section">
 
                 <div class="setting-title">
-                    🔑 Пароль
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="15.5" r="4"/><path d="m11.5 12.5 8-8M16 7l2 2M18.5 4.5l1 1"/></svg></span> Пароль
                 </div>
 
                 <div class="settings-row">
 
                     <div class="settings-row-icon">
-                        🔐
+                        <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><circle cx="12" cy="15" r="1"/></svg></span>
                     </div>
 
                     <div class="settings-row-content">
@@ -3419,7 +3447,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="modal-header">
 
             <div class="modal-title">
-                🔑 Новый пароль
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="15.5" r="4"/><path d="m11.5 12.5 8-8M16 7l2 2M18.5 4.5l1 1"/></svg></span> Новый пароль
             </div>
 
             <button
@@ -3434,7 +3462,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="setting-section">
 
             <div class="setting-title">
-                🔐 Текущий пароль
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><circle cx="12" cy="15" r="1"/></svg></span> Текущий пароль
             </div>
 
             <div class="password-field">
@@ -3450,7 +3478,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     class="password-toggle"
                     onclick="togglePasswordVisibility('currentPasswordInput',this)"
                 >
-                    👁️
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
                 </button>
 
             </div>
@@ -3477,7 +3505,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     class="password-toggle"
                     onclick="togglePasswordVisibility('newPasswordInput',this)"
                 >
-                    👁️
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
                 </button>
 
             </div>
@@ -3504,7 +3532,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     class="password-toggle"
                     onclick="togglePasswordVisibility('repeatPasswordInput',this)"
                 >
-                    👁️
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
                 </button>
 
             </div>
@@ -3547,11 +3575,11 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 <div id="communitiesModal" class="modal hidden">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">💬 Сообщества</div>
+            <div class="modal-title"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 3v-3.2a2 2 0 0 1-3-1.8v-8a2 2 0 0 1 2-2Z"/></svg></span> Сообщества</div>
             <button class="modal-close" onclick="closeModal('communitiesModal')">✕</button>
         </div>
-        <button class="primary" onclick="openCreateGroup()">👥 Создать группу</button>
-        <button class="secondary" style="margin-top:8px;" onclick="openChannels()">📢 Открыть каналы</button>
+        <button class="primary" onclick="openCreateGroup()"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg></span> Создать группу</button>
+        <button class="secondary" style="margin-top:8px;" onclick="openChannels()"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span> Открыть каналы</button>
         <div id="groupsList" class="channels-list" style="margin-top:14px;"></div>
     </div>
 </div>
@@ -3560,7 +3588,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 <div id="groupManageModal" class="modal hidden">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">👥 Участники группы</div>
+            <div class="modal-title"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg></span> Участники группы</div>
             <button class="modal-close" onclick="closeModal('groupManageModal')">✕</button>
         </div>
         <div class="group-manage-owner" id="groupManageOwner"></div>
@@ -3575,7 +3603,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 <div id="createGroupModal" class="modal hidden">
     <div class="modal-card">
         <div class="modal-header">
-            <div class="modal-title">👥 Создать группу</div>
+            <div class="modal-title"><span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg></span> Создать группу</div>
             <button class="modal-close" onclick="closeModal('createGroupModal')">✕</button>
         </div>
         <input id="groupNameInput" placeholder="Название группы">
@@ -3595,7 +3623,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="modal-header">
 
             <div class="modal-title">
-                📢 Каналы
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span> Каналы
             </div>
 
             <button
@@ -3668,12 +3696,12 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
         <input id="channelPhotoInput" type="hidden" value="">
         <label class="file-upload-btn channel-photo-upload" for="channelPhotoFile">
-            📷 Выбрать фото канала
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3.2 3 2.2-2.2 3.4 3.4"/></svg></span> Выбрать фото канала
             <input id="channelPhotoFile" type="file" accept="image/*" hidden>
         </label>
 
         <div id="channelCreatePreview" class="profile-photo">
-            📢
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span>
         </div>
 
         <div
@@ -3714,7 +3742,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="modal-header">
 
             <div class="modal-title">
-                📢 Профиль канала
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span> Профиль канала
             </div>
 
             <button
@@ -3727,7 +3755,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         </div>
 
         <div id="channelProfilePreview" class="profile-photo">
-            📢
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span>
         </div>
 
         <input
@@ -3742,7 +3770,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
         <input id="channelProfilePhoto" type="hidden" value="">
         <label class="file-upload-btn channel-photo-upload" for="channelProfilePhotoFile">
-            📷 Выбрать фото канала
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3.2 3 2.2-2.2 3.4 3.4"/></svg></span> Выбрать фото канала
             <input id="channelProfilePhotoFile" type="file" accept="image/*" hidden>
         </label>
 
@@ -3801,7 +3829,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
     <div class="modal-card incoming-card">
 
         <div id="incomingCallPhoto" class="incoming-profile-photo">
-            👤
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span>
         </div>
 
         <div class="modal-title">
@@ -3821,7 +3849,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 class="primary"
                 onclick="acceptIncomingCall()"
             >
-                📞 Принять
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 4.5 9.5 7 8 9.5c1.1 2.2 2.3 3.4 4.5 4.5l2.5-1.5 2.5 2.3c.7.7.6 1.9-.2 2.5l-1.2.9c-.8.6-1.8.7-2.7.3-5.4-2.4-8.5-5.5-10.9-10.9-.4-.9-.3-1.9.3-2.7l.9-1.2c.6-.8 1.8-.9 2.5-.2Z"/></svg></span> Принять
             </button>
 
             <button onclick="rejectIncomingCall()">
@@ -3844,7 +3872,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
     <div class="call-top">
 
         <div id="callProfilePhoto" class="call-profile-photo">
-            👤
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg></span>
         </div>
 
         <div id="callName" class="call-name">
@@ -4109,7 +4137,7 @@ function togglePasswordVisibility(inputId, button) {
 
         input.type = "password";
 
-        button.textContent = "👁️";
+        button.innerHTML = vibeIcon("eye");
         button.title = "Показать пароль";
     }
 }
@@ -4961,6 +4989,41 @@ function closeVibeHelp() {
     $("vibeHelpModal")?.classList.add("hidden");
 }
 
+
+function vibeIcon(name, extraClass="") {
+    const icons = {
+        community: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg>',
+        settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.7 13.4 5l1.9-.4.9 1.7 1.8.8-.2 2 1.3 1.5-1.3 1.5.2 2-1.8.8-.9 1.7-1.9-.4-1.4 1.3-1.4-1.3-1.9.4-.9-1.7-1.8-.8.2-2L5 10.6l1.2-1.5-.2-2 1.8-.8.9-1.7 1.9.4L12 3.7Z"/><circle cx="12" cy="10.6" r="2.7"/></svg>',
+        user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg>',
+        lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><circle cx="12" cy="15" r="1"/></svg>',
+        language: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.8 9h16.4M3.8 15h16.4M12 3.5c2.2 2.3 3.3 5.1 3.3 8.5s-1.1 6.2-3.3 8.5c-2.2-2.3-3.3-5.1-3.3-8.5S9.8 5.8 12 3.5Z"/></svg>',
+        palette: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 0 0 0 16h1.1c1.2 0 1.9-1.4 1.2-2.4-.6-.9.1-2.1 1.2-2.1H17a5 5 0 0 0 5-5C22 7 17.5 4 12 4Z"/><circle cx="7.5" cy="11" r="1"/><circle cx="9.5" cy="7.5" r="1"/><circle cx="13" cy="6.7" r="1"/></svg>',
+        image: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="9" r="1.5"/><path d="m5.5 17 4.2-4.2 3.2 3 2.2-2.2 3.4 3.4"/></svg>',
+        calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 9.5h16"/></svg>',
+        shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 19 6v5.2c0 4.5-2.6 7.6-7 9.3-4.4-1.7-7-4.8-7-9.3V6l7-2.5Z"/><path d="m9 12 2 2 4-4"/></svg>',
+        key: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="15.5" r="4"/><path d="m11.5 12.5 8-8M16 7l2 2M18.5 4.5l1 1"/></svg>',
+        logout: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H10"/><path d="M13 8l4 4-4 4M17 12H9"/></svg>',
+        channel: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
+        file: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 15.5h6"/></svg>',
+        phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 4.5 9.5 7 8 9.5c1.1 2.2 2.3 3.4 4.5 4.5l2.5-1.5 2.5 2.3c.7.7.6 1.9-.2 2.5l-1.2.9c-.8.6-1.8.7-2.7.3-5.4-2.4-8.5-5.5-10.9-10.9-.4-.9-.3-1.9.3-2.7l.9-1.2c.6-.8 1.8-.9 2.5-.2Z"/></svg>',
+        video: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="13" height="12" rx="2"/><path d="m16.5 10 4-2v8l-4-2z"/></svg>',
+        eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg>',
+        comment: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 3v-3.2a2 2 0 0 1-3-1.8v-8a2 2 0 0 1 2-2Z"/></svg>',
+        copy: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="11" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h2"/></svg>',
+        reply: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 7 4 12l5 5"/><path d="M5 12h8.5a6.5 6.5 0 0 1 6.5 6.5"/></svg>',
+        forward: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 7 5 5-5 5"/><path d="M20 12H11a7 7 0 0 0-7 7"/></svg>',
+        trash: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 4h4l1 3H9l1-3ZM7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>',
+        plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+        check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>',
+        close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>',
+        mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="3.5" width="8" height="12" rx="4"/><path d="M5 11.5a7 7 0 0 0 14 0M12 18.5V21M9 21h6"/></svg>',
+        camera: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5h3l1.3-2h7.4l1.3 2h3A1.5 1.5 0 0 1 21.5 9v9A1.5 1.5 0 0 1 20 19.5H4A1.5 1.5 0 0 1 2.5 18V9A1.5 1.5 0 0 1 4 7.5Z"/><circle cx="12" cy="13.5" r="3.5"/></svg>',
+        ban: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>',
+        unlock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M9 10V7.5a3.5 3.5 0 0 1 6.8-1"/></svg>'
+    };
+    return `<span class="vibe-icon ${extraClass}">${icons[name] || icons.comment}</span>`;
+}
+
 /* =========================================================
    AUTO LOGIN
 ========================================================= */
@@ -5626,7 +5689,7 @@ function handleSocketMessage(data) {
             .innerHTML =
             data.photo
                 ? `<img src="${escapeHTML(data.photo)}">`
-                : "👤";
+                : vibeIcon("user");
 
         $("incomingCallModal")
             .classList
@@ -5696,7 +5759,7 @@ async function updateCurrentChatHeader() {
     const user = await getUser(currentChat);
     if (!user) return;
     $("chatName").textContent = user.name || user.login;
-    $("chatAvatar").innerHTML = user.photo ? `<img src="${escapeHTML(user.photo)}">` : "👤";
+    $("chatAvatar").innerHTML = user.photo ? `<img src="${escapeHTML(user.photo)}">` : vibeIcon("user");
     $("chatStatus").textContent = user.online ? "онлайн" : "офлайн";
 }
 
@@ -5791,7 +5854,7 @@ function personHTML(user,count=0) {
     const avatar =
         user.photo
             ? `<img src="${escapeHTML(user.photo)}">`
-            : "👤";
+            : vibeIcon("user");
 
     const onlineDot =
         user.login !== currentUser?.login
@@ -6083,7 +6146,7 @@ function renderChats() {
             const icon =
                 channel.photo
                     ? `<img src="${escapeHTML(channel.photo)}">`
-                    : "📢";
+                    : vibeIcon("channel");
 
             const unread =
                 getChannelUnreadCount(
@@ -6245,7 +6308,7 @@ async function openChat(login) {
         $("chatAvatar").innerHTML =
             user.photo
                 ? `<img src="${escapeHTML(user.photo)}">`
-                : "👤";
+                : vibeIcon("user");
     }
 
     await loadMessages(true);
@@ -6349,7 +6412,7 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
         const replySource = message.replyTo;
         const replyText = replySource ? String(replySource.text || "").replace(/\s+/g, " ").trim() : "";
         const replyHtml = replySource
-            ? `<div class="message-reply"><span>↩️</span><span>${escapeHTML(replyText.length > 45 ? replyText.slice(0,45) + "..." : replyText)}</span></div>`
+            ? `<div class="message-reply">${vibeIcon("reply")}<span>${escapeHTML(replyText.length > 45 ? replyText.slice(0,45) + "..." : replyText)}</span></div>`
             : "";
 
         const senderHtml = isGroup && !mine
@@ -6395,7 +6458,7 @@ function setReplyTarget(message) {
     replyTargetMessage = {
         id: message.id,
         from: message.from,
-        text: message.text || (message.type === "voice" ? "🎙️ Голосовое сообщение" : "")
+        text: message.text || (message.type === "voice" ? "Голосовое сообщение" : "")
     };
     const preview = $("replyPreview");
     const text = $("replyPreviewText");
@@ -6432,11 +6495,11 @@ function openMessageActions(messageInfo, x, y) {
     menu.style.left = Math.min(x, innerWidth - 205) + "px";
     menu.style.top = Math.min(y, innerHeight - 220) + "px";
     menu.innerHTML = `
-      <button onclick="copySelectedMessage()">📋 Копировать</button>
-      <button onclick="replySelectedMessage()">↩️ Ответить</button>
-      <button onclick="forwardSelectedMessage()">↗️ Переслать</button>
-      <button onclick="deleteSelectedMessage('self')">🗑️ Удалить у себя</button>
-      ${messageInfo.from === currentUser.login ? `<button onclick="deleteSelectedMessage('all')">🗑️ Удалить у всех</button>` : ""}`;
+      <button onclick="copySelectedMessage()">${vibeIcon("copy")} Копировать</button>
+      <button onclick="replySelectedMessage()">${vibeIcon("reply")} Ответить</button>
+      <button onclick="forwardSelectedMessage()">${vibeIcon("forward")} Переслать</button>
+      <button onclick="deleteSelectedMessage('self')">${vibeIcon("trash")} Удалить у себя</button>
+      ${messageInfo.from === currentUser.login ? `<button onclick="deleteSelectedMessage('all')">${vibeIcon("trash")} Удалить у всех</button>` : ""}`;
     document.body.appendChild(menu);
 }
 
@@ -6912,13 +6975,13 @@ async function updateProfileViewActions(user) {
 
     box.innerHTML = `
         <button class="primary" type="button" id="profileContactButton">
-            ${isContact ? "✓ В контактах" : "➕ Добавить в контакты"}
+            ${isContact ? "✓ В контактах" : vibeIcon("plus") + " Добавить в контакты"}
         </button>
         <button type="button" id="profileBlockButton">
-            ${isBlocked ? "🔓 Разблокировать" : "🚫 Заблокировать"}
+            ${isBlocked ? vibeIcon("lock") + " Разблокировать" : vibeIcon("shield") + " Заблокировать"}
         </button>
         <button type="button" id="profileMessageButton">
-            💬 Написать сообщение
+            ${vibeIcon("comment")} Написать сообщение
         </button>
     `;
 
@@ -7151,7 +7214,7 @@ async function openUserProfile(login) {
         .innerHTML =
         canSeePhoto && user.photo
             ? `<img src="${escapeHTML(user.photo)}">`
-            : "👤";
+            : vibeIcon("user");
 
 
     /*
@@ -7222,7 +7285,7 @@ async function openUserProfile(login) {
 
         grid.appendChild(
             createProfileInfoCard(
-                "💬 Стиль сообщений",
+                vibeIcon("comment") + " Стиль сообщений",
                 user.messageStyle
             )
         );
@@ -7306,7 +7369,7 @@ function updateProfilePreview() {
         .innerHTML =
         currentPhoto
             ? `<img src="${escapeHTML(currentPhoto)}">`
-            : "👤";
+            : vibeIcon("user");
 }
 
 
@@ -7586,7 +7649,7 @@ async function saveProfile() {
                     $("chatAvatar").innerHTML =
                         user.photo
                             ? `<img src="${escapeHTML(user.photo)}">`
-                            : "👤";
+                            : vibeIcon("user");
                 }
             }
 
@@ -7642,10 +7705,10 @@ function renderGroupsList() {
         item.className = "channel-item";
         item.innerHTML = `
             <div class="channel-item-main">
-                <div class="channel-icon">${group.photo ? `<img src="${escapeHTML(group.photo)}">` : "👥"}</div>
+                <div class="channel-icon">${group.photo ? `<img src="${escapeHTML(group.photo)}">` : vibeIcon("community")}</div>
                 <div class="channel-info">
                     <div class="channel-name">${escapeHTML(group.name)}</div>
-                    <div class="channel-description">${escapeHTML(group.description || "Группа")} · 👥 ${Number(group.memberCount || group.members?.length || 0)}</div>
+                    <div class="channel-description">${escapeHTML(group.description || "Группа")} · ${vibeIcon("community")} ${Number(group.memberCount || group.members?.length || 0)}</div>
                 </div>
             </div>`;
         item.querySelector(".channel-item-main").onclick = () => {
@@ -7693,9 +7756,9 @@ async function openGroup(group) {
     $("callButtons").classList.add("hidden");
     $("emojiPicker").classList.add("hidden");
     openMobileChatView();
-    $("chatAvatar").innerHTML = group.photo ? `<img src="${escapeHTML(group.photo)}">` : "👥";
-    $("chatName").textContent = "👥 " + group.name;
-    $("chatStatus").textContent = (group.description || "Группа Vibe") + " · 👥 " + Number(group.memberCount || group.members?.length || 0);
+    $("chatAvatar").innerHTML = group.photo ? `<img src="${escapeHTML(group.photo)}">` : vibeIcon("community");
+    $("chatName").innerHTML = vibeIcon("community") + " " + escapeHTML(group.name);
+    $("chatStatus").innerHTML = escapeHTML(group.description || "Группа Vibe") + " · " + vibeIcon("community") + " " + Number(group.memberCount || group.members?.length || 0);
     $("chatStatus").title = "Нажмите, чтобы открыть участников";
     $("chatStatus").onclick = () => openGroupManager(group);
     const input = $("messageInput");
@@ -7746,7 +7809,7 @@ async function addGroupMember() {
         currentGroup = d.group;
         await loadGroups();
         await openGroupManager(currentGroup);
-        $("chatStatus").textContent = (currentGroup.description || "Группа Vibe") + " · 👥 " + currentGroup.members.length;
+        $("chatStatus").innerHTML = escapeHTML(currentGroup.description || "Группа Vibe") + " · " + vibeIcon("community") + " " + currentGroup.members.length;
     } catch { alert("Ошибка сервера"); }
 }
 
@@ -7763,7 +7826,7 @@ async function removeGroupMember(target) {
         currentGroup = d.group;
         await loadGroups();
         await openGroupManager(currentGroup);
-        $("chatStatus").textContent = (currentGroup.description || "Группа Vibe") + " · 👥 " + currentGroup.members.length;
+        $("chatStatus").innerHTML = escapeHTML(currentGroup.description || "Группа Vibe") + " · " + vibeIcon("community") + " " + currentGroup.members.length;
     } catch { alert("Ошибка сервера"); }
 }
 
@@ -7879,7 +7942,7 @@ function renderChannelsList() {
             const icon =
                 channel.photo
                     ? `<img src="${escapeHTML(channel.photo)}">`
-                    : "📢";
+                    : vibeIcon("channel");
 
             main.innerHTML =
                 `
@@ -7898,7 +7961,7 @@ function renderChannelsList() {
                     <div class="channel-description">
                         ${escapeHTML(channel.description || "Канал Vibe")}
                     </div>
-                    <div class="channel-description">👥 ${Number(channel.subscriberCount || channel.subscribers?.length || 0)} подписчиков</div>
+                    <div class="channel-description">${vibeIcon("community")} ${Number(channel.subscriberCount || channel.subscribers?.length || 0)} подписчиков</div>
 
                 </div>
                 `;
@@ -8043,7 +8106,7 @@ async function toggleCurrentChannelSubscription() {
 function openCreateChannel() {
     if ($("channelPhotoInput")) $("channelPhotoInput").value = "";
     if ($("channelPhotoFile")) $("channelPhotoFile").value = "";
-    if ($("channelCreatePreview")) $("channelCreatePreview").innerHTML = "📢";
+    if ($("channelCreatePreview")) $("channelCreatePreview").innerHTML = vibeIcon("channel");
 
     $("channelNameInput").value = "";
     $("channelDescriptionInput").value = "";
@@ -8052,7 +8115,7 @@ function openCreateChannel() {
 
     $("channelCreatePreview")
         .innerHTML =
-        "📢";
+        vibeIcon("channel");
 
     closeModal(
         "channelsModal"
@@ -8076,7 +8139,7 @@ $("channelPhotoInput")
                 .innerHTML =
                 photo
                     ? `<img src="${escapeHTML(photo)}">`
-                    : "📢";
+                    : vibeIcon("channel");
         }
     );
 
@@ -8252,13 +8315,13 @@ async function openChannel(channel) {
         .innerHTML =
         channel.photo
             ? `<img src="${escapeHTML(channel.photo)}">`
-            : "📢";
+            : vibeIcon("channel");
 
     $("chatName").textContent =
-        "📢 " + channel.name;
+        vibeIcon("channel") + " " + escapeHTML(channel.name);
 
     $("chatStatus").textContent =
-        (channel.description || "Канал Vibe") + " · 👥 " + Number(channel.subscriberCount || channel.subscribers?.length || 0);
+        (channel.description || "Канал Vibe") + " · " + Number(channel.subscriberCount || channel.subscribers?.length || 0);
 
     const input =
         $("messageInput");
@@ -8317,9 +8380,8 @@ function updateChannelHeader() {
         return;
     }
 
-    $("chatName").textContent =
-        "📢 " +
-        currentChannel.name;
+    $("chatName").innerHTML =
+        vibeIcon("channel") + " " + escapeHTML(currentChannel.name);
 
     $("chatStatus").textContent =
         currentChannel.description ||
@@ -8328,7 +8390,7 @@ function updateChannelHeader() {
     $("chatAvatar").innerHTML =
         currentChannel.photo
             ? `<img src="${escapeHTML(currentChannel.photo)}">`
-            : "📢";
+            : vibeIcon("channel");
 }
 
 
@@ -8359,7 +8421,7 @@ function openChannelProfile() {
         .innerHTML =
         currentChannel.photo
             ? `<img src="${escapeHTML(currentChannel.photo)}">`
-            : "📢";
+            : vibeIcon("channel");
 
     $("channelProfileName").disabled =
         !own;
@@ -8402,7 +8464,7 @@ $("channelProfilePhoto")
                 .innerHTML =
                 photo
                     ? `<img src="${escapeHTML(photo)}">`
-                    : "📢";
+                    : vibeIcon("channel");
         }
     );
 
@@ -8562,13 +8624,13 @@ async function loadChannelPosts(forceScroll=true) {
         box.innerHTML="";
         const banner=document.createElement("div");
         banner.className="channel-banner";
-        banner.innerHTML=`<b>📢 ${escapeHTML(currentChannel.name)}</b><span>${escapeHTML(currentChannel.description||"Канал Vibe")}</span>`;
+        banner.innerHTML=`<b>${vibeIcon("channel")} ${escapeHTML(currentChannel.name)}</b><span>${escapeHTML(currentChannel.description||"Канал Vibe")}</span>`;
         box.appendChild(banner);
         if(!posts.length){const empty=document.createElement("div");empty.className="empty-chat";empty.style.height="calc(100% - 70px)";empty.textContent="В канале пока нет публикаций";box.appendChild(empty);return;}
         posts.forEach(post=>{
             const item=document.createElement("article"); item.className="channel-post";
             const author=post.authorUser||{login:post.author,name:post.author,photo:""};
-            const avatar=author.photo?`<img src="${escapeHTML(author.photo)}">`:"👤";
+            const avatar=author.photo?`<img src="${escapeHTML(author.photo)}">`:vibeIcon("user");
             let mediaHTML="";
             if(post.media){
                 if((post.mediaType||"").startsWith("image")) mediaHTML=`<img src="${escapeHTML(post.media)}" alt="">`;
@@ -8578,7 +8640,7 @@ async function loadChannelPosts(forceScroll=true) {
             item.innerHTML=`
               <div class="channel-post-head"><div class="avatar">${avatar}</div><div class="channel-post-head-main"><div class="channel-post-channel-name">${escapeHTML(currentChannel.name)}</div><div class="channel-post-author-name">${escapeHTML(author.name||author.login)}</div></div></div>
               <div class="channel-post-body">${post.text?`<div class="channel-post-text">${escapeHTML(post.text)}</div>`:""}${mediaHTML}</div>
-              <div class="channel-post-meta"><span>${new Date(post.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span><span class="channel-post-views">👁 ${Number(post.views||0)}</span><button type="button" class="channel-comment-toggle">💬 ${comments.length}</button></div>
+              <div class="channel-post-meta"><span>${new Date(post.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</span><span class="channel-post-views">${vibeIcon("eye")} ${Number(post.views||0)}</span><button type="button" class="channel-comment-toggle">${vibeIcon("comment")} ${comments.length}</button></div>
               <div class="channel-comments hidden"></div>`;
             const commentsBox=item.querySelector(".channel-comments");
             const renderComments=()=>{commentsBox.innerHTML=comments.map(c=>`<div class="channel-comment"><b>${escapeHTML(c.name||c.author)}</b>${escapeHTML(c.text||"")}</div>`).join("")+`<div class="channel-comment-form"><input maxlength="300" placeholder="Написать комментарий…"><button type="button">Отправить</button></div>`; commentsBox.classList.toggle("hidden");};
@@ -8919,7 +8981,7 @@ function showCallUI(user=null) {
         .innerHTML =
         user && user.photo
             ? `<img src="${escapeHTML(user.photo)}">`
-            : "👤";
+            : vibeIcon("user");
 
     $("callStatus")
         .textContent =
@@ -8946,13 +9008,12 @@ function showCallUI(user=null) {
             ? "block"
             : "none";
 
-    $("micButton").textContent =
-        "🎙️";
+    $("micButton").innerHTML = vibeIcon("mic");
 
-    $("cameraButton").textContent =
+    $("cameraButton").innerHTML =
         activeCallVideo
-            ? "📷"
-            : "🚫";
+            ? vibeIcon("camera")
+            : vibeIcon("ban");
 
     callSeconds = 0;
 
@@ -9176,10 +9237,10 @@ function toggleMicrophone() {
             }
         );
 
-    $("micButton").textContent =
+    $("micButton").innerHTML =
         microphoneEnabled
-            ? "🎙️"
-            : "🔇";
+            ? vibeIcon("mic")
+            : vibeIcon("ban");
 }
 
 
@@ -9202,10 +9263,10 @@ function toggleCamera() {
             }
         );
 
-    $("cameraButton").textContent =
+    $("cameraButton").innerHTML =
         cameraEnabled
-            ? "📷"
-            : "🚫";
+            ? vibeIcon("camera")
+            : vibeIcon("ban");
 }
 
 
@@ -9403,10 +9464,10 @@ autoLogin();
   <div class="vibe-help-card">
     <div class="vibe-help-head"><div class="vibe-help-icon">?</div><div><h2>Как пользоваться Vibe</h2><p>Короткая инструкция без лишних сложностей</p></div></div>
     <div class="vibe-help-list">
-      <div class="vibe-help-row"><div>💬</div><div><b>Чаты</b><span>Выбери человека слева и отправляй сообщения, фото, GIF, файлы или голосовые.</span></div></div>
-      <div class="vibe-help-row"><div>👥</div><div><b>Контакты и группы</b><span>Ищи пользователей через поиск. Группы позволяют общаться сразу нескольким участникам.</span></div></div>
-      <div class="vibe-help-row"><div>📢</div><div><b>Каналы</b><span>Канал предназначен для публикаций. Подписчики видят новые посты и могут открывать комментарии.</span></div></div>
-      <div class="vibe-help-row"><div>⚙️</div><div><b>Настройки</b><span>Там можно менять профиль, приватность, язык и оформление Vibe.</span></div></div>
+      <div class="vibe-help-row"><div>${vibeIcon("comment")}</div><div><b>Чаты</b><span>Выбери человека слева и отправляй сообщения, фото, GIF, файлы или голосовые.</span></div></div>
+      <div class="vibe-help-row"><div>${vibeIcon("community")}</div><div><b>Контакты и группы</b><span>Ищи пользователей через поиск. Группы позволяют общаться сразу нескольким участникам.</span></div></div>
+      <div class="vibe-help-row"><div>${vibeIcon("channel")}</div><div><b>Каналы</b><span>Канал предназначен для публикаций. Подписчики видят новые посты и могут открывать комментарии.</span></div></div>
+      <div class="vibe-help-row"><div>${vibeIcon("settings")}</div><div><b>Настройки</b><span>Там можно менять профиль, приватность, язык и оформление Vibe.</span></div></div>
     </div>
     <button class="vibe-help-close" type="button" onclick="closeVibeHelp()">Понятно</button>
   </div>
