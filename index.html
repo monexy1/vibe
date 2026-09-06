@@ -7917,8 +7917,28 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             ? `<div class="group-sender">${escapeHTML(message.from || "Пользователь")}</div>`
             : "";
 
+        const forwarded = message.forwardedFrom && typeof message.forwardedFrom === "object"
+            ? message.forwardedFrom
+            : null;
+
+        const forwardedHtml = forwarded
+            ? `<div class="forwarded-from">
+                <div class="forwarded-from-avatar">
+                    ${
+                        forwarded.photo
+                            ? `<img src="${escapeHTML(forwarded.photo)}" alt="">`
+                            : vibeIcon("channel")
+                    }
+                </div>
+                <div class="forwarded-from-copy">
+                    <div class="forwarded-from-label">Переслано из</div>
+                    <div class="forwarded-from-name">${escapeHTML(forwarded.name || "Канал")}</div>
+                </div>
+            </div>`
+            : "";
+
         if (message.type === "voice" && message.audio) {
-            bubble.innerHTML = `${senderHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
         } else if (message.type === "attachment" && message.attachment) {
             const mime = String(message.attachmentType || "");
             let attachmentHtml = "";
@@ -7932,9 +7952,9 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             const attachmentCaption = message.text
                 ? `<div class="attachment-caption">${escapeHTML(message.text)}</div>`
                 : "";
-            bubble.innerHTML = `${senderHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
         } else {
-            bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
 
         bubble.insertAdjacentHTML("beforeend", renderMessageReactions(message) + renderMessageReactionTools(message));
@@ -10578,8 +10598,6 @@ async function loadChannelPosts(forceScroll=true) {
                 </div>
 
                 <div class="channel-post-meta">
-                    <span>${escapeHTML(timeText)}</span>
-
                     <span class="channel-post-views">
                         ${vibeIcon("eye")}
                         ${Number(post.views || 0)}
@@ -10590,9 +10608,12 @@ async function loadChannelPosts(forceScroll=true) {
                         class="channel-comment-toggle"
                         title="Комментарии"
                     >
-                        ${vibeIcon("comment")}
-                        ${comments.length}
+                        <span class="vibe-comment-avatars"></span>
+                        <span class="vibe-comment-count">${comments.length} ${comments.length === 1 ? "комментарий" : "комментариев"}</span>
+                        <span class="vibe-comment-arrow">›</span>
                     </button>
+
+                    <span class="channel-post-time-footer">${escapeHTML(timeText)}</span>
                 </div>
 
             `;
@@ -14403,8 +14424,26 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
             b.onclick=async()=>{
                 b.disabled=true;
                 try{
-                    const body={from:currentUser.login,to:user.login,type:post.media?"attachment":"text",text:"↗️ "+(post.poll?"📊 "+String(post.poll.question||"Опрос"):String(post.text||""))};
-                    if(post.media){body.attachment=post.media;body.attachmentType=post.mediaType||"application/octet-stream";body.attachmentName=post.attachmentName||"Пересланная публикация";}
+                    const body={
+                        from:currentUser.login,
+                        to:user.login,
+                        type:post.media?"attachment":"text",
+                        text:post.poll
+                            ? "📊 "+String(post.poll.question||"Опрос")
+                            : String(post.text||""),
+                        forwardedFrom: currentChannel ? {
+                            type:"channel",
+                            id:String(currentChannel.id||""),
+                            name:String(currentChannel.name||"Канал"),
+                            username:String(currentChannel.username||""),
+                            photo:String(currentChannel.photo||"")
+                        } : null
+                    };
+                    if(post.media){
+                        body.attachment=post.media;
+                        body.attachmentType=post.mediaType||"application/octet-stream";
+                        body.attachmentName=post.attachmentName||"Пересланная публикация";
+                    }
                     const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
                     const d=await r.json().catch(()=>({}));
                     if(!r.ok||!d.success)throw new Error(d.message||"Не удалось переслать публикацию");
@@ -14970,6 +15009,199 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
         renderBar();
         injectPinAll();
     });
+})();
+</script>
+
+<style id="vibe-clean-channel-layout">
+.channel-post{
+    width:min(820px,calc(100% - 30px)) !important;
+    margin:7px 0 10px 12px !important;
+    border-radius:16px !important;
+}
+.channel-posts{display:block!important}
+.channel-post-meta{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    padding:6px 10px 7px!important;
+    min-height:34px!important;
+}
+.channel-post-meta .channel-post-views{
+    order:1!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:4px!important;
+    color:var(--muted)!important;
+}
+.channel-post-meta .channel-comment-toggle{
+    order:2!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:6px!important;
+    min-height:25px!important;
+    padding:2px 7px!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:transparent!important;
+    color:#56adfb!important;
+}
+.channel-post-meta .channel-post-time-footer{
+    order:3!important;
+    margin-left:auto!important;
+    color:var(--muted)!important;
+    font-size:10px!important;
+}
+.vibe-comment-avatars{
+    display:inline-flex!important;
+    align-items:center!important;
+    min-width:0!important;
+    height:23px!important;
+}
+.vibe-comment-avatar{
+    width:23px!important;
+    height:23px!important;
+    min-width:23px!important;
+    border-radius:50%!important;
+    overflow:hidden!important;
+    display:grid!important;
+    place-items:center!important;
+    border:2px solid var(--panel)!important;
+    margin-left:-6px!important;
+    background:var(--accent)!important;
+    color:#fff!important;
+    font-size:9px!important;
+    font-weight:900!important;
+}
+.vibe-comment-avatar:first-child{margin-left:0!important}
+.vibe-comment-avatar img{width:100%!important;height:100%!important;object-fit:cover!important}
+.vibe-comment-count{
+    color:#56adfb!important;
+    font-size:12px!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+}
+.vibe-comment-arrow{
+    color:#56adfb!important;
+    font-size:21px!important;
+    line-height:1!important;
+}
+
+/* Forwarded messages should remain normal-width, readable bubbles. */
+.message-row .message{
+    max-width:min(70%,650px);
+}
+.forwarded-from{
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    margin:0 0 7px!important;
+    padding:5px 8px!important;
+    border-left:3px solid var(--accent)!important;
+    border-radius:8px!important;
+    background:rgba(139,92,246,.08)!important;
+}
+.forwarded-from-avatar{
+    width:30px!important;
+    height:30px!important;
+    min-width:30px!important;
+    border-radius:50%!important;
+    overflow:hidden!important;
+    display:grid!important;
+    place-items:center!important;
+    background:rgba(139,92,246,.12)!important;
+    color:var(--accent)!important;
+}
+.forwarded-from-avatar img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+}
+.forwarded-from-copy{min-width:0!important;flex:1!important}
+.forwarded-from-label{
+    color:var(--muted)!important;
+    font-size:10px!important;
+    line-height:1.1!important;
+}
+.forwarded-from-name{
+    color:var(--text)!important;
+    font-size:12px!important;
+    font-weight:900!important;
+    line-height:1.2!important;
+    margin-top:2px!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+}
+.forwarded-from + div{
+    min-width:0!important;
+    max-width:100%!important;
+    overflow-wrap:anywhere!important;
+    word-break:normal!important;
+}
+@media(max-width:700px){
+    .channel-post{
+        width:calc(100% - 18px)!important;
+        margin:5px 0 8px 8px!important;
+    }
+    .channel-post-meta{padding:5px 8px 7px!important}
+    .message-row .message{max-width:84%!important}
+}
+</style>
+<script id="vibe-clean-channel-layout-script">
+(function(){
+    function fillCommentAvatars(){
+        if(!currentChannel)return;
+        (window.__vibeChannelPosts||[]).forEach(post=>{
+            const item=document.querySelector(
+                '.channel-post[data-post-id="'+CSS.escape(String(post.id))+'"]'
+            );
+            if(!item)return;
+            const holder=item.querySelector(".vibe-comment-avatars");
+            if(!holder)return;
+            holder.innerHTML="";
+            const comments=Array.isArray(post.comments)?post.comments:[];
+            comments.slice(-3).forEach(comment=>{
+                const avatar=document.createElement("span");
+                avatar.className="vibe-comment-avatar";
+                if(comment.photo){
+                    const img=document.createElement("img");
+                    img.src=comment.photo; img.alt="";
+                    avatar.appendChild(img);
+                }else{
+                    avatar.textContent=
+                        String(comment.name||comment.author||"?")
+                            .slice(0,1).toUpperCase();
+                }
+                holder.appendChild(avatar);
+            });
+            holder.style.display=comments.length ? "inline-flex" : "none";
+        });
+    }
+
+    function normalizeForwardedBubbles(){
+        document.querySelectorAll(".message").forEach(bubble=>{
+            if(!bubble.querySelector(".forwarded-from"))return;
+            bubble.style.maxWidth="min(70%,650px)";
+            bubble.style.minWidth="";
+        });
+    }
+
+    const observer=new MutationObserver(()=>{
+        fillCommentAvatars();
+        normalizeForwardedBubbles();
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+
+    document.addEventListener("DOMContentLoaded",()=>{
+        fillCommentAvatars();
+        normalizeForwardedBubbles();
+    });
+
+    setInterval(()=>{
+        fillCommentAvatars();
+        normalizeForwardedBubbles();
+    },500);
 })();
 </script>
 
