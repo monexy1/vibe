@@ -65,17 +65,31 @@ function saveJSON(file, data) {
    SUPABASE PERSISTENT COMMUNITY STATE
    Channels, channel posts and groups survive Render redeploys.
 ========================================================= */
-const VIBE_STATE_KEYS = { channels:"channels", channelPosts:"channel-posts", groups:"groups" };
+const VIBE_STATE_KEYS = {
+    users: "users",
+    channels: "channels",
+    channelPosts: "channel-posts",
+    groups: "groups"
+};
+
 let vibeStateHydrated = false;
 const vibeStateTimers = new Map();
 
 async function getVibeState(key) {
     try {
-        const { data, error } = await supabase.from("vibe_state").select("value").eq("key", key).maybeSingle();
+        const { data, error } = await supabase
+            .from("vibe_state")
+            .select("value")
+            .eq("key", key)
+            .maybeSingle();
+
         if (error) {
-            if (!String(error.message || "").toLowerCase().includes("does not exist")) console.error("Supabase vibe_state read error:", error.message);
+            if (!String(error.message || "").toLowerCase().includes("does not exist")) {
+                console.error("Supabase vibe_state read error:", error.message);
+            }
             return null;
         }
+
         return data?.value ?? null;
     } catch (error) {
         console.error("Supabase vibe_state read error:", error.message);
@@ -85,11 +99,24 @@ async function getVibeState(key) {
 
 async function putVibeState(key, value) {
     try {
-        const { error } = await supabase.from("vibe_state").upsert({ key, value, updated_at:new Date().toISOString() }, { onConflict:"key" });
+        const { error } = await supabase
+            .from("vibe_state")
+            .upsert(
+                {
+                    key,
+                    value,
+                    updated_at: new Date().toISOString()
+                },
+                { onConflict: "key" }
+            );
+
         if (error) {
-            if (!String(error.message || "").toLowerCase().includes("does not exist")) console.error("Supabase vibe_state write error:", error.message);
+            if (!String(error.message || "").toLowerCase().includes("does not exist")) {
+                console.error("Supabase vibe_state write error:", error.message);
+            }
             return false;
         }
+
         return true;
     } catch (error) {
         console.error("Supabase vibe_state write error:", error.message);
@@ -97,19 +124,43 @@ async function putVibeState(key, value) {
     }
 }
 
+/*
+   Every JSON-backed piece of Vibe that contains persistent application
+   state is mirrored to Supabase. The local JSON files are only a cache/
+   emergency fallback; Supabase is the source that survives Render deploys.
+*/
 function queueVibeStateSync(file, data) {
     if (!vibeStateHydrated) return;
+
     let key = "";
+
+    if (file === USERS_FILE) key = VIBE_STATE_KEYS.users;
     if (file === CHANNELS_FILE) key = VIBE_STATE_KEYS.channels;
     if (file === CHANNEL_POSTS_FILE) key = VIBE_STATE_KEYS.channelPosts;
     if (file === GROUPS_FILE) key = VIBE_STATE_KEYS.groups;
+
     if (!key) return;
+
     clearTimeout(vibeStateTimers.get(key));
-    const timer = setTimeout(() => putVibeState(key, data).catch(() => {}), 200);
+
+    const timer = setTimeout(async () => {
+        try {
+            const ok = await putVibeState(key, data);
+            if (!ok) {
+                console.error(`Vibe persistent state sync failed for ${key}`);
+            }
+        } catch (error) {
+            console.error(`Vibe persistent state sync failed for ${key}:`, error.message);
+        } finally {
+            vibeStateTimers.delete(key);
+        }
+    }, 200);
+
     vibeStateTimers.set(key, timer);
 }
 
 const originalSaveJSON = saveJSON;
+
 saveJSON = function(file, data) {
     originalSaveJSON(file, data);
     queueVibeStateSync(file, data);
@@ -117,23 +168,45 @@ saveJSON = function(file, data) {
 
 async function hydrateVibeState() {
     const items = [
+        [USERS_FILE, VIBE_STATE_KEYS.users],
         [CHANNELS_FILE, VIBE_STATE_KEYS.channels],
         [CHANNEL_POSTS_FILE, VIBE_STATE_KEYS.channelPosts],
         [GROUPS_FILE, VIBE_STATE_KEYS.groups]
     ];
-    for (const [file,key] of items) {
+
+    for (const [file, key] of items) {
         const local = readJSON(file);
         const remote = await getVibeState(key);
-        if (Array.isArray(remote) && remote.length > 0) {
+
+        /*
+           IMPORTANT:
+           An existing remote empty array is valid data. Do not fall back
+           to the repository JSON in that case, otherwise deleted channels
+           or groups can come back after a Render redeploy.
+        */
+        if (Array.isArray(remote)) {
             fs.writeFileSync(file, JSON.stringify(remote, null, 2));
-        } else if (Array.isArray(local) && local.length > 0) {
+            continue;
+        }
+
+        /*
+           First run / old installation: migrate the local state once.
+           Do not overwrite a remote state that already exists.
+        */
+        if (Array.isArray(local)) {
             await putVibeState(key, local);
         }
     }
+
     vibeStateHydrated = true;
 }
+
 const vibeStateReady = hydrateVibeState().catch(error => {
     console.error("Vibe state hydration failed:", error.message);
+    /*
+       Keep the server usable if Supabase is temporarily unavailable.
+       Local JSON remains the fallback for this process.
+    */
     vibeStateHydrated = true;
 });
 
@@ -1250,6 +1323,13 @@ const server =
         async (req, res) => {
 
             try {
+
+                /*
+                   Never serve a freshly deployed process before persistent
+                   state has been restored from Supabase. This prevents the
+                   short-lived "empty chats/channels" state on startup.
+                */
+                await vibeStateReady;
 
                 if (
                     req.method === "OPTIONS"
