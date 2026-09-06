@@ -4296,6 +4296,189 @@ const server =
 
 
                 /* =====================================================
+                   CHANNEL DELETE
+                   Deletes the channel itself and every publication/comment
+                   stored with it. A linked discussion group is left intact
+                   because it may be a separate user-owned group.
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-delete") {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "").trim();
+                    const owner = String(body.owner || "").trim();
+                    if (!channelId || !owner) {
+                        sendJSON(res,{success:false,message:"Недостаточно данных"},400);
+                        return;
+                    }
+
+                    const channels = readJSON(CHANNELS_FILE);
+                    const channel = channels.find(c => String(c.id) === channelId);
+                    if (!channel) {
+                        sendJSON(res,{success:false,message:"Канал не найден"},404);
+                        return;
+                    }
+                    if (channel.owner !== owner) {
+                        sendJSON(res,{success:false,message:"Только владелец может удалить канал"},403);
+                        return;
+                    }
+
+                    const recipients = Array.from(new Set([
+                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
+                        channel.owner
+                    ].filter(Boolean)));
+
+                    const filteredChannels = channels.filter(c => String(c.id) !== channelId);
+                    saveJSON(CHANNELS_FILE, filteredChannels);
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const filteredPosts = posts.filter(post => String(post.channelId) !== channelId);
+                    saveJSON(CHANNEL_POSTS_FILE, filteredPosts);
+
+                    recipients.forEach(login => sendToUser(login, {
+                        type:"channel-deleted",
+                        channelId
+                    }));
+
+                    sendJSON(res,{success:true,channelId});
+                    return;
+                }
+
+                /* =====================================================
+                   CHANNEL POST REACTION
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-reaction") {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "").trim();
+                    const postId = String(body.postId || "").trim();
+                    const login = String(body.login || "").trim();
+                    const emoji = String(body.emoji || "").trim();
+                    const allowed = ["❤️","😂","👍","🔥","😮","😢"];
+
+                    if (!channelId || !postId || !login || !allowed.includes(emoji)) {
+                        sendJSON(res,{success:false,message:"Некорректная реакция"},400);
+                        return;
+                    }
+                    if (!findUser(login)) {
+                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
+                        return;
+                    }
+
+                    const channels = readJSON(CHANNELS_FILE);
+                    const channel = channels.find(c => String(c.id) === channelId);
+                    if (!channel) {
+                        sendJSON(res,{success:false,message:"Канал не найден"},404);
+                        return;
+                    }
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
+                    if (!post) {
+                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
+                        return;
+                    }
+
+                    if (!post.reactions || typeof post.reactions !== "object") post.reactions = {};
+                    const hadReaction = Array.isArray(post.reactions[emoji]) && post.reactions[emoji].includes(login);
+                    Object.keys(post.reactions).forEach(key => {
+                        if (!Array.isArray(post.reactions[key])) post.reactions[key] = [];
+                        post.reactions[key] = post.reactions[key].filter(item => item !== login);
+                    });
+                    if (!hadReaction) {
+                        if (!post.reactions[emoji]) post.reactions[emoji] = [];
+                        post.reactions[emoji].push(login);
+                    }
+                    Object.keys(post.reactions).forEach(key => {
+                        if (!post.reactions[key].length) delete post.reactions[key];
+                    });
+
+                    saveJSON(CHANNEL_POSTS_FILE, posts);
+
+                    const recipients = Array.from(new Set([
+                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
+                        channel.owner
+                    ].filter(Boolean)));
+                    recipients.forEach(target => sendToUser(target, {
+                        type:"channel-post-reaction",
+                        channelId,
+                        postId,
+                        post
+                    }));
+
+                    sendJSON(res,{success:true,post});
+                    return;
+                }
+
+                /* =====================================================
+                   CHANNEL POLL VOTE
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-poll-vote") {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "").trim();
+                    const postId = String(body.postId || "").trim();
+                    const login = String(body.login || "").trim();
+                    const optionId = String(body.optionId || "").trim();
+
+                    if (!channelId || !postId || !login || optionId === "") {
+                        sendJSON(res,{success:false,message:"Некорректный голос"},400);
+                        return;
+                    }
+                    if (!findUser(login)) {
+                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
+                        return;
+                    }
+
+                    const channels = readJSON(CHANNELS_FILE);
+                    const channel = channels.find(c => String(c.id) === channelId);
+                    if (!channel) {
+                        sendJSON(res,{success:false,message:"Канал не найден"},404);
+                        return;
+                    }
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
+                    if (!post || !post.poll) {
+                        sendJSON(res,{success:false,message:"Опрос не найден"},404);
+                        return;
+                    }
+
+                    if (!Array.isArray(post.poll.options) || !post.poll.options.some(o => String(o.id) === optionId)) {
+                        sendJSON(res,{success:false,message:"Вариант не найден"},400);
+                        return;
+                    }
+                    if (!post.poll.voters || typeof post.poll.voters !== "object") post.poll.voters = {};
+
+                    const previous = post.poll.voters[login];
+                    if (previous !== undefined && String(previous) === optionId) {
+                        sendJSON(res,{success:true,post});
+                        return;
+                    }
+
+                    if (previous !== undefined) {
+                        const oldOption = post.poll.options.find(o => String(o.id) === String(previous));
+                        if (oldOption) oldOption.votes = Math.max(0, Number(oldOption.votes || 0) - 1);
+                    }
+
+                    const selected = post.poll.options.find(o => String(o.id) === optionId);
+                    if (selected) selected.votes = Number(selected.votes || 0) + 1;
+                    post.poll.voters[login] = optionId;
+
+                    saveJSON(CHANNEL_POSTS_FILE, posts);
+
+                    const recipients = Array.from(new Set([
+                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
+                        channel.owner
+                    ].filter(Boolean)));
+                    recipients.forEach(target => sendToUser(target, {
+                        type:"channel-poll-vote",
+                        channelId,
+                        postId,
+                        post
+                    }));
+
+                    sendJSON(res,{success:true,post});
+                    return;
+                }
+
+                /* =====================================================
                    CHANNEL POST VIEW
                 ===================================================== */
                 if (req.method === "POST" && pathname === "/channel-post-view") {
@@ -4424,10 +4607,36 @@ const server =
                             ? body.mediaType
                             : "";
 
+                    const rawPoll = body.poll && typeof body.poll === "object"
+                        ? body.poll
+                        : null;
+                    let poll = null;
+
+                    if (rawPoll) {
+                        const question = String(rawPoll.question || "").trim().slice(0, 300);
+                        const rawOptions = Array.isArray(rawPoll.options) ? rawPoll.options : [];
+                        const options = rawOptions
+                            .map(value => String(value || "").trim().slice(0, 120))
+                            .filter(Boolean)
+                            .slice(0, 10);
+
+                        if (question && options.length >= 2) {
+                            poll = {
+                                question,
+                                options: options.map((option, index) => ({
+                                    id: String(index),
+                                    text: option,
+                                    votes: 0
+                                })),
+                                voters: {}
+                            };
+                        }
+                    }
 
                     if (
                         !text &&
-                        !media
+                        !media &&
+                        !poll
                     ) {
 
                         sendJSON(
@@ -4463,6 +4672,8 @@ const server =
                         media,
 
                         mediaType,
+                        poll,
+                        reactions: {},
                         views: 0,
                         viewers: [],
                         comments: [],
