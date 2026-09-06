@@ -12569,3 +12569,320 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
     }
 }
 </style>
+
+
+<!-- =========================================================
+     VIBE SAFE POLISH PATCH — birthday / reactions / chat opening
+     This patch intentionally overrides only the affected UI logic.
+========================================================= -->
+<style id="vibe-safe-polish-patch">
+/* Birthday picker: centered inside the current viewport/modal instead of
+   being attached to the input position. Works on desktop and mobile. */
+#vibeBirthdayPicker.vibe-birthday-picker {
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(370px, calc(100vw - 24px)) !important;
+    max-width: calc(100vw - 24px) !important;
+    max-height: min(360px, calc(100dvh - 24px)) !important;
+    overflow: hidden !important;
+    z-index: 30000 !important;
+    box-sizing: border-box !important;
+}
+#vibeBirthdayPicker .vibe-birthday-days {
+    gap: 2px !important;
+}
+#vibeBirthdayPicker .vibe-birthday-day {
+    height: 33px !important;
+    min-height: 33px !important;
+    border-radius: 9px !important;
+}
+#vibeBirthdayPicker .vibe-birthday-footer {
+    margin-top: 5px !important;
+}
+@media (max-width: 750px) {
+    #vibeBirthdayPicker.vibe-birthday-picker {
+        width: min(360px, calc(100vw - 20px)) !important;
+        max-height: min(355px, calc(100dvh - 20px)) !important;
+    }
+    #vibeBirthdayPicker .vibe-birthday-day {
+        height: 32px !important;
+        min-height: 32px !important;
+    }
+}
+@media (max-width: 390px) {
+    #vibeBirthdayPicker.vibe-birthday-picker {
+        width: calc(100vw - 16px) !important;
+        padding: 8px !important;
+    }
+    #vibeBirthdayPicker .vibe-birthday-day {
+        height: 30px !important;
+        min-height: 30px !important;
+        font-size: 11px !important;
+    }
+}
+
+/* Never expose the old welcome screen while a real chat is being opened. */
+.chat.chat-opening .messages {
+    visibility: hidden !important;
+}
+
+/* Reaction selection animation. */
+.message-actions-reactions button.vibe-reaction-selecting {
+    animation: vibeReactionPick .34s cubic-bezier(.2,.8,.2,1) both;
+    background: rgba(139,92,246,.18) !important;
+}
+@keyframes vibeReactionPick {
+    0%   { transform: scale(.78) rotate(-7deg); opacity:.55; }
+    55%  { transform: scale(1.28) rotate(3deg); opacity:1; }
+    100% { transform: scale(1) rotate(0); opacity:1; }
+}
+.vibe-reaction-pop {
+    position: fixed;
+    z-index: 40000;
+    pointer-events: none;
+    font-size: 30px;
+    line-height: 1;
+    transform: translate(-50%, -50%) scale(.55);
+    opacity: 0;
+    animation: vibeReactionPop .48s cubic-bezier(.2,.8,.2,1) forwards;
+}
+@keyframes vibeReactionPop {
+    0%   { transform: translate(-50%, -50%) scale(.55); opacity:0; }
+    22%  { transform: translate(-50%, -60%) scale(1.25); opacity:1; }
+    100% { transform: translate(-50%, -105%) scale(1); opacity:0; }
+}
+
+/* Avoid a flash of stale welcome content between chat selections. */
+.chat.chat-opening #welcomePanel {
+    display: none !important;
+}
+</style>
+<script id="vibe-safe-polish-script">
+(function () {
+    "use strict";
+
+    /* ---------------------------------------------------------
+       1) Birthday picker — always centered, no page scrolling.
+    --------------------------------------------------------- */
+    window.positionVibeBirthdayPicker = function () {
+        const picker = document.getElementById("vibeBirthdayPicker");
+        if (!picker || picker.classList.contains("hidden")) return;
+
+        // CSS centers it. Clear old JS coordinates left by previous versions.
+        picker.style.left = "50%";
+        picker.style.top = "50%";
+        picker.style.right = "auto";
+        picker.style.bottom = "auto";
+        picker.style.transform = "translate(-50%, -50%)";
+    };
+
+    window.toggleVibeBirthdayPicker = function (event) {
+        event?.stopPropagation();
+        const picker = document.getElementById("vibeBirthdayPicker");
+        if (!picker) return;
+
+        if (!picker.classList.contains("hidden")) {
+            picker.classList.add("hidden");
+            return;
+        }
+
+        const saved = document.getElementById("registerBirthDate")?.value || "";
+        if (saved) {
+            const parts = saved.split("-").map(Number);
+            if (parts.length === 3 && parts[0] && parts[1]) {
+                vibeBirthdayView = new Date(parts[0], parts[1] - 1, 1);
+            }
+        } else {
+            const now = new Date();
+            vibeBirthdayView = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+
+        if (typeof renderVibeBirthdayPicker === "function") {
+            renderVibeBirthdayPicker();
+        }
+        picker.classList.remove("hidden");
+        window.positionVibeBirthdayPicker();
+    };
+
+    /* ---------------------------------------------------------
+       2) Reactions — same reactions as server + visual selection.
+    --------------------------------------------------------- */
+    const reactionList = ["❤️", "😂", "👍", "🔥", "😮", "😢"];
+
+    function makeReactionPop(emoji, button) {
+        const pop = document.createElement("span");
+        pop.className = "vibe-reaction-pop";
+        pop.textContent = emoji;
+        const r = button.getBoundingClientRect();
+        pop.style.left = (r.left + r.width / 2) + "px";
+        pop.style.top = (r.top + r.height / 2) + "px";
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 520);
+    }
+
+    window.openMessageActions = function (messageInfo, x, y) {
+        if (typeof closeMessageActions === "function") closeMessageActions();
+        if (!messageInfo || !currentUser) return;
+
+        selectedMessageForAction = messageInfo;
+
+        const menu = document.createElement("div");
+        menu.className = "message-actions";
+        menu.style.left = "0px";
+        menu.style.top = "0px";
+
+        menu.innerHTML = `
+            <div class="message-actions-reactions" aria-label="Реакции">
+                ${reactionList.map(emoji => `
+                    <button type="button"
+                        title="${escapeHTML(emoji)}"
+                        aria-label="Реакция ${escapeHTML(emoji)}"
+                        data-reaction="${escapeHTML(emoji)}"
+                        data-message-id="${escapeHTML(messageInfo.id)}">${emoji}</button>
+                `).join("")}
+            </div>
+            <button type="button" onclick="replySelectedMessage()">${vibeIcon("reply")}<span>Ответить</span></button>
+            <button type="button" onclick="copySelectedMessage()">${vibeIcon("copy")}<span>Копировать текст</span></button>
+            <button type="button" onclick="copySelectedMessageLink()">${vibeIcon("link")}<span>Копировать ссылку на сообщение</span></button>
+            <button type="button" onclick="forwardSelectedMessage()">${vibeIcon("forward")}<span>Переслать</span></button>
+            <button type="button" onclick="reportSelectedMessage()">${vibeIcon("info")}<span>Пожаловаться</span></button>
+            <button type="button" onclick="selectSelectedMessage()">${vibeIcon("check")}<span>Выделить</span></button>
+            <div class="message-actions-divider"></div>
+            <button type="button" class="message-actions-danger" onclick="deleteSelectedMessage('${messageInfo.from === currentUser.login ? "all" : "self"}')">${vibeIcon("trash")}<span>${messageInfo.from === currentUser.login ? "Удалить у всех" : "Удалить у себя"}</span></button>
+        `;
+
+        document.body.appendChild(menu);
+
+        const rect = menu.getBoundingClientRect();
+        const maxLeft = Math.max(10, innerWidth - rect.width - 10);
+        const maxTop = Math.max(10, innerHeight - rect.height - 10);
+        menu.style.left = Math.round(Math.max(10, Math.min(Number(x) || 10, maxLeft))) + "px";
+        menu.style.top = Math.round(Math.max(10, Math.min(Number(y) || 10, maxTop))) + "px";
+    };
+
+    /* The existing click handler still calls setMessageReaction().
+       This listener runs before the old one and adds only animation. */
+    document.addEventListener("click", function (event) {
+        const reaction = event.target.closest?.(".message-actions [data-reaction][data-message-id]");
+        if (!reaction) return;
+
+        event.stopPropagation();
+        reaction.classList.remove("vibe-reaction-selecting");
+        void reaction.offsetWidth;
+        reaction.classList.add("vibe-reaction-selecting");
+        makeReactionPop(reaction.dataset.reaction, reaction);
+
+        // We stop the old delegated handler here so the reaction is sent once.
+        setMessageReaction(reaction.dataset.messageId, reaction.dataset.reaction);
+        setTimeout(() => reaction.classList.remove("vibe-reaction-selecting"), 360);
+    }, true);
+
+    /* ---------------------------------------------------------
+       3) Fast, race-safe direct chat opening.
+       The welcome panel stays hidden until the actual messages arrive.
+    --------------------------------------------------------- */
+    let chatOpenSequence = 0;
+
+    window.openChat = async function (login) {
+        if (!currentUser || !login) return;
+        const sequence = ++chatOpenSequence;
+        const chat = document.querySelector(".chat");
+        const box = document.getElementById("messages");
+        const input = document.getElementById("messageInput");
+
+        if (typeof closeMessageActions === "function") closeMessageActions();
+        if (typeof closeVibeBirthdayPicker === "function") closeVibeBirthdayPicker();
+
+        currentGroup = null;
+        currentChannel = null;
+        currentChat = login;
+
+        document.querySelectorAll(".channel-only-tools").forEach(el => el.classList.add("hidden"));
+        document.getElementById("attachmentPhotoButton")?.classList.remove("hidden");
+        document.getElementById("attachmentFileButton")?.classList.remove("hidden");
+        document.getElementById("attachmentGifButton")?.classList.remove("hidden");
+        document.getElementById("mainComposer")?.classList.remove("channel-readonly-composer");
+        document.getElementById("emojiPicker")?.classList.add("hidden");
+        document.getElementById("callButtons")?.classList.remove("hidden");
+
+        if (chat) chat.classList.add("chat-opening");
+        if (box) {
+            // Remove the welcome screen immediately so it can never flash.
+            box.innerHTML = "";
+        }
+
+        if (typeof openMobileChatView === "function") openMobileChatView();
+
+        if (chatTimer) {
+            clearInterval(chatTimer);
+            chatTimer = null;
+        }
+
+        if (input) {
+            input.disabled = false;
+            input.placeholder = translations[siteLanguage]?.write || "Написать сообщение...";
+        }
+
+        // Use the already-loaded sidebar data for an instant header.
+        const cachedChat = Array.isArray(chats)
+            ? chats.find(c => c && c.login === login)
+            : null;
+        if (cachedChat?.user) {
+            const u = cachedChat.user;
+            document.getElementById("chatName").textContent = u.name || u.login;
+            document.getElementById("chatStatus").textContent = u.online ? "онлайн" : "офлайн";
+            document.getElementById("chatAvatar").innerHTML = u.photo
+                ? `<img src="${escapeHTML(u.photo)}">`
+                : vibeIcon("user");
+        }
+
+        const messagesUrl = "/messages?user1=" + encodeURIComponent(currentUser.login) + "&user2=" + encodeURIComponent(login);
+
+        try {
+            // Header profile and messages are fetched in parallel.
+            const [userResult, messagesResult] = await Promise.all([
+                getUser(login),
+                fetch(messagesUrl).then(r => r.ok ? r.json() : null)
+            ]);
+
+            if (sequence !== chatOpenSequence || currentChat !== login || currentGroup || currentChannel) return;
+
+            if (userResult) {
+                document.getElementById("chatName").textContent = userResult.name || userResult.login;
+                document.getElementById("chatStatus").textContent = userResult.online ? "онлайн" : "офлайн";
+                document.getElementById("chatAvatar").innerHTML = userResult.photo
+                    ? `<img src="${escapeHTML(userResult.photo)}">`
+                    : vibeIcon("user");
+            }
+
+            if (Array.isArray(messagesResult)) {
+                renderMessageList(messagesResult, true, false, false);
+                readMessageCounts[login] = messagesResult.filter(m => m.from === login).length;
+                saveReadMessageCounts();
+            } else if (box) {
+                box.innerHTML = `<div class="empty-chat">${siteLanguage === "ru" ? "Пока сообщений нет.<br>Напишите первым!" : "No messages yet.<br>Send the first message!"}</div>`;
+            }
+
+            renderChats();
+        } catch {
+            if (sequence === chatOpenSequence && box) {
+                box.innerHTML = `<div class="empty-chat">Не удалось загрузить сообщения.</div>`;
+            }
+        } finally {
+            if (sequence === chatOpenSequence) {
+                chat?.classList.remove("chat-opening");
+                setTimeout(() => {
+                    if (sequence === chatOpenSequence) input?.focus();
+                }, 0);
+            }
+        }
+    };
+
+    window.addEventListener("resize", window.positionVibeBirthdayPicker);
+    window.addEventListener("scroll", window.positionVibeBirthdayPicker, true);
+})();
+</script>
