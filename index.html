@@ -13914,3 +13914,226 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 })();
 </script>
 
+<style id="vibe-channel-final-pinned-forward-delete">
+/* ===== Channel pinned bar, forwarding and deletion ===== */
+#vibeChannelPinnedBar{
+    display:none;
+    align-items:center;
+    gap:10px;
+    min-height:54px;
+    box-sizing:border-box;
+    padding:7px 12px 7px 10px;
+    background:var(--panel);
+    border-bottom:1px solid var(--border);
+    box-shadow:0 3px 12px rgba(0,0,0,.12);
+    cursor:pointer;
+    position:relative;
+    z-index:2;
+}
+#vibeChannelPinnedBar.show{display:flex}
+.vibe-pinned-thumb{
+    width:34px;height:34px;min-width:34px;border-radius:6px;overflow:hidden;
+    display:grid;place-items:center;background:var(--panel2);color:var(--accent);font-size:17px;
+}
+.vibe-pinned-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.vibe-pinned-copy{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.vibe-pinned-title{font-size:12px;font-weight:800;color:#62a9ff;line-height:1.15}
+.vibe-pinned-text{font-size:12px;color:var(--text);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vibe-pinned-close{width:28px;height:28px;min-width:28px;border:0;background:transparent;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;border-radius:8px}
+.vibe-pinned-close:hover{background:var(--panel2);color:var(--text)}
+
+.vibe-forward-choice{
+    display:flex;align-items:center;gap:10px;width:100%;padding:10px;border:0;border-radius:13px;
+    background:transparent;color:var(--text);text-align:left;cursor:pointer
+}
+.vibe-forward-choice:hover{background:var(--panel2)}
+
+@media(max-width:700px){
+    #vibeChannelPinnedBar{min-height:50px;padding:6px 9px}
+    .vibe-pinned-thumb{width:32px;height:32px;min-width:32px}
+    .vibe-pinned-title,.vibe-pinned-text{font-size:11px}
+}
+</style>
+
+<script id="vibe-channel-final-pinned-forward-delete-script">
+(function(){
+    "use strict";
+
+    /* ---------- pinned bar ---------- */
+    function pinnedKey(){
+        return currentUser ? "vibePinnedChannelPosts:" + currentUser.login : "vibePinnedChannelPosts";
+    }
+    function readPinned(){
+        try{
+            const value=JSON.parse(localStorage.getItem(pinnedKey())||"[]");
+            return Array.isArray(value)?value.map(String):[];
+        }catch{return []}
+    }
+    function writePinned(list){
+        try{localStorage.setItem(pinnedKey(),JSON.stringify(Array.from(new Set(list.map(String)))))}catch{}
+    }
+    function isPinnedNow(id){return readPinned().includes(String(id))}
+
+    function ensurePinnedBar(){
+        const chat=document.querySelector(".chat");
+        const messages=document.getElementById("messages");
+        if(!chat || !messages)return null;
+        let bar=document.getElementById("vibeChannelPinnedBar");
+        if(!bar){
+            bar=document.createElement("div");
+            bar.id="vibeChannelPinnedBar";
+            chat.insertBefore(bar,messages);
+        }
+        return bar;
+    }
+
+    function updatePinnedBar(){
+        const bar=ensurePinnedBar();
+        if(!bar){return}
+        if(!currentChannel){bar.classList.remove("show");bar.innerHTML="";return}
+        const posts=Array.isArray(window.__vibeChannelPosts)?window.__vibeChannelPosts:[];
+        const pinned=posts.find(p=>isPinnedNow(p.id));
+        if(!pinned){bar.classList.remove("show");bar.innerHTML="";return}
+
+        const text=String(pinned.text||"").replace(/\s+/g," ").trim() || (pinned.media ? (pinned.attachmentName||"Вложение") : "Публикация");
+        const thumb=pinned.media && String(pinned.mediaType||"").startsWith("image")
+            ? `<img src="${escapeHTML(pinned.media)}" alt="">`
+            : `<span>${pinned.media ? "📎" : "▤"}</span>`;
+        bar.innerHTML=`<div class="vibe-pinned-thumb">${thumb}</div><div class="vibe-pinned-copy"><div class="vibe-pinned-title">Закреплённое сообщение</div><div class="vibe-pinned-text">${escapeHTML(text)}</div></div><button type="button" class="vibe-pinned-close" aria-label="Открепить">×</button>`;
+        bar.classList.add("show");
+        bar.onclick=function(){
+            const target=document.querySelector('.channel-post[data-post-id="'+CSS.escape(String(pinned.id))+'"]');
+            if(target)target.scrollIntoView({behavior:"smooth",block:"center"});
+        };
+        const close=bar.querySelector(".vibe-pinned-close");
+        close.onclick=function(event){
+            event.stopPropagation();
+            writePinned(readPinned().filter(x=>x!==String(pinned.id)));
+            updatePinnedBar();
+            decorateChannelPosts();
+        };
+    }
+
+    /* replace the existing self-pin function with bar update */
+    window.vibeToggleChannelPostPin=function(){
+        const post=(typeof selectedChannelPostForAction!=="undefined") ? selectedChannelPostForAction : null;
+        document.querySelector(".message-actions")?.remove();
+        if(!post)return;
+        const id=String(post.id), list=readPinned();
+        if(list.includes(id))writePinned(list.filter(x=>x!==id));else writePinned([id]);
+        decorateChannelPosts();
+        updatePinnedBar();
+    };
+
+    /* ---------- pretty forwarding ---------- */
+    function closeForward(){document.getElementById("vibeChannelForwardModal")?.remove()}
+    function postText(post){
+        if(!post)return "";
+        let text=String(post.text||"");
+        if(post.media && !text) text=post.attachmentName||"Файл";
+        return text;
+    }
+    async function sendForward(login,post){
+        const body={
+            from:currentUser.login,
+            to:login,
+            text:"↗️ " + postText(post),
+            type:post.media?"attachment":"text"
+        };
+        if(post.media){
+            body.attachment=post.media;
+            body.attachmentType=post.mediaType||"application/octet-stream";
+            body.attachmentName=post.attachmentName||"Пересланная публикация";
+        }
+        const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+        const d=await r.json().catch(()=>({}));
+        if(!d.success)throw new Error(d.message||"Не удалось переслать");
+    }
+    window.vibeForwardChannelPost=async function(){
+        const post=(typeof selectedChannelPostForAction!=="undefined") ? selectedChannelPostForAction : null;
+        document.querySelector(".message-actions")?.remove();
+        if(!post || !currentUser)return;
+        closeForward();
+        const modal=document.createElement("div");
+        modal.id="vibeChannelForwardModal"; modal.className="modal";
+        modal.innerHTML=`<div class="modal-card" style="width:min(430px,calc(100vw - 24px));max-height:min(620px,calc(100dvh - 24px));display:flex;flex-direction:column;overflow:hidden"><div class="modal-header"><div class="modal-title">Переслать публикацию</div><button type="button" onclick="document.getElementById('vibeChannelForwardModal')?.remove()">✕</button></div><div style="padding:0 14px 10px;color:var(--muted);font-size:12px">Выбери друга</div><div id="vibeChannelForwardList" style="overflow:auto;padding:0 10px 12px"></div></div>`;
+        document.body.appendChild(modal);
+        const list=modal.querySelector("#vibeChannelForwardList");
+        const friends=await fetch("/friends?login="+encodeURIComponent(currentUser.login)).then(r=>r.json()).catch(()=>[]);
+        if(!Array.isArray(friends)||!friends.length){list.innerHTML=`<div style="padding:22px;text-align:center;color:var(--muted)">У тебя пока нет друзей</div>`;return}
+        friends.forEach(friend=>{
+            const b=document.createElement("button");b.type="button";b.className="vibe-forward-choice";
+            b.innerHTML=`<div class="vibe-forward-avatar">${friend.photo?`<img src="${escapeHTML(friend.photo)}" alt="">`:escapeHTML((friend.name||friend.login||"?").slice(0,1).toUpperCase())}</div><div class="vibe-forward-name"><strong>${escapeHTML(friend.name||friend.login)}</strong><span>@${escapeHTML(friend.login)}</span></div>`;
+            b.onclick=async()=>{
+                b.disabled=true;
+                try{await sendForward(friend.login,post);closeForward();showVibeNotice?.("Готово","Публикация переслана другу")}catch(e){showVibeNotice?.("Не удалось переслать",e.message)}finally{b.disabled=false}
+            };
+            list.appendChild(b);
+        });
+    };
+
+    /* ---------- channel post delete ---------- */
+    window.vibeDeleteChannelPostForMe=function(){
+        const post=(typeof selectedChannelPostForAction!=="undefined") ? selectedChannelPostForAction : null;
+        document.querySelector(".message-actions")?.remove();
+        if(!post)return;
+        hideForMe(post.id);
+        decorateChannelPosts();
+        updatePinnedBar();
+    };
+
+    window.vibeDeleteChannelPostForAll=async function(){
+        const post=(typeof selectedChannelPostForAction!=="undefined") ? selectedChannelPostForAction : null;
+        document.querySelector(".message-actions")?.remove();
+        if(!post || !currentChannel || !currentUser)return;
+        if(currentChannel.owner!==currentUser.login){showVibeNotice?.("Недоступно","Только владелец канала может удалить публикацию у всех.");return}
+        const ok=await (typeof showVibeChannelConfirm==="function" ? showVibeChannelConfirm("Удалить публикацию?","Она будет удалена у всех подписчиков канала.") : Promise.resolve(true));
+        if(!ok)return;
+        try{
+            const r=await fetch("/channel-post-delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,postId:post.id,owner:currentUser.login})});
+            const d=await r.json().catch(()=>({}));
+            if(!d.success)throw new Error(d.message||"Не удалось удалить публикацию");
+            window.__vibeChannelPosts=(window.__vibeChannelPosts||[]).filter(p=>String(p.id)!==String(post.id));
+            document.querySelector('.channel-post[data-post-id="'+CSS.escape(String(post.id))+'"]')?.remove();
+            updatePinnedBar();
+        }catch(e){showVibeNotice?.("Не удалось удалить",e.message)}
+    };
+
+    /* ---------- render hook for current channel posts ---------- */
+    const oldDecorate=window.decorateChannelPosts;
+    window.decorateChannelPosts=function(){
+        if(typeof oldDecorate==="function")oldDecorate();
+        updatePinnedBar();
+    };
+
+    /* Existing function is lexical, so additionally rebind with a wrapper that
+       runs after loading as well. */
+    const oldLoad=window.loadChannelPosts;
+    if(typeof oldLoad==="function" && !window.__vibePinnedLoaderFinal){
+        window.__vibePinnedLoaderFinal=true;
+        window.loadChannelPosts=async function(forceScroll=true){
+            const result=await oldLoad(forceScroll);
+            updatePinnedBar();
+            return result;
+        };
+    }
+
+    /* Catch channel deletion events immediately. */
+    const oldHandle=window.handleSocketMessage;
+    if(typeof oldHandle==="function" && !window.__vibeChannelDeleteSocketFinal){
+        window.__vibeChannelDeleteSocketFinal=true;
+        window.handleSocketMessage=function(data){
+            oldHandle(data);
+            if(data?.type==="channel-post-deleted" && currentChannel && String(data.channelId)===String(currentChannel.id)){
+                window.__vibeChannelPosts=(window.__vibeChannelPosts||[]).filter(p=>String(p.id)!==String(data.postId));
+                document.querySelector('.channel-post[data-post-id="'+CSS.escape(String(data.postId))+'"]')?.remove();
+                try{writePinned(readPinned().filter(x=>x!==String(data.postId)))}catch{}
+                updatePinnedBar();
+            }
+        };
+    }
+
+    document.addEventListener("DOMContentLoaded",function(){setTimeout(updatePinnedBar,50)});
+})();
+</script>
+

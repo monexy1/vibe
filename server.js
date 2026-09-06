@@ -4605,6 +4605,55 @@ const server =
                 }
 
                 /* =====================================================
+                   CHANNEL POST DELETE
+                   Owner-only delete for everyone.
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-delete") {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "").trim();
+                    const postId = String(body.postId || "").trim();
+                    const owner = String(body.owner || "").trim();
+
+                    if (!channelId || !postId || !owner) {
+                        sendJSON(res,{success:false,message:"Недостаточно данных"},400);
+                        return;
+                    }
+
+                    const channels = readJSON(CHANNELS_FILE);
+                    const channel = channels.find(c => String(c.id) === channelId);
+                    if (!channel) {
+                        sendJSON(res,{success:false,message:"Канал не найден"},404);
+                        return;
+                    }
+                    if (String(channel.owner) !== owner) {
+                        sendJSON(res,{success:false,message:"Только владелец может удалить публикацию у всех"},403);
+                        return;
+                    }
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const exists = posts.some(p => String(p.id) === postId && String(p.channelId) === channelId);
+                    if (!exists) {
+                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
+                        return;
+                    }
+
+                    saveJSON(CHANNEL_POSTS_FILE, posts.filter(p => !(String(p.id) === postId && String(p.channelId) === channelId)));
+
+                    const recipients = Array.from(new Set([
+                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
+                        channel.owner
+                    ].filter(Boolean)));
+                    recipients.forEach(target => sendToUser(target, {
+                        type:"channel-post-deleted",
+                        channelId,
+                        postId
+                    }));
+
+                    sendJSON(res,{success:true,channelId,postId});
+                    return;
+                }
+
+                /* =====================================================
                    CHANNEL POST
                 ===================================================== */
 
