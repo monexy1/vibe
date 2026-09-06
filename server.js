@@ -324,6 +324,7 @@ function supabaseRowToLocalUser(row) {
         blockedUsers: [],
         profile: {
             name: row.name || row.login || "",
+            username: row.username || row.login || "",
             about: row.about || "",
             photo: row.photo || "",
             background: row.background || "",
@@ -355,6 +356,7 @@ async function createSupabaseUser(user) {
         login: user.login,
         password: user.password,
         name: profile.name || user.login,
+        username: profile.username || user.login,
         about: profile.about || "",
         photo: profile.photo || "",
         background: profile.background || "",
@@ -406,6 +408,7 @@ function applySupabaseUserToLocalUser(localUser, row) {
     localUser.password = row.password || localUser.password;
 
     if (typeof row.name === "string") localUser.profile.name = row.name;
+    if (typeof row.username === "string") localUser.profile.username = row.username || localUser.login;
     if (typeof row.about === "string") localUser.profile.about = row.about;
     if (typeof row.photo === "string") localUser.profile.photo = row.photo;
     if (typeof row.background === "string") localUser.profile.background = row.background;
@@ -492,6 +495,22 @@ function normalizeUser(user) {
     if (typeof user.profile.email !== "string") {
         user.profile.email = "";
     }
+
+    if (typeof user.profile.username !== "string") {
+        user.profile.username = user.login || "";
+    }
+
+    user.profile.username =
+        user.profile.username
+            .trim()
+            .replace(/^@+/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, "")
+            .slice(0, 32) ||
+        String(user.login || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9_]/g, "")
+            .slice(0, 32);
 
     if (
         !user.profile.privacy ||
@@ -932,6 +951,10 @@ function publicUser(
 
         name:
             user.profile.name ||
+            user.login,
+
+        username:
+            user.profile.username ||
             user.login,
 
         about:
@@ -1902,6 +1925,64 @@ const server =
                         user.profile.name =
                             body.name.trim().slice(0, 60) || user.login;
                         supabaseChanges.name = user.profile.name;
+                    }
+
+                    if (typeof body.username === "string") {
+                        const requestedUsername =
+                            body.username
+                                .trim()
+                                .replace(/^@+/g, "")
+                                .toLowerCase()
+                                .replace(/[^a-z0-9_]/g, "")
+                                .slice(0, 32);
+
+                        if (!requestedUsername) {
+                            sendJSON(res,{
+                                success:false,
+                                message:"Юзернейм должен содержать латинские буквы, цифры или _"
+                            },400);
+                            return;
+                        }
+
+                        try {
+                            const { data: usernameRows, error: usernameError } =
+                                await supabase
+                                    .from("users")
+                                    .select("login,username")
+                                    .eq("username",requestedUsername)
+                                    .limit(2);
+
+                            if (usernameError) {
+                                throw usernameError;
+                            }
+
+                            const taken = (usernameRows || []).some(
+                                row => String(row.login) !== login
+                            );
+
+                            if (taken) {
+                                sendJSON(res,{
+                                    success:false,
+                                    message:"Этот юзернейм уже занят"
+                                },409);
+                                return;
+                            }
+                        } catch (error) {
+                            /* If the username column has not been migrated yet,
+                               surface a clear server error instead of silently
+                               pretending it was saved. */
+                            if (String(error?.message || "").toLowerCase().includes("username")) {
+                                sendJSON(res,{
+                                    success:false,
+                                    message:"Сначала добавьте поле username в Supabase"
+                                },500);
+                                return;
+                            }
+                            throw error;
+                        }
+
+                        user.profile.username = requestedUsername;
+                        supabaseChanges.username = requestedUsername;
                     }
 
                     if (typeof body.about === "string") {
@@ -3145,6 +3226,18 @@ const server =
                             ? String(body.attachmentName || "Файл").slice(0,180)
                             : "";
 
+                    const forwardedFrom =
+                        body.forwardedFrom &&
+                        typeof body.forwardedFrom === "object"
+                            ? {
+                                type:String(body.forwardedFrom.type || ""),
+                                id:String(body.forwardedFrom.id || ""),
+                                name:String(body.forwardedFrom.name || "").slice(0,120),
+                                username:String(body.forwardedFrom.username || "").slice(0,40),
+                                photo:String(body.forwardedFrom.photo || "").slice(0,2000000)
+                            }
+                            : null;
+
 
                     if (
                         !from ||
@@ -3275,6 +3368,8 @@ const server =
                                 : "",
 
                         replyTo,
+
+                        forwardedFrom,
 
                         reactions: {},
 

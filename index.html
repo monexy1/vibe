@@ -3891,6 +3891,23 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     placeholder="Имя"
                 >
 
+                <div class="profile-username-field">
+                    <label class="setting-label">Юзернейм</label>
+                    <div class="profile-username-input-wrap">
+                        <span>@</span>
+                        <input
+                            id="profileUsername"
+                            placeholder="username"
+                            maxlength="32"
+                            autocomplete="off"
+                            spellcheck="false"
+                        >
+                    </div>
+                    <div class="profile-username-hint">
+                        Уникальный юзернейм. Латиница, цифры и символ _.
+                    </div>
+                </div>
+
                 <textarea
                     id="profileAbout"
                     placeholder="О себе — необязательно"
@@ -7917,8 +7934,22 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             ? `<div class="group-sender">${escapeHTML(message.from || "Пользователь")}</div>`
             : "";
 
+        const forwardedHtml = message.forwardedFrom
+            ? `<div class="forwarded-from">
+                <div class="forwarded-from-avatar">
+                    ${message.forwardedFrom.photo
+                        ? `<img src="${escapeHTML(message.forwardedFrom.photo)}" alt="">`
+                        : vibeIcon("channel")}
+                </div>
+                <div class="forwarded-from-copy">
+                    <div class="forwarded-from-label">Переслано из</div>
+                    <div class="forwarded-from-name">${escapeHTML(message.forwardedFrom.name || "Канал")}</div>
+                </div>
+            </div>`
+            : "";
+
         if (message.type === "voice" && message.audio) {
-            bubble.innerHTML = `${senderHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
         } else if (message.type === "attachment" && message.attachment) {
             const mime = String(message.attachmentType || "");
             let attachmentHtml = "";
@@ -7932,9 +7963,9 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             const attachmentCaption = message.text
                 ? `<div class="attachment-caption">${escapeHTML(message.text)}</div>`
                 : "";
-            bubble.innerHTML = `${senderHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
         } else {
-            bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
 
         bubble.insertAdjacentHTML("beforeend", renderMessageReactions(message) + renderMessageReactionTools(message));
@@ -8473,6 +8504,12 @@ async function openProfile() {
     $("profileName").value =
         user.name || "";
 
+    if ($("profileUsername")) {
+        $("profileUsername").value =
+            String(user.username || currentUser.login || "")
+                .replace(/^@+/, "");
+    }
+
     $("profileAbout").value =
         user.about || "";
 
@@ -8522,6 +8559,9 @@ async function openProfile() {
     );
 
     $("profileName").disabled = false;
+    if ($("profileUsername")) {
+        $("profileUsername").disabled = false;
+    }
     $("profileAbout").disabled = false;
     $("profilePhoto").disabled = false;
     $("profileBirthDate").disabled = false;
@@ -9135,6 +9175,12 @@ async function saveProfile() {
                                 $("profileName")
                                     .value
                                     .trim(),
+
+                            username:
+                                $("profileUsername")?.value
+                                    .trim()
+                                    .replace(/^@+/, "")
+                                    .toLowerCase() || "",
 
                             about:
                                 $("profileAbout")
@@ -10163,11 +10209,7 @@ async function openChannel(channel) {
         channel.name || "Канал";
 
     $("chatStatus").textContent =
-        [
-            channel.description || "Канал Vibe",
-            channel.username ? "@" + channel.username : "",
-            Number(channel.subscriberCount || channel.subscribers?.length || 0) + " подписчиков"
-        ].filter(Boolean).join(" · ");
+        Number(channel.subscriberCount || channel.subscribers?.length || 0) + " подписчиков";
 
     const input =
         $("messageInput");
@@ -10238,11 +10280,7 @@ function updateChannelHeader() {
         );
 
     $("chatStatus").textContent =
-        [
-            currentChannel.description || "Канал Vibe",
-            currentChannel.username ? "@" + currentChannel.username : "",
-            subscriberCount + " подписчиков"
-        ].filter(Boolean).join(" · ");
+        Number(currentChannel.subscriberCount ?? currentChannel.subscribers?.length ?? 0) + " подписчиков";
 
     $("chatAvatar").innerHTML =
         currentChannel.photo
@@ -10559,17 +10597,6 @@ async function loadChannelPosts(forceScroll=true) {
                     { hour: "2-digit", minute: "2-digit" }
                 );
 
-            const commentPreview = comments
-                .slice(-3)
-                .map(comment => {
-                    const photo = comment?.photo || "";
-                    const name = comment?.name || comment?.author || "?";
-                    return photo
-                        ? `<span class="vibe-comment-avatar"><img src="${escapeHTML(photo)}" alt=""></span>`
-                        : `<span class="vibe-comment-avatar">${escapeHTML(String(name).slice(0,1).toUpperCase())}</span>`;
-                })
-                .join("");
-
             item.innerHTML = `
                 <div class="channel-post-head">
                     <div class="avatar">${channelAvatar}</div>
@@ -10589,31 +10616,23 @@ async function loadChannelPosts(forceScroll=true) {
                 </div>
 
                 <div class="channel-post-meta">
-                    <div class="channel-post-meta-left">
-                        <span class="channel-post-views">
-                            ${vibeIcon("eye")}
-                            <span>${Number(post.views || 0)}</span>
-                        </span>
+                    <span>${escapeHTML(timeText)}</span>
 
-                        <button
-                            type="button"
-                            class="channel-comment-toggle"
-                            title="Комментарии"
-                        >
-                            ${commentPreview
-                                ? `<span class="vibe-comment-avatars">${commentPreview}</span>`
-                                : ""}
-                            <span class="vibe-comment-count">
-                                ${comments.length} ${comments.length === 1 ? "комментарий" : "комментариев"}
-                            </span>
-                            <span class="vibe-comment-arrow">›</span>
-                        </button>
-                    </div>
-
-                    <span class="channel-post-time">
-                        ${escapeHTML(timeText)}
+                    <span class="channel-post-views">
+                        ${vibeIcon("eye")}
+                        ${Number(post.views || 0)}
                     </span>
+
+                    <button
+                        type="button"
+                        class="channel-comment-toggle"
+                        title="Комментарии"
+                    >
+                        ${vibeIcon("comment")}
+                        ${comments.length}
+                    </button>
                 </div>
+
             `;
 
             const commentButton = item.querySelector(".channel-comment-toggle");
@@ -10623,9 +10642,22 @@ async function loadChannelPosts(forceScroll=true) {
 
             box.appendChild(item);
 
-            if (post.views === undefined) {
-                post.views = 0;
-            }
+            fetch(
+                "/channel-post-view",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        channelId: currentChannel.id,
+                        postId: post.id,
+                        viewer: currentUser?.login || ""
+                    })
+                }
+            ).catch(() => {});
+
+            if (post.views === undefined) post.views = 0;
         });
 
         if (forceScroll || wasNearBottom) {
@@ -14979,191 +15011,444 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 })();
 </script>
 
-<style id="vibe-current-channel-feed-only-fix">
-/* === Channel feed: left aligned, like a messenger feed === */
-.channel-post{
-    width:min(820px, calc(100% - 28px)) !important;
-    margin:0 0 12px 12px !important;
-    padding:0 !important;
-    overflow:hidden !important;
+<style id="vibe-forward-final-clean">
+.profile-username-field{
+    margin-top:10px;
 }
-
-.channel-posts{
-    display:block !important;
-    width:100% !important;
+.profile-username-input-wrap{
+    position:relative;
+    display:flex;
+    align-items:center;
 }
-
-.channel-post-body{
-    padding:0 14px 10px !important;
+.profile-username-input-wrap>span{
+    position:absolute;
+    left:13px;
+    z-index:2;
+    color:var(--muted);
+    font-weight:800;
+    pointer-events:none;
 }
-
-.channel-post-text{
-    max-width:100% !important;
-    white-space:pre-wrap !important;
-    overflow-wrap:anywhere !important;
-    word-break:normal !important;
-    line-height:1.45 !important;
+.profile-username-input-wrap input{
+    padding-left:29px!important;
 }
-
-.channel-post-media{
-    max-width:100% !important;
+.profile-username-hint{
+    margin-top:5px;
+    color:var(--muted);
+    font-size:10px;
+    line-height:1.35;
 }
-
-.channel-post-meta{
-    display:flex !important;
-    align-items:center !important;
-    justify-content:space-between !important;
-    gap:10px !important;
-    padding:7px 11px 8px !important;
-    min-height:35px !important;
+.vibe-forward-clean-overlay{
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:14px!important;
+    box-sizing:border-box!important;
+    background:rgba(4,7,18,.72)!important;
+    backdrop-filter:blur(8px)!important;
+    z-index:60000!important;
 }
-
-.channel-post-meta-left{
-    min-width:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    gap:8px !important;
+.vibe-forward-clean-card{
+    width:min(470px,calc(100vw - 24px));
+    max-height:min(680px,calc(100dvh - 24px));
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    margin:auto;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:0 25px 90px rgba(0,0,0,.45);
 }
-
-.channel-post-views{
-    display:inline-flex !important;
-    align-items:center !important;
-    gap:4px !important;
-    color:var(--muted) !important;
-    white-space:nowrap !important;
+.vibe-forward-clean-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:15px 16px;
+    border-bottom:1px solid var(--border);
 }
-
-.channel-post-views svg{
-    width:15px !important;
-    height:15px !important;
-    vertical-align:0 !important;
+.vibe-forward-clean-title{
+    flex:1;
+    font-size:18px;
+    font-weight:950;
 }
-
-.channel-post-time{
-    flex:0 0 auto !important;
-    color:var(--muted) !important;
-    font-size:11px !important;
+.vibe-forward-clean-close{
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:11px;
+    background:var(--panel2);
+    color:var(--text);
 }
-
-.channel-comment-toggle{
-    min-width:0 !important;
-    display:inline-flex !important;
-    align-items:center !important;
-    gap:6px !important;
-    border:0 !important;
-    background:transparent !important;
-    color:#58aefb !important;
-    padding:2px 4px !important;
-    border-radius:999px !important;
+.vibe-forward-clean-search{
+    margin:11px 14px 9px;
 }
-
-.channel-comment-toggle:hover{
-    background:rgba(88,174,251,.08) !important;
+.vibe-forward-clean-list{
+    overflow:auto;
+    padding:0 10px 14px;
 }
-
-.vibe-comment-avatars{
-    display:inline-flex !important;
-    align-items:center !important;
-    height:23px !important;
-    padding-left:2px !important;
+.vibe-forward-clean-section{
+    padding:7px 8px 6px;
+    color:var(--muted);
+    font-size:11px;
+    font-weight:900;
 }
-
-.vibe-comment-avatar{
-    width:23px !important;
-    height:23px !important;
-    min-width:23px !important;
-    border-radius:50% !important;
-    overflow:hidden !important;
-    display:grid !important;
-    place-items:center !important;
-    background:var(--accent) !important;
-    border:2px solid var(--panel) !important;
-    margin-left:-6px !important;
-    color:#fff !important;
-    font-size:9px !important;
-    font-weight:900 !important;
+.vibe-forward-clean-row{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px;
+    border:0;
+    border-radius:12px;
+    background:transparent;
+    color:var(--text);
+    text-align:left;
 }
-
-.vibe-comment-avatar:first-child{
-    margin-left:0 !important;
+.vibe-forward-clean-row:hover{
+    background:var(--panel2);
 }
-
-.vibe-comment-avatar img{
-    width:100% !important;
-    height:100% !important;
-    object-fit:cover !important;
+.vibe-forward-clean-avatar{
+    width:42px;
+    height:42px;
+    min-width:42px;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+    background:var(--accent);
+    color:#fff;
+    font-weight:900;
 }
-
-.vibe-comment-count{
-    color:#58aefb !important;
-    font-size:12px !important;
-    font-weight:800 !important;
-    white-space:nowrap !important;
+.vibe-forward-clean-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
 }
-
-.vibe-comment-arrow{
-    color:#58aefb !important;
-    font-size:19px !important;
-    line-height:1 !important;
+.vibe-forward-clean-info{
+    min-width:0;
+    flex:1;
 }
-
-/* === Forwarded direct message: keep it as a normal-size bubble === */
-.message-row .message:has(.forwarded-from){
-    max-width:min(72%, 620px) !important;
-    min-width:170px !important;
+.vibe-forward-clean-info strong{
+    display:block;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
 }
-
-.message-row.mine .message:has(.forwarded-from){
-    min-width:170px !important;
-}
-
-.forwarded-from{
-    max-width:100% !important;
-    box-sizing:border-box !important;
-}
-
-.forwarded-from-copy{
-    min-width:0 !important;
-    max-width:100% !important;
-}
-
-.forwarded-from-label,
-.forwarded-from-name{
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    white-space:nowrap !important;
-}
-
-.forwarded-from + div,
-.forwarded-from ~ .attachment-caption{
-    max-width:100% !important;
-    overflow-wrap:anywhere !important;
-    word-break:normal !important;
-    white-space:pre-wrap !important;
-}
-
-@media(max-width:700px){
-    .channel-post{
-        width:calc(100% - 14px) !important;
-        margin:0 0 9px 7px !important;
-    }
-
-    .channel-post-head{
-        padding:10px 11px 7px !important;
-    }
-
-    .channel-post-body{
-        padding:0 11px 8px !important;
-    }
-
-    .channel-post-meta{
-        padding:6px 9px 7px !important;
-    }
-
-    .message-row .message:has(.forwarded-from){
-        max-width:82% !important;
-        min-width:150px !important;
-    }
+.vibe-forward-clean-info span{
+    display:block;
+    margin-top:2px;
+    color:var(--muted);
+    font-size:11px;
 }
 </style>
 
+<script id="vibe-forward-final-clean-script">
+(function(){
+    "use strict";
+
+    function removeOldForwardMenus(){
+        document.querySelectorAll(
+            ".message-actions,.vibe-channel-action-menu"
+        ).forEach(el=>el.remove());
+    }
+
+    window.vibeForwardChannelPost = async function(){
+        const post =
+            (typeof selectedChannelPostForAction !== "undefined"
+                ? selectedChannelPostForAction
+                : null) ||
+            window.__vibeSelectedChannelPost ||
+            null;
+
+        /* The old context menu must disappear BEFORE the new window appears. */
+        removeOldForwardMenus();
+
+        if(!post || !currentUser) return;
+
+        let old=document.getElementById("vibeForwardCleanOverlay");
+        if(old) old.remove();
+
+        const modal=document.createElement("div");
+        modal.id="vibeForwardCleanOverlay";
+        modal.className="vibe-forward-clean-overlay";
+
+        modal.innerHTML=`
+            <div class="vibe-forward-clean-card">
+                <div class="vibe-forward-clean-head">
+                    <div class="vibe-forward-clean-title">Переслать публикацию</div>
+                    <button type="button" class="vibe-forward-clean-close">✕</button>
+                </div>
+                <input
+                    class="input vibe-forward-clean-search"
+                    placeholder="Поиск человека или чата..."
+                    autocomplete="off"
+                >
+                <div class="vibe-forward-clean-list"></div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        const list=modal.querySelector(".vibe-forward-clean-list");
+        const search=modal.querySelector(".vibe-forward-clean-search");
+
+        const close=()=>{
+            modal.remove();
+            removeOldForwardMenus();
+        };
+
+        modal.querySelector(".vibe-forward-clean-close").onclick=close;
+        modal.onclick=e=>{
+            if(e.target===modal) close();
+        };
+
+        function addHeader(text){
+            const h=document.createElement("div");
+            h.className="vibe-forward-clean-section";
+            h.textContent=text;
+            list.appendChild(h);
+        }
+
+        function addUser(user,subtitle){
+            const row=document.createElement("button");
+            row.type="button";
+            row.className="vibe-forward-clean-row";
+
+            const avatar=document.createElement("div");
+            avatar.className="vibe-forward-clean-avatar";
+
+            if(user.photo){
+                const img=document.createElement("img");
+                img.src=user.photo;
+                img.alt="";
+                avatar.appendChild(img);
+            }else{
+                avatar.textContent=
+                    String(user.name||user.login||"?")
+                        .slice(0,1).toUpperCase();
+            }
+
+            const info=document.createElement("div");
+            info.className="vibe-forward-clean-info";
+            info.innerHTML=
+                `<strong>${escapeHTML(user.name||user.login||"")}</strong>`+
+                `<span>${escapeHTML(subtitle||("@"+user.login))}</span>`;
+
+            row.append(avatar,info);
+
+            row.onclick=async()=>{
+                row.disabled=true;
+                try{
+                    const body={
+                        from:currentUser.login,
+                        to:user.login,
+                        type:post.media?"attachment":"text",
+                        text:post.poll
+                            ? "📊 Опрос\n"+String(post.poll.question||"Опрос")
+                            : String(post.text||""),
+                        forwardedFrom: currentChannel ? {
+                            type:"channel",
+                            id:String(currentChannel.id||""),
+                            name:String(currentChannel.name||"Канал"),
+                            username:String(currentChannel.username||""),
+                            photo:String(currentChannel.photo||"")
+                        } : null
+                    };
+
+                    if(post.media){
+                        body.attachment=post.media;
+                        body.attachmentType=
+                            post.mediaType||"application/octet-stream";
+                        body.attachmentName=
+                            post.attachmentName||"Пересланная публикация";
+                    }
+
+                    const response=await fetch("/send-message",{
+                        method:"POST",
+                        headers:{"Content-Type":"application/json"},
+                        body:JSON.stringify(body)
+                    });
+
+                    const data=await response.json().catch(()=>({}));
+
+                    if(!response.ok||!data.success){
+                        throw new Error(
+                            data.message||"Не удалось переслать публикацию"
+                        );
+                    }
+
+                    /* Only the forwarding picker closes.
+                       No "Готово" alert/modal is shown. */
+                    close();
+                }catch(error){
+                    showVibeNotice?.(
+                        "Не удалось переслать",
+                        error.message
+                    );
+                }finally{
+                    row.disabled=false;
+                }
+            };
+
+            list.appendChild(row);
+        }
+
+        async function load(){
+            let recent=[];
+            let people=[];
+
+            try{
+                const r=await fetch(
+                    "/chats?login="+
+                    encodeURIComponent(currentUser.login)
+                );
+                recent=r.ok?await r.json():[];
+            }catch{}
+
+            try{
+                const r=await fetch(
+                    "/users?viewer="+
+                    encodeURIComponent(currentUser.login)+
+                    "&q="
+                );
+                const d=await r.json().catch(()=>[]);
+                people=Array.isArray(d)?d:[];
+            }catch{}
+
+            function draw(q=""){
+                const query=String(q||"").trim().toLowerCase();
+                list.innerHTML="";
+                const used=new Set();
+
+                const recentUsers=[];
+                recent.forEach(chat=>{
+                    const u=chat.user||{};
+                    if(!u.login||u.login===currentUser.login)return;
+
+                    const hay=
+                        String(u.name||"").toLowerCase()+
+                        " "+
+                        String(u.login||"").toLowerCase();
+
+                    if(!query||hay.includes(query)){
+                        recentUsers.push(u);
+                        used.add(String(u.login));
+                    }
+                });
+
+                if(recentUsers.length){
+                    addHeader("ТВОИ ЧАТЫ");
+                    recentUsers.forEach(
+                        u=>addUser(u,"Недавний чат")
+                    );
+                }
+
+                const otherUsers=people.filter(
+                    u=>!used.has(String(u.login))
+                );
+
+                if(otherUsers.length){
+                    addHeader(query?"ЛЮДИ":"ДРУГИЕ ПОЛЬЗОВАТЕЛИ");
+                    otherUsers.forEach(
+                        u=>addUser(u,"@"+u.login)
+                    );
+                }
+
+                if(!recentUsers.length&&!otherUsers.length){
+                    list.innerHTML=
+                        '<div style="padding:24px;text-align:center;color:var(--muted)">Ничего не найдено</div>';
+                }
+            }
+
+            draw("");
+
+            let timer=null;
+            search.oninput=()=>{
+                clearTimeout(timer);
+                timer=setTimeout(async()=>{
+                    const q=search.value||"";
+
+                    try{
+                        const r=await fetch(
+                            "/users?viewer="+
+                            encodeURIComponent(currentUser.login)+
+                            "&q="+encodeURIComponent(q)
+                        );
+                        const d=await r.json().catch(()=>[]);
+                        people=Array.isArray(d)?d:[];
+                    }catch{
+                        people=[];
+                    }
+
+                    draw(q);
+                },120);
+            };
+        }
+
+        await load();
+        search.focus();
+
+        /* Extra failsafe: if an old menu is reinserted by legacy handlers,
+           remove it while our forward picker is open. */
+        const observer=new MutationObserver(()=>{
+            if(document.body.contains(modal)){
+                removeOldForwardMenus();
+            }
+        });
+        observer.observe(document.body,{childList:true,subtree:true});
+
+        modal._cleanup=()=>observer.disconnect();
+    };
+
+    /* Ensure context menu disappears immediately when any forward button
+       is clicked, even if a legacy onclick fires first. */
+    document.addEventListener("click",event=>{
+        const btn=event.target.closest?.(
+            'button[onclick*="vibeForwardChannelPost"],'+
+            'button[data-vibe-channel-action="forward"]'
+        );
+        if(!btn)return;
+
+        removeOldForwardMenus();
+        setTimeout(removeOldForwardMenus,0);
+        setTimeout(removeOldForwardMenus,60);
+        setTimeout(removeOldForwardMenus,180);
+    },true);
+})();
+</script>
+<style id="vibe-forwarded-source-style">
+.forwarded-from{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 6px;
+    padding:6px 8px;
+    border-left:3px solid var(--accent);
+    border-radius:8px;
+    background:rgba(139,92,246,.08);
+}
+.forwarded-from-avatar{
+    width:30px;height:30px;min-width:30px;
+    border-radius:50%;overflow:hidden;
+    display:grid;place-items:center;
+    background:var(--panel2);color:var(--accent);
+}
+.forwarded-from-avatar img{
+    width:100%;height:100%;object-fit:cover;
+}
+.forwarded-from-copy{min-width:0;flex:1}
+.forwarded-from-label{font-size:10px;color:var(--muted)}
+.forwarded-from-name{
+    margin-top:1px;
+    font-size:12px;
+    font-weight:900;
+    color:var(--accent);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+</style>
