@@ -336,16 +336,17 @@ body.booting #app {
 }
 
 .vibe-birthday-picker {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(100% + 8px);
-    z-index: 1200;
-    padding: 12px;
+    position: fixed;
+    left: 12px;
+    top: 12px;
+    width: min(390px, calc(100vw - 24px));
+    box-sizing: border-box;
+    z-index: 2200;
+    padding: 10px;
     border: 1px solid var(--border);
     border-radius: 16px;
     background: var(--panel);
-    box-shadow: 0 20px 55px rgba(0,0,0,.42);
+    box-shadow: 0 20px 55px rgba(0,0,0,.48);
 }
 
 .vibe-birthday-head {
@@ -353,7 +354,7 @@ body.booting #app {
     grid-template-columns: 38px 1fr 38px;
     align-items: center;
     gap: 6px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .vibe-birthday-head > div {
@@ -382,7 +383,7 @@ body.booting #app {
 .vibe-birthday-days {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
+    gap: 3px;
 }
 
 .vibe-birthday-week {
@@ -395,9 +396,9 @@ body.booting #app {
 
 .vibe-birthday-day {
     aspect-ratio: 1;
-    min-height: 34px;
+    min-height: 30px;
     border: 0;
-    border-radius: 10px;
+    border-radius: 9px;
     background: transparent;
     color: var(--text);
     cursor: pointer;
@@ -437,15 +438,16 @@ body.booting #app {
 
 @media (max-width: 750px) {
     .vibe-birthday-picker {
-        position: fixed;
-        left: 12px;
-        right: 12px;
-        top: auto;
-        bottom: max(12px, env(safe-area-inset-bottom));
-        width: auto;
+        width: min(360px, calc(100vw - 20px));
+        left: 10px;
+        padding: 9px;
     }
     .vibe-birthday-day {
-        min-height: 38px;
+        min-height: 30px;
+        font-size: 11px;
+    }
+    .vibe-birthday-head button {
+        min-height: 32px;
     }
 }
 
@@ -5911,6 +5913,32 @@ function selectVibeBirthday(date) {
     closeVibeBirthdayPicker();
 }
 
+function positionVibeBirthdayPicker() {
+    const picker = $("vibeBirthdayPicker");
+    const anchor = $("registerBirthDateDisplay");
+    if (!picker || !anchor || picker.classList.contains("hidden")) return;
+
+    const r = anchor.getBoundingClientRect();
+    const margin = 10;
+    const gap = 8;
+    const width = Math.min(390, window.innerWidth - margin * 2);
+    picker.style.width = width + "px";
+
+    const pickerHeight = picker.offsetHeight;
+    let left = r.left;
+    let top = r.bottom + gap;
+
+    if (top + pickerHeight > window.innerHeight - margin) {
+        top = r.top - pickerHeight - gap;
+    }
+    if (top < margin) top = margin;
+    if (left + width > window.innerWidth - margin) left = window.innerWidth - margin - width;
+    if (left < margin) left = margin;
+
+    picker.style.left = left + "px";
+    picker.style.top = top + "px";
+}
+
 function toggleVibeBirthdayPicker(event) {
     event?.stopPropagation();
     const picker = $("vibeBirthdayPicker");
@@ -5927,6 +5955,7 @@ function toggleVibeBirthdayPicker(event) {
         }
         renderVibeBirthdayPicker();
         picker.classList.remove("hidden");
+        requestAnimationFrame(positionVibeBirthdayPicker);
     } else {
         picker.classList.add("hidden");
     }
@@ -5964,6 +5993,9 @@ document.addEventListener("click", (event) => {
     const wrap = event.target.closest?.(".vibe-date-picker-wrap");
     if (!wrap) closeVibeBirthdayPicker();
 });
+
+window.addEventListener("resize", positionVibeBirthdayPicker);
+window.addEventListener("scroll", positionVibeBirthdayPicker, true);
 
 async function register() {
 
@@ -6502,6 +6534,11 @@ function logout() {
     }
 
     endCallUI();
+
+    closeModal("settingsModal");
+    closeModal("profileModal");
+    closeModal("registerModal");
+    closeVibeBirthdayPicker();
 
     currentUser = null;
     currentChat = "";
