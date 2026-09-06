@@ -3256,34 +3256,6 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 }
 </style>
 
-
-<style id="vibe-fast-chat-patch">
-/* Faster chat interactions */
-.message-reaction-picker button {
-    transition:transform .14s ease, background .14s ease, filter .14s ease;
-    will-change:transform;
-}
-.message-reaction-picker button:hover {
-    transform:translateY(-1px) scale(1.06);
-}
-.message-reaction-picker button.vibe-reaction-pop {
-    animation:vibeReactionPop .22s cubic-bezier(.2,.8,.2,1);
-}
-@keyframes vibeReactionPop {
-    0% { transform:scale(.72); opacity:.55; }
-    65% { transform:scale(1.16); opacity:1; }
-    100% { transform:scale(1); opacity:1; }
-}
-.message-reaction.active {
-    animation:vibeReactionActive .2s cubic-bezier(.2,.8,.2,1);
-}
-@keyframes vibeReactionActive {
-    0% { transform:scale(.86); }
-    60% { transform:scale(1.09); }
-    100% { transform:scale(1); }
-}
-</style>
-
 </head>
 
 <body class="booting">
@@ -5104,9 +5076,6 @@ let callTimer = null;
 let callSeconds = 0;
 
 let profileViewLogin = "";
-
-let currentDirectMessages = [];
-let currentGroupMessages = [];
 
 let selectedProfileBackground = "default";
 
@@ -7769,7 +7738,10 @@ async function openChat(login) {
 
     renderChats();
 
-    requestAnimationFrame(() => input.focus());
+    setTimeout(
+        () => input.focus(),
+        100
+    );
 }
 
 
@@ -7837,8 +7809,7 @@ async function loadMessages(forceScroll=false) {
         const response = await fetch("/messages?user1=" + encodeURIComponent(currentUser.login) + "&user2=" + encodeURIComponent(currentChat));
         if (!response.ok) return;
         const messages = await response.json();
-        currentDirectMessages = Array.isArray(messages) ? messages : [];
-        renderMessageList(currentDirectMessages, forceScroll, wasNearBottom, false);
+        renderMessageList(messages, forceScroll, wasNearBottom, false);
     } catch {}
 }
 
@@ -7860,88 +7831,15 @@ function renderMessageReactionTools(message) {
     </div>`;
 }
 
-function applyOptimisticReaction(messageId, emoji, isGroup) {
-    const list = isGroup ? currentGroupMessages : currentDirectMessages;
-    const message = list.find(m => String(m.id) === String(messageId));
-    if (!message || !currentUser) return;
-
-    if (!message.reactions || typeof message.reactions !== "object") {
-        message.reactions = {};
-    }
-
-    let hadSelected = Array.isArray(message.reactions[emoji]) &&
-        message.reactions[emoji].includes(currentUser.login);
-
-    Object.keys(message.reactions).forEach(key => {
-        if (!Array.isArray(message.reactions[key])) message.reactions[key] = [];
-        message.reactions[key] = message.reactions[key].filter(
-            login => login !== currentUser.login
-        );
-    });
-
-    if (!hadSelected) {
-        if (!message.reactions[emoji]) message.reactions[emoji] = [];
-        message.reactions[emoji].push(currentUser.login);
-    }
-
-    Object.keys(message.reactions).forEach(key => {
-        if (!message.reactions[key].length) delete message.reactions[key];
-    });
-}
-
 async function setMessageReaction(messageId, emoji) {
     if (!currentUser || !messageId || !emoji) return;
-
-    const isGroup = !!currentGroup;
-    applyOptimisticReaction(messageId, emoji, isGroup);
-
-    if (isGroup) {
-        renderMessageList(
-            currentGroupMessages,
-            false,
-            true,
-            true
-        );
-    } else if (currentChat && !currentChannel) {
-        renderMessageList(
-            currentDirectMessages,
-            false,
-            true,
-            false
-        );
-    }
-
     try {
-        const r = await fetch("/message-reaction", {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                login:currentUser.login,
-                messageId,
-                emoji
-            })
-        });
+        const r = await fetch("/message-reaction", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({login:currentUser.login, messageId, emoji})});
         const d = await r.json();
-
-        if (!d.success) {
-            if (isGroup) {
-                loadGroupMessages(false);
-            } else {
-                loadMessages(false);
-            }
-            return;
-        }
-
-        // Refresh in the background; don't block the UI on the network round-trip.
-        if (isGroup) {
-            loadGroupMessages(false);
-        } else if (currentChat && !currentChannel) {
-            loadMessages(false);
-        }
-    } catch {
-        if (isGroup) loadGroupMessages(false);
-        else if (currentChat && !currentChannel) loadMessages(false);
-    }
+        if (!d.success) return;
+        if (currentChat && !currentChannel) await loadMessages(false);
+        if (currentGroup) await loadGroupMessages(false);
+    } catch {}
 }
 
 function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
@@ -8146,9 +8044,6 @@ document.addEventListener("click", event => {
     if (reaction) {
         event.stopPropagation();
         document.querySelectorAll(".message-reaction-picker").forEach(p => p.classList.add("hidden"));
-        reaction.classList.remove("vibe-reaction-pop");
-        void reaction.offsetWidth;
-        reaction.classList.add("vibe-reaction-pop");
         setMessageReaction(reaction.dataset.messageId, reaction.dataset.reaction);
         return;
     }
@@ -8360,16 +8255,7 @@ async function sendMessage() {
             });
             const d = await r.json();
             if (!d.success) { input.value = text; if (replyTo) setReplyTarget(replyTo); return; }
-            if (d.message) {
-                currentGroupMessages.push(d.message);
-                renderMessageList(
-                    currentGroupMessages,
-                    true,
-                    true,
-                    true
-                );
-            }
-            loadGroupMessages(false);
+            await loadGroupMessages(true);
         } catch { input.value = text; }
         return;
     }
@@ -8440,19 +8326,18 @@ async function sendMessage() {
 
         if (data.success) {
 
-            if (data.message) {
-                currentDirectMessages.push(data.message);
-                renderMessageList(
-                    currentDirectMessages,
-                    true,
-                    true,
-                    false
-                );
-            }
+            /*
+                Сервер уже сохранил сообщение.
+                Показываем его сразу после ответа POST.
+            */
 
-            // Keep the sidebar/counters fresh without delaying the message.
-            loadChats();
-            markChatAsRead(currentChat);
+            await loadMessages(true);
+
+            await loadChats();
+
+            await markChatAsRead(
+                currentChat
+            );
 
         } else {
 
@@ -9495,7 +9380,7 @@ async function openGroup(group) {
     input.disabled = false;
     input.placeholder = translations[siteLanguage].write;
     await loadGroupMessages(true);
-    requestAnimationFrame(() => input.focus());
+    setTimeout(() => input.focus(), 100);
 }
 
 
@@ -9727,8 +9612,7 @@ async function loadGroupMessages(forceScroll=false) {
         const r = await fetch("/group-messages?groupId=" + encodeURIComponent(currentGroup.id) + "&login=" + encodeURIComponent(currentUser.login));
         if (!r.ok) return;
         const messages = await r.json();
-        currentGroupMessages = Array.isArray(messages) ? messages : [];
-        renderMessageList(currentGroupMessages, forceScroll, wasNearBottom, true);
+        renderMessageList(messages, forceScroll, wasNearBottom, true);
     } catch {}
 }
 
@@ -12573,39 +12457,35 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
     left:9px;
     bottom:calc(100% + 8px);
     z-index:1200;
-    width:276px;
+    width:258px;
     max-width:calc(100vw - 18px);
     display:flex;
     flex-direction:column;
-    gap:3px;
-    padding:8px;
+    gap:2px;
+    padding:7px;
     border:1px solid var(--border);
-    border-radius:18px;
-    background:linear-gradient(180deg,rgba(28,35,60,.98),rgba(21,27,47,.99));
-    box-shadow:0 22px 55px rgba(0,0,0,.48);
-    backdrop-filter:blur(16px);
+    border-radius:16px;
+    background:var(--panel);
+    box-shadow:0 18px 45px rgba(0,0,0,.45);
 }
 .mobile-attachment-menu.hidden { display:none !important; }
 
 .attachment-menu-item {
     width:100%;
-    min-height:52px;
+    min-height:47px;
     display:flex;
     align-items:center;
     gap:12px;
-    padding:8px 10px;
+    padding:7px 10px;
     border:0;
-    border-radius:13px;
+    border-radius:11px;
     background:transparent;
     color:var(--text);
     text-align:left;
     font:inherit;
-    font-weight:700;
+    font-weight:600;
     cursor:pointer;
-    transition:background .15s ease, transform .12s ease;
-}
-.attachment-menu-item:active {
-    transform:scale(.985);
+    transition:background .15s ease;
 }
 .attachment-menu-item:hover,
 .attachment-menu-item:focus-visible {
@@ -12613,40 +12493,28 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
     outline:none;
 }
 .attachment-menu-icon {
-    width:38px;
-    height:38px;
-    min-width:38px;
+    width:27px;
+    height:27px;
+    min-width:27px;
     display:grid;
     place-items:center;
-    color:#fff;
-    border-radius:12px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));
-    box-shadow:0 7px 18px rgba(139,92,246,.22);
+    color:var(--text);
 }
 .attachment-menu-icon svg {
-    width:20px;
-    height:20px;
+    width:21px;
+    height:21px;
     fill:none;
     stroke:currentColor;
-    stroke-width:1.8;
+    stroke-width:1.7;
     stroke-linecap:round;
     stroke-linejoin:round;
 }
 .attachment-menu-gif {
-    color:#fff;
-    font-size:11px;
-    letter-spacing:.02em;
+    color:var(--accent);
+    font-size:12px;
     font-weight:900;
-    border:0;
-}
-.attachment-menu-item:nth-child(2) .attachment-menu-icon {
-    background:linear-gradient(135deg,#3b82f6,#2563eb);
-}
-.attachment-menu-item:nth-child(3) .attachment-menu-icon {
-    background:linear-gradient(135deg,#ec4899,#8b5cf6);
-}
-.attachment-menu-item:nth-child(4) .attachment-menu-icon {
-    background:linear-gradient(135deg,#f59e0b,#ef4444);
+    border:1px solid currentColor;
+    border-radius:6px;
 }
 .attachment-menu-label {
     min-width:0;
@@ -13033,3 +12901,162 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
     window.addEventListener("scroll", window.positionVibeBirthdayPicker, true);
 })();
 </script>
+
+<style id="vibe-attachment-menu-final-fix">
+/* ===== VIBE ATTACHMENT MENU FINAL FIX ===== */
+
+/* Кнопки Фото/Документ/GIF/Опрос всегда находятся полностью внутри своих квадратов. */
+#mobileAttachmentMenu .attachment-menu-item{
+    display:flex !important;
+    align-items:center !important;
+    gap:11px !important;
+    min-height:58px !important;
+    padding:5px 8px !important;
+    box-sizing:border-box !important;
+    overflow:hidden !important;
+}
+
+#mobileAttachmentMenu .attachment-menu-icon{
+    width:48px !important;
+    height:48px !important;
+    min-width:48px !important;
+    min-height:48px !important;
+    flex:0 0 48px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    box-sizing:border-box !important;
+    border-radius:13px !important;
+    overflow:hidden !important;
+}
+
+#mobileAttachmentMenu .attachment-menu-icon svg{
+    width:23px !important;
+    height:23px !important;
+    max-width:23px !important;
+    max-height:23px !important;
+    flex:0 0 23px !important;
+}
+
+#mobileAttachmentMenu .attachment-menu-gif{
+    overflow:hidden !important;
+    font-size:12px !important;
+    line-height:1 !important;
+    font-weight:900 !important;
+    text-align:center !important;
+    white-space:nowrap !important;
+}
+
+#mobileAttachmentMenu .attachment-menu-label{
+    min-width:0 !important;
+    flex:1 1 auto !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:normal !important;
+    line-height:1.15 !important;
+}
+
+/* В обычных чатах опрос скрыт. В канале JS его включает. */
+#mobileAttachmentMenu #attachmentPollButton{
+    display:none !important;
+}
+
+/* В канале этот класс возвращает кнопку в меню. */
+#mobileAttachmentMenu.vibe-channel-menu #attachmentPollButton{
+    display:flex !important;
+}
+
+@media (max-width:420px){
+    #mobileAttachmentMenu .attachment-menu-item{
+        min-height:52px !important;
+        padding:4px 7px !important;
+        gap:9px !important;
+    }
+
+    #mobileAttachmentMenu .attachment-menu-icon{
+        width:44px !important;
+        height:44px !important;
+        min-width:44px !important;
+        min-height:44px !important;
+        flex-basis:44px !important;
+        border-radius:12px !important;
+    }
+
+    #mobileAttachmentMenu .attachment-menu-icon svg{
+        width:21px !important;
+        height:21px !important;
+        max-width:21px !important;
+        max-height:21px !important;
+    }
+}
+</style>
+
+<script id="vibe-attachment-menu-final-script">
+(function(){
+    function getVibeAttachmentMenu(){
+        return document.getElementById("mobileAttachmentMenu");
+    }
+
+    function getVibePollButton(){
+        const menu = getVibeAttachmentMenu();
+        if (!menu) return null;
+
+        let button = document.getElementById("attachmentPollButton");
+        if (button) return button;
+
+        const items = menu.querySelectorAll(".attachment-menu-item");
+        for (const item of items) {
+            const onclick = item.getAttribute("onclick") || "";
+            if (onclick.includes("openPollComposer")) {
+                item.id = "attachmentPollButton";
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    window.syncVibeAttachmentMenu = function(){
+        const menu = getVibeAttachmentMenu();
+        const poll = getVibePollButton();
+        if (!menu || !poll) return;
+
+        /* Опрос показываем только когда открыт канал. */
+        menu.classList.toggle("vibe-channel-menu", !!window.currentChannel);
+
+        /* На всякий случай явно задаём display для кнопки. */
+        poll.style.display = window.currentChannel ? "flex" : "none";
+    };
+
+    /* Полностью заменяем открытие меню, сохраняя остальную логику без изменений. */
+    window.toggleMobileAttachmentMenu = function(){
+        const menu = getVibeAttachmentMenu();
+        if (!menu) return;
+
+        window.syncVibeAttachmentMenu();
+
+        menu.classList.toggle("hidden");
+
+        window.syncVibeAttachmentMenu();
+    };
+
+    window.closeMobileAttachmentMenu = function(){
+        getVibeAttachmentMenu()?.classList.add("hidden");
+    };
+
+    document.addEventListener("DOMContentLoaded", function(){
+        window.syncVibeAttachmentMenu();
+    });
+
+    /* Следим за переключением обычный чат/группа/канал, не меняя основной код Vibe. */
+    let lastChannelState = null;
+    setInterval(function(){
+        const current = !!window.currentChannel;
+        if (current !== lastChannelState){
+            lastChannelState = current;
+            window.syncVibeAttachmentMenu();
+        }
+    }, 250);
+})();
+</script>
+
