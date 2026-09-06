@@ -62,6 +62,100 @@ function saveJSON(file, data) {
 
 
 /* =========================================================
+   SUPABASE STATE FOR CHANNELS
+   Keeps channels and channel posts after Render redeploys.
+========================================================= */
+const VIBE_STATE_CHANNELS_KEY = "channels";
+const VIBE_STATE_POSTS_KEY = "channel-posts";
+let vibeStateHydrated = false;
+const vibeStateTimers = {};
+
+async function getVibeState(key) {
+    try {
+        const { data, error } = await supabase
+            .from("vibe_state")
+            .select("value")
+            .eq("key", key)
+            .maybeSingle();
+        if (error) {
+            if (!String(error.message || "").toLowerCase().includes("does not exist")) {
+                console.error("Supabase vibe_state read error:", error.message);
+            }
+            return null;
+        }
+        return data?.value ?? null;
+    } catch (error) {
+        console.error("Supabase vibe_state read error:", error.message);
+        return null;
+    }
+}
+
+async function putVibeState(key, value) {
+    try {
+        const { error } = await supabase
+            .from("vibe_state")
+            .upsert({
+                key,
+                value,
+                updated_at: new Date().toISOString()
+            }, { onConflict: "key" });
+        if (error) {
+            if (!String(error.message || "").toLowerCase().includes("does not exist")) {
+                console.error("Supabase vibe_state write error:", error.message);
+            }
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error("Supabase vibe_state write error:", error.message);
+        return false;
+    }
+}
+
+function queueVibeStateSync(file, data) {
+    if (!vibeStateHydrated) return;
+    const key = file === CHANNELS_FILE
+        ? VIBE_STATE_CHANNELS_KEY
+        : file === CHANNEL_POSTS_FILE
+            ? VIBE_STATE_POSTS_KEY
+            : null;
+    if (!key) return;
+    clearTimeout(vibeStateTimers[key]);
+    vibeStateTimers[key] = setTimeout(() => {
+        putVibeState(key, data).catch(() => {});
+    }, 700);
+}
+
+async function hydrateVibeState() {
+    const entries = [
+        [CHANNELS_FILE, VIBE_STATE_CHANNELS_KEY],
+        [CHANNEL_POSTS_FILE, VIBE_STATE_POSTS_KEY]
+    ];
+    for (const [file, key] of entries) {
+        const local = readJSON(file);
+        const remote = await getVibeState(key);
+        if (Array.isArray(remote) && remote.length > 0) {
+            fs.writeFileSync(file, JSON.stringify(remote, null, 2));
+        } else if (Array.isArray(local) && local.length > 0) {
+            await putVibeState(key, local);
+        }
+    }
+    vibeStateHydrated = true;
+}
+
+const originalSaveJSON = saveJSON;
+saveJSON = function(file, data) {
+    originalSaveJSON(file, data);
+    queueVibeStateSync(file, data);
+};
+
+const vibeStateReady = hydrateVibeState().catch(error => {
+    console.error("Vibe state hydration failed:", error.message);
+    vibeStateHydrated = true;
+});
+
+
+/* =========================================================
    SUPABASE PERSISTENT MESSAGES
    Direct messages are stored in Supabase so Render redeploys
    cannot erase the chat history.
@@ -1103,6 +1197,8 @@ const server =
     http.createServer(
         async (req, res) => {
 
+            await vibeStateReady;
+
             try {
 
                 if (
@@ -1579,63 +1675,34 @@ const server =
                     req.method === "GET" &&
                     pathname === "/users"
                 ) {
+                    const query = String(url.searchParams.get("q") || "").trim().toLowerCase();
+                    const viewer = String(url.searchParams.get("viewer") || "");
+                    const merged = new Map();
 
-                    const query =
-                        String(
-                            url.searchParams.get(
-                                "q"
-                            ) || ""
-                        )
-                            .trim()
-                            .toLowerCase();
+                    getUsers().forEach(user => {
+                        if (user?.login) merged.set(String(user.login), user);
+                    });
 
+                    try {
+                        const remoteUsers = await getSupabaseUsersMap();
+                        remoteUsers.forEach((row, login) => {
+                            if (!merged.has(login)) merged.set(login, supabaseRowToLocalUser(row));
+                        });
+                    } catch {}
 
-                    const viewer =
-                        String(
-                            url.searchParams.get(
-                                "viewer"
-                            ) || ""
-                        );
+                    const result = Array.from(merged.values())
+                        .filter(user => String(user.login) !== viewer)
+                        .filter(user => {
+                            const login = String(user.login || "").toLowerCase();
+                            const name = String(user.profile?.name || user.name || user.login || "").toLowerCase();
+                            return !query || login.includes(query) || name.includes(query);
+                        })
+                        .slice(0, 30)
+                        .map(user => publicUser(user, viewer));
 
-
-                    const users =
-                        getUsers();
-
-
-                    const result =
-                        users
-                            .filter(
-                                user =>
-                                    user.login
-                                        .toLowerCase()
-                                        .includes(query)
-                            )
-                            .filter(
-                                user =>
-                                    user.login !== viewer
-                            )
-                            .slice(0, 20)
-                            .map(
-                                user =>
-                                    publicUser(
-                                        user,
-                                        viewer
-                                    )
-                            );
-
-
-                    sendJSON(
-                        res,
-                        result
-                    );
-
+                    sendJSON(res, result);
                     return;
                 }
-
-
-                /* =====================================================
-                   PROFILE GET
-                ===================================================== */
 
                 if (
                     req.method === "GET" &&
