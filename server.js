@@ -158,10 +158,6 @@ function messageFromSupabaseRow(row) {
     if (typeof deletedFor === "string") {
         try { deletedFor = JSON.parse(deletedFor); } catch { deletedFor = []; }
     }
-    let forwardedFrom = row.forwarded_from ?? null;
-    if (typeof forwardedFrom === "string") {
-        try { forwardedFrom = JSON.parse(forwardedFrom); } catch { forwardedFrom = null; }
-    }
     return {
         id: String(row.id),
         from: row.from_login || row.from || "",
@@ -176,10 +172,6 @@ function messageFromSupabaseRow(row) {
         attachmentType: row.attachment_type || "",
         attachmentName: row.attachment_name || "",
         replyTo,
-        forwardedFrom:
-            forwardedFrom && typeof forwardedFrom === "object"
-                ? forwardedFrom
-                : null,
         reactions: reactions && typeof reactions === "object" ? reactions : {},
         deletedFor: Array.isArray(deletedFor) ? deletedFor : [],
         deletedForAll: !!row.deleted_for_all,
@@ -202,7 +194,6 @@ function messageToSupabaseRow(message) {
         attachment_type: message.attachmentType || "",
         attachment_name: message.attachmentName || "",
         reply_to: message.replyTo || null,
-        forwarded_from: message.forwardedFrom || null,
         reactions: message.reactions || {},
         deleted_for: Array.isArray(message.deletedFor) ? message.deletedFor : [],
         deleted_for_all: !!message.deletedForAll,
@@ -3154,18 +3145,6 @@ const server =
                             ? String(body.attachmentName || "Файл").slice(0,180)
                             : "";
 
-                    const forwardedFrom =
-                        body.forwardedFrom &&
-                        typeof body.forwardedFrom === "object"
-                            ? {
-                                type:String(body.forwardedFrom.type || ""),
-                                id:String(body.forwardedFrom.id || ""),
-                                name:String(body.forwardedFrom.name || "").slice(0,120),
-                                username:String(body.forwardedFrom.username || "").slice(0,40),
-                                photo:String(body.forwardedFrom.photo || "").slice(0,2000000)
-                              }
-                            : null;
-
 
                     if (
                         !from ||
@@ -3296,8 +3275,6 @@ const server =
                                 : "",
 
                         replyTo,
-
-                        forwardedFrom,
 
                         reactions: {},
 
@@ -4554,7 +4531,6 @@ const server =
                             ) || ""
                         );
 
-
                     const viewer =
                         String(
                             url.searchParams.get(
@@ -4562,67 +4538,110 @@ const server =
                             ) || ""
                         );
 
-
                     const posts =
                         readJSON(
                             CHANNEL_POSTS_FILE
                         );
-
 
                     const result =
                         posts
                             .filter(
                                 post =>
                                     post.channelId === channelId &&
-                                    !(viewer && Array.isArray(post.hiddenFor) && post.hiddenFor.includes(viewer))
+                                    !(
+                                        viewer &&
+                                        Array.isArray(post.hiddenFor) &&
+                                        post.hiddenFor.includes(viewer)
+                                    )
                             )
                             .map(
                                 post => {
 
                                     const author =
-                                        findUser(
-                                            post.author
-                                        );
-
+                                        findUser(post.author);
 
                                     return {
-
                                         ...post,
-
-                                        views:Number(post.views||0),
-
-                                        comments:Array.isArray(post.comments) ? post.comments : [],
-
+                                        views:Number(post.views || 0),
+                                        comments:
+                                            Array.isArray(post.comments)
+                                                ? post.comments
+                                                : [],
                                         authorUser:
                                             author
-                                                ? publicUser(
-                                                    author,
-                                                    viewer
-                                                )
+                                                ? publicUser(author, viewer)
                                                 : {
-                                                    login:
-                                                        post.author,
-
-                                                    name:
-                                                        post.author,
-
-                                                    photo:
-                                                        ""
+                                                    login:post.author,
+                                                    name:post.author,
+                                                    photo:""
                                                 }
                                     };
                                 }
                             );
 
-
-                    sendJSON(
-                        res,
-                        result
-                    );
-
+                    sendJSON(res,result);
                     return;
                 }
 
 
+
+                /* =====================================================
+                   CHANNEL POSTS VIEW BATCH
+                   One read/write for an entire channel load.
+                ===================================================== */
+                if (
+                    req.method === "POST" &&
+                    pathname === "/channel-posts-view-batch"
+                ) {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "");
+                    const viewer = String(body.viewer || "");
+                    const ids = Array.isArray(body.postIds)
+                        ? body.postIds.map(String).slice(0, 500)
+                        : [];
+
+                    if (!channelId || !viewer || !ids.length) {
+                        sendJSON(res,{success:true,views:{}});
+                        return;
+                    }
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const wanted = new Set(ids);
+                    const views = {};
+                    let changed = false;
+
+                    posts.forEach(post => {
+                        if (
+                            String(post.channelId) !== channelId ||
+                            !wanted.has(String(post.id))
+                        ) {
+                            return;
+                        }
+
+                        post.views = Number(post.views || 0);
+                        post.viewers = Array.isArray(post.viewers)
+                            ? post.viewers
+                            : [];
+
+                        if (!post.viewers.includes(viewer)) {
+                            post.viewers.push(viewer);
+                            post.views += 1;
+                            changed = true;
+                        }
+
+                        views[String(post.id)] = post.views;
+                    });
+
+                    if (changed) {
+                        saveJSON(CHANNEL_POSTS_FILE, posts);
+                    }
+
+                    sendJSON(res,{
+                        success:true,
+                        views
+                    });
+                    return;
+                }
 
                 /* =====================================================
                    CHANNEL POST VIEW
