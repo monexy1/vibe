@@ -158,6 +158,10 @@ function messageFromSupabaseRow(row) {
     if (typeof deletedFor === "string") {
         try { deletedFor = JSON.parse(deletedFor); } catch { deletedFor = []; }
     }
+    let forwardedFrom = row.forwarded_from ?? null;
+    if (typeof forwardedFrom === "string") {
+        try { forwardedFrom = JSON.parse(forwardedFrom); } catch { forwardedFrom = null; }
+    }
     return {
         id: String(row.id),
         from: row.from_login || row.from || "",
@@ -172,6 +176,10 @@ function messageFromSupabaseRow(row) {
         attachmentType: row.attachment_type || "",
         attachmentName: row.attachment_name || "",
         replyTo,
+        forwardedFrom:
+            forwardedFrom && typeof forwardedFrom === "object"
+                ? forwardedFrom
+                : null,
         reactions: reactions && typeof reactions === "object" ? reactions : {},
         deletedFor: Array.isArray(deletedFor) ? deletedFor : [],
         deletedForAll: !!row.deleted_for_all,
@@ -194,6 +202,7 @@ function messageToSupabaseRow(message) {
         attachment_type: message.attachmentType || "",
         attachment_name: message.attachmentName || "",
         reply_to: message.replyTo || null,
+        forwarded_from: message.forwardedFrom || null,
         reactions: message.reactions || {},
         deleted_for: Array.isArray(message.deletedFor) ? message.deletedFor : [],
         deleted_for_all: !!message.deletedForAll,
@@ -3145,6 +3154,18 @@ const server =
                             ? String(body.attachmentName || "Файл").slice(0,180)
                             : "";
 
+                    const forwardedFrom =
+                        body.forwardedFrom &&
+                        typeof body.forwardedFrom === "object"
+                            ? {
+                                type: String(body.forwardedFrom.type || ""),
+                                id: String(body.forwardedFrom.id || ""),
+                                name: String(body.forwardedFrom.name || "").slice(0,120),
+                                username: String(body.forwardedFrom.username || "").slice(0,40),
+                                photo: String(body.forwardedFrom.photo || "").slice(0,2000000)
+                              }
+                            : null;
+
 
                     if (
                         !from ||
@@ -3275,6 +3296,8 @@ const server =
                                 : "",
 
                         replyTo,
+
+                        forwardedFrom,
 
                         reactions: {},
 
@@ -4326,10 +4349,6 @@ const server =
                     const posts=readJSON(CHANNEL_POSTS_FILE);
                     if(!posts.some(p=>String(p.id)===postId&&String(p.channelId)===channelId)){sendJSON(res,{success:false,message:"Публикация не найдена"},404);return;}
                     saveJSON(CHANNEL_POSTS_FILE,posts.filter(p=>!(String(p.id)===postId&&String(p.channelId)===channelId)));
-                    if(String(channel.pinnedPostId||"")===postId){
-                        channel.pinnedPostId="";
-                        saveJSON(CHANNELS_FILE,channels);
-                    }
                     (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-post-deleted",channelId,postId}));
                     sendJSON(res,{success:true,channelId,postId}); return;
                 }
@@ -4396,123 +4415,6 @@ const server =
                     }
                     (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-poll-vote",channelId,postId,post}));
                     sendJSON(res,{success:true,post}); return;
-                }
-
-
-                /* =====================================================
-                   PERSISTENT CHANNEL PIN
-                   scope=self is handled by browser local state.
-                   scope=all is stored on the channel and visible to all.
-                ===================================================== */
-                if (
-                    req.method === "GET" &&
-                    pathname === "/channel-pinned"
-                ) {
-                    const channelId =
-                        String(url.searchParams.get("channelId") || "");
-
-                    const channels = getNormalizedChannels();
-                    const channel = channels.find(
-                        c => String(c.id) === channelId
-                    );
-
-                    if (!channel) {
-                        sendJSON(
-                            res,
-                            { success:false, message:"Канал не найден" },
-                            404
-                        );
-                        return;
-                    }
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = channel.pinnedPostId
-                        ? posts.find(
-                            p =>
-                                String(p.id) === String(channel.pinnedPostId) &&
-                                String(p.channelId) === channelId
-                          )
-                        : null;
-
-                    sendJSON(res,{
-                        success:true,
-                        pinnedPostId:post ? String(post.id) : "",
-                        post:post || null
-                    });
-                    return;
-                }
-
-                if (
-                    req.method === "POST" &&
-                    pathname === "/channel-pin"
-                ) {
-                    const body=await getBody(req);
-                    const channelId=String(body.channelId||"");
-                    const postId=String(body.postId||"");
-                    const login=String(body.login||"");
-                    const scope=body.scope==="all" ? "all" : "self";
-
-                    const channels=getNormalizedChannels();
-                    const channel=channels.find(
-                        c=>String(c.id)===channelId
-                    );
-
-                    if(!channel){
-                        sendJSON(res,{success:false,message:"Канал не найден"},404);
-                        return;
-                    }
-
-                    const posts=readJSON(CHANNEL_POSTS_FILE);
-                    const post=posts.find(
-                        p=>String(p.id)===postId &&
-                            String(p.channelId)===channelId
-                    );
-
-                    if(!post){
-                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
-                        return;
-                    }
-
-                    if(scope==="all"){
-                        if(String(channel.owner)!==login){
-                            sendJSON(res,{
-                                success:false,
-                                message:"Закреплять для всех может только владелец канала"
-                            },403);
-                            return;
-                        }
-
-                        channel.pinnedPostId =
-                            String(channel.pinnedPostId||"")===postId
-                                ? ""
-                                : postId;
-
-                        saveJSON(CHANNELS_FILE,channels);
-
-                        (channel.subscribers||[]).forEach(subscriber=>{
-                            sendToUser(subscriber,{
-                                type:"channel-pinned",
-                                channelId,
-                                postId:channel.pinnedPostId||""
-                            });
-                        });
-
-                        sendJSON(res,{
-                            success:true,
-                            scope:"all",
-                            pinnedPostId:channel.pinnedPostId||"",
-                            post:channel.pinnedPostId ? post : null
-                        });
-                        return;
-                    }
-
-                    sendJSON(res,{
-                        success:true,
-                        scope:"self",
-                        pinnedPostId:postId,
-                        post
-                    });
-                    return;
                 }
 
                 /* =====================================================
