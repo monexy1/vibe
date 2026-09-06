@@ -3422,6 +3422,77 @@ const server =
 
 
                 /* =====================================================
+                   EDIT MESSAGE
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/edit-message") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const messageId = String(body.messageId || "").trim();
+                    const text = String(body.text || "").trim().slice(0, 5000);
+                    const messages = await getPersistentMessages();
+                    const message = messages.find(m => String(m.id) === messageId);
+
+                    if (!login || !message) {
+                        sendJSON(res, {success:false, message:"Сообщение не найдено"}, 404);
+                        return;
+                    }
+                    if (String(message.from) !== login) {
+                        sendJSON(res, {success:false, message:"Изменять сообщение может только его автор"}, 403);
+                        return;
+                    }
+                    if (!text) {
+                        sendJSON(res, {success:false, message:"Сообщение не может быть пустым"}, 400);
+                        return;
+                    }
+
+                    message.text = text;
+                    message.edited = true;
+                    await updatePersistentMessage(message);
+
+                    sendToUser(message.from, {type:"message-edited", message});
+                    if (message.to) {
+                        sendToUser(message.to, {type:"message-edited", message});
+                    }
+
+                    sendJSON(res, {success:true, message});
+                    return;
+                }
+
+                /* =====================================================
+                   PIN / UNPIN MESSAGE
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/pin-message") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const messageId = String(body.messageId || "").trim();
+                    const pinned = body.pinned !== false;
+
+                    const messages = await getPersistentMessages();
+                    const message = messages.find(m => String(m.id) === messageId);
+
+                    if (!login || !message) {
+                        sendJSON(res, {success:false, message:"Сообщение не найдено"}, 404);
+                        return;
+                    }
+
+                    if (String(message.from) !== login && String(message.to) !== login) {
+                        sendJSON(res, {success:false, message:"Нет доступа"}, 403);
+                        return;
+                    }
+
+                    message.pinned = pinned;
+                    await updatePersistentMessage(message);
+
+                    sendToUser(message.from, {type:"message-pinned", message});
+                    if (message.to) {
+                        sendToUser(message.to, {type:"message-pinned", message});
+                    }
+
+                    sendJSON(res, {success:true, message});
+                    return;
+                }
+
+                /* =====================================================
                    MESSAGE REACTIONS
                 ===================================================== */
                 if (req.method === "POST" && pathname === "/message-reaction") {
@@ -3429,7 +3500,7 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const emoji = String(body.emoji || "").trim();
-                    const allowed = ["❤️","😂","👍","🔥","😮","😢"];
+                    const allowed = ["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢"];
                     if (!login || !messageId || !allowed.includes(emoji)) {
                         sendJSON(res,{success:false,message:"Некорректная реакция"},400);
                         return;
