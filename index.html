@@ -12902,161 +12902,155 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 })();
 </script>
 
-<style id="vibe-attachment-menu-final-fix">
-/* ===== VIBE ATTACHMENT MENU FINAL FIX ===== */
-
-/* Кнопки Фото/Документ/GIF/Опрос всегда находятся полностью внутри своих квадратов. */
-#mobileAttachmentMenu .attachment-menu-item{
-    display:flex !important;
-    align-items:center !important;
-    gap:11px !important;
-    min-height:58px !important;
-    padding:5px 8px !important;
-    box-sizing:border-box !important;
-    overflow:hidden !important;
+<style id="vibe-attachment-menu-corrected">
+/* === ATTACHMENT MENU: corrected square icons === */
+#mobileAttachmentMenu {
+    width: 276px !important;
+    max-width: calc(100vw - 14px) !important;
+    padding: 7px !important;
+    box-sizing: border-box !important;
+    gap: 2px !important;
 }
 
-#mobileAttachmentMenu .attachment-menu-icon{
-    width:48px !important;
-    height:48px !important;
-    min-width:48px !important;
-    min-height:48px !important;
-    flex:0 0 48px !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    box-sizing:border-box !important;
-    border-radius:13px !important;
-    overflow:hidden !important;
+#mobileAttachmentMenu .attachment-menu-item {
+    width: 100% !important;
+    min-height: 58px !important;
+    padding: 4px 7px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 11px !important;
+    color: var(--text) !important;
+    overflow: hidden !important;
 }
 
-#mobileAttachmentMenu .attachment-menu-icon svg{
-    width:23px !important;
-    height:23px !important;
-    max-width:23px !important;
-    max-height:23px !important;
-    flex:0 0 23px !important;
+#mobileAttachmentMenu .attachment-menu-icon {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    flex: 0 0 48px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    border-radius: 13px !important;
+    background: var(--accent) !important;
+    color: #fff !important;
+    border: 0 !important;
+    overflow: hidden !important;
 }
 
-#mobileAttachmentMenu .attachment-menu-gif{
-    overflow:hidden !important;
-    font-size:12px !important;
-    line-height:1 !important;
-    font-weight:900 !important;
-    text-align:center !important;
-    white-space:nowrap !important;
+#mobileAttachmentMenu .attachment-menu-item:nth-child(1) .attachment-menu-icon {
+    background: linear-gradient(145deg, #8f56ff, #7440ea) !important;
+}
+#mobileAttachmentMenu .attachment-menu-item:nth-child(2) .attachment-menu-icon {
+    background: linear-gradient(145deg, #466ff5, #2f5ddd) !important;
+}
+#mobileAttachmentMenu .attachment-menu-item:nth-child(3) .attachment-menu-icon {
+    background: linear-gradient(145deg, #ff5bcb, #9c45ee) !important;
+}
+#mobileAttachmentMenu .attachment-menu-item:nth-child(4) .attachment-menu-icon {
+    background: linear-gradient(145deg, #ff9a2f, #ff6d2f) !important;
 }
 
-#mobileAttachmentMenu .attachment-menu-label{
-    min-width:0 !important;
-    flex:1 1 auto !important;
-    overflow:hidden !important;
-    text-overflow:ellipsis !important;
-    white-space:normal !important;
-    line-height:1.15 !important;
+#mobileAttachmentMenu .attachment-menu-icon svg {
+    width: 23px !important;
+    height: 23px !important;
+    max-width: 23px !important;
+    max-height: 23px !important;
+    flex: 0 0 23px !important;
+    fill: none !important;
+    stroke: currentColor !important;
+    stroke-width: 1.8 !important;
+    stroke-linecap: round !important;
+    stroke-linejoin: round !important;
 }
 
-/* В обычных чатах опрос скрыт. В канале JS его включает. */
-#mobileAttachmentMenu #attachmentPollButton{
-    display:none !important;
+#mobileAttachmentMenu .attachment-menu-gif {
+    font-size: 12px !important;
+    line-height: 1 !important;
+    font-weight: 900 !important;
+    color: #fff !important;
+    border: 0 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.2) !important;
 }
 
-/* В канале этот класс возвращает кнопку в меню. */
-#mobileAttachmentMenu.vibe-channel-menu #attachmentPollButton{
-    display:flex !important;
+#mobileAttachmentMenu .attachment-menu-label {
+    display: block !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    color: var(--text) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1.15 !important;
+    text-align: left !important;
+    white-space: normal !important;
+    overflow: hidden !important;
 }
 
-@media (max-width:420px){
-    #mobileAttachmentMenu .attachment-menu-item{
-        min-height:52px !important;
-        padding:4px 7px !important;
-        gap:9px !important;
+/* Poll is hidden in regular chats; JS adds this class while a channel is open. */
+#mobileAttachmentMenu #attachmentPollButton {
+    display: none !important;
+}
+#mobileAttachmentMenu.vibe-show-poll #attachmentPollButton {
+    display: flex !important;
+}
+
+@media (max-width: 420px) {
+    #mobileAttachmentMenu {
+        width: 258px !important;
+        max-width: calc(100vw - 12px) !important;
     }
-
-    #mobileAttachmentMenu .attachment-menu-icon{
-        width:44px !important;
-        height:44px !important;
-        min-width:44px !important;
-        min-height:44px !important;
-        flex-basis:44px !important;
-        border-radius:12px !important;
+    #mobileAttachmentMenu .attachment-menu-item {
+        min-height: 54px !important;
+        padding: 3px 6px !important;
+        gap: 9px !important;
     }
-
-    #mobileAttachmentMenu .attachment-menu-icon svg{
-        width:21px !important;
-        height:21px !important;
-        max-width:21px !important;
-        max-height:21px !important;
+    #mobileAttachmentMenu .attachment-menu-icon {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        flex-basis: 44px !important;
+        border-radius: 12px !important;
+    }
+    #mobileAttachmentMenu .attachment-menu-icon svg {
+        width: 21px !important;
+        height: 21px !important;
+        max-width: 21px !important;
+        max-height: 21px !important;
+        flex-basis: 21px !important;
     }
 }
 </style>
 
-<script id="vibe-attachment-menu-final-script">
-(function(){
-    function getVibeAttachmentMenu(){
-        return document.getElementById("mobileAttachmentMenu");
-    }
-
-    function getVibePollButton(){
-        const menu = getVibeAttachmentMenu();
-        if (!menu) return null;
-
-        let button = document.getElementById("attachmentPollButton");
-        if (button) return button;
-
-        const items = menu.querySelectorAll(".attachment-menu-item");
-        for (const item of items) {
-            const onclick = item.getAttribute("onclick") || "";
-            if (onclick.includes("openPollComposer")) {
-                item.id = "attachmentPollButton";
-                return item;
-            }
-        }
-
-        return null;
-    }
-
-    window.syncVibeAttachmentMenu = function(){
-        const menu = getVibeAttachmentMenu();
-        const poll = getVibePollButton();
-        if (!menu || !poll) return;
-
-        /* Опрос показываем только когда открыт канал. */
-        menu.classList.toggle("vibe-channel-menu", !!window.currentChannel);
-
-        /* На всякий случай явно задаём display для кнопки. */
-        poll.style.display = window.currentChannel ? "flex" : "none";
-    };
-
-    /* Полностью заменяем открытие меню, сохраняя остальную логику без изменений. */
-    window.toggleMobileAttachmentMenu = function(){
-        const menu = getVibeAttachmentMenu();
+<script id="vibe-attachment-menu-corrected-script">
+(function () {
+    function syncAttachmentMenu() {
+        const menu = document.getElementById('mobileAttachmentMenu');
         if (!menu) return;
 
-        window.syncVibeAttachmentMenu();
+        /* currentChannel is the actual Vibe variable (not window.currentChannel). */
+        const channelOpen = typeof currentChannel !== 'undefined' && !!currentChannel;
+        menu.classList.toggle('vibe-show-poll', channelOpen);
 
-        menu.classList.toggle("hidden");
+        const poll = document.getElementById('attachmentPollButton');
+        if (poll) poll.style.removeProperty('display');
+    }
 
-        window.syncVibeAttachmentMenu();
-    };
+    window.syncVibeAttachmentMenu = syncAttachmentMenu;
 
-    window.closeMobileAttachmentMenu = function(){
-        getVibeAttachmentMenu()?.classList.add("hidden");
-    };
+    document.addEventListener('DOMContentLoaded', syncAttachmentMenu);
 
-    document.addEventListener("DOMContentLoaded", function(){
-        window.syncVibeAttachmentMenu();
-    });
-
-    /* Следим за переключением обычный чат/группа/канал, не меняя основной код Vibe. */
-    let lastChannelState = null;
-    setInterval(function(){
-        const current = !!window.currentChannel;
-        if (current !== lastChannelState){
-            lastChannelState = current;
-            window.syncVibeAttachmentMenu();
+    let lastState = null;
+    setInterval(function () {
+        const state = typeof currentChannel !== 'undefined' && !!currentChannel;
+        if (state !== lastState) {
+            lastState = state;
+            syncAttachmentMenu();
         }
-    }, 250);
+    }, 200);
 })();
 </script>
 
