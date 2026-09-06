@@ -4320,10 +4320,9 @@ const server =
 
                     const result =
                         posts
-                            .filter(
-                                post =>
-                                    post.channelId ===
-                                    channelId
+                            .filter(post =>
+                                post.channelId === channelId &&
+                                !(Array.isArray(post.hiddenFor) && viewer && post.hiddenFor.map(String).includes(String(viewer)))
                             )
                             .map(
                                 post => {
@@ -4605,6 +4604,47 @@ const server =
                 }
 
                 /* =====================================================
+                   CHANNEL POST HIDE FOR ONE USER
+                   Hides one channel publication only for the requesting user.
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-hide") {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "").trim();
+                    const postId = String(body.postId || "").trim();
+                    const login = String(body.login || "").trim();
+
+                    if (!channelId || !postId || !login) {
+                        sendJSON(res,{success:false,message:"Недостаточно данных"},400);
+                        return;
+                    }
+                    if (!findUser(login)) {
+                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
+                        return;
+                    }
+
+                    const channels = readJSON(CHANNELS_FILE);
+                    const channel = channels.find(c => String(c.id) === channelId);
+                    if (!channel) {
+                        sendJSON(res,{success:false,message:"Канал не найден"},404);
+                        return;
+                    }
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
+                    if (!post) {
+                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
+                        return;
+                    }
+
+                    if (!Array.isArray(post.hiddenFor)) post.hiddenFor = [];
+                    if (!post.hiddenFor.map(String).includes(login)) post.hiddenFor.push(login);
+                    saveJSON(CHANNEL_POSTS_FILE, posts);
+
+                    sendJSON(res,{success:true,channelId,postId,login});
+                    return;
+                }
+
+                /* =====================================================
                    CHANNEL POST DELETE
                    Owner-only delete for everyone.
                 ===================================================== */
@@ -4803,6 +4843,7 @@ const server =
                         reactions: {},
                         views: 0,
                         viewers: [],
+                        hiddenFor: [],
                         comments: [],
 
                         time:

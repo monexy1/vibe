@@ -14137,3 +14137,331 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 })();
 </script>
 
+<style id="vibe-channel-controls-final-fix">
+/* Poll is available only in a channel; the final JS also checks ownership. */
+#attachmentPollButton { display:none !important; }
+body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
+
+.vibe-channel-action-reactions{
+    display:flex;align-items:center;gap:3px;padding:6px 7px 7px;
+    border-bottom:1px solid var(--border);margin-bottom:4px;
+}
+.vibe-channel-action-reactions button{
+    width:31px;height:31px;border:0;border-radius:9px;background:transparent;
+    font-size:19px;cursor:pointer;transition:transform .12s,background .12s;
+}
+.vibe-channel-action-reactions button:hover{background:var(--panel2);transform:scale(1.12)}
+.vibe-channel-action-reactions button:active{transform:scale(.94)}
+
+#vibeChannelPollModal{position:fixed;inset:0;z-index:60000;display:flex;align-items:center;justify-content:center;padding:15px;background:rgba(4,7,18,.72);backdrop-filter:blur(9px)}
+#vibeChannelPollModal.hidden{display:none!important}
+.vibe-poll-card{width:min(480px,calc(100vw - 24px));max-height:calc(100dvh - 30px);overflow:auto;border:1px solid var(--border);border-radius:21px;background:var(--panel);box-shadow:0 25px 90px rgba(0,0,0,.52);padding:18px}
+.vibe-poll-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.vibe-poll-head-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#5b4bb7);color:#fff;font-size:20px;font-weight:900}
+.vibe-poll-title{font-size:18px;font-weight:900}.vibe-poll-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.vibe-poll-field{margin-top:11px}.vibe-poll-field label{display:block;font-size:11px;font-weight:900;color:var(--muted);margin:0 0 6px 2px}
+.vibe-poll-field input{width:100%;box-sizing:border-box}
+.vibe-poll-options{display:flex;flex-direction:column;gap:8px}
+.vibe-poll-option-row{display:flex;gap:7px;align-items:center}
+.vibe-poll-option-row input{min-width:0;flex:1}
+.vibe-poll-option-remove{width:38px;height:38px;border:1px solid var(--border);border-radius:10px;background:var(--panel2);color:var(--muted);cursor:pointer}
+.vibe-poll-option-add{width:100%;margin-top:8px;border:1px dashed var(--border);border-radius:11px;background:transparent;color:var(--accent);padding:9px;font-weight:900;cursor:pointer}
+.vibe-poll-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+.vibe-poll-actions button{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:11px;font-weight:900;cursor:pointer}
+.vibe-poll-actions .primary{background:linear-gradient(135deg,#8b5cf6,#6b46c1);border-color:transparent;color:#fff}
+.vibe-poll-error{display:none;margin-top:9px;color:#ff9b9b;font-size:12px;font-weight:800}
+.vibe-poll-setting{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:12px;color:var(--muted)}
+.vibe-poll-setting input{accent-color:var(--accent)}
+
+@media(max-width:520px){
+    .vibe-poll-card{border-radius:18px;padding:15px}
+}
+</style>
+
+<script id="vibe-channel-controls-final-script">
+(function(){
+    "use strict";
+
+    const RX = ["❤️","😂","👍","🔥","😮","😢","🎉","👀"];
+    let activePost = null;
+    let activeMenu = null;
+    let longPressTimer = null;
+
+    function getPost(postId){
+        return (window.__vibeChannelPosts || []).find(p => String(p.id) === String(postId)) || null;
+    }
+
+    function ownerCanPoll(){
+        return !!(currentChannel && currentUser && currentChannel.owner === currentUser.login);
+    }
+
+    function syncPollButton(){
+        document.body.classList.toggle("vibe-channel-owner", ownerCanPoll());
+        const btn = document.getElementById("attachmentPollButton");
+        if(btn) btn.style.display = ownerCanPoll() ? "flex" : "none";
+    }
+
+    function closeActionMenu(){
+        document.querySelectorAll(".vibe-channel-action-menu").forEach(x=>x.remove());
+        activeMenu=null;
+    }
+
+    async function safeJson(response){
+        return await response.json().catch(()=>({success:false,message:"Ошибка сервера"}));
+    }
+
+    function currentPostFromElement(el){
+        const root=el?.closest?.(".channel-post");
+        if(!root) return null;
+        return getPost(root.dataset.postId);
+    }
+
+    function actionMenuHTML(post){
+        const owner=!!(currentChannel && currentUser && currentChannel.owner===currentUser.login);
+        const reacts=RX.map(e=>`<button type="button" data-vibe-channel-reaction="${escapeHTML(e)}" title="${escapeHTML(e)}">${e}</button>`).join("");
+        return `
+          <div class="vibe-channel-action-reactions">${reacts}</div>
+          <button type="button" data-vibe-channel-action="copy">${vibeIcon("copy")}<span>Копировать</span></button>
+          <button type="button" data-vibe-channel-action="forward">${vibeIcon("forward")}<span>Переслать</span></button>
+          <button type="button" data-vibe-channel-action="pin">${vibeIcon("pin")}<span>${isPinnedSafe(post.id)?"Открепить у себя":"Закрепить у себя"}</span></button>
+          <button type="button" data-vibe-channel-action="self-delete">${vibeIcon("trash")}<span>Удалить у себя</span></button>
+          ${owner ? `<button type="button" class="message-actions-danger" data-vibe-channel-action="all-delete">${vibeIcon("trash")}<span>Удалить у всех</span></button>` : ""}
+        `;
+    }
+
+    function isPinnedSafe(id){
+        try{
+            const key=currentUser?"vibePinnedChannelPosts:"+currentUser.login:"vibePinnedChannelPosts";
+            const arr=JSON.parse(localStorage.getItem(key)||"[]");
+            return Array.isArray(arr)&&arr.map(String).includes(String(id));
+        }catch{return false}
+    }
+
+    function setPinnedSafe(id,on){
+        try{
+            const key=currentUser?"vibePinnedChannelPosts:"+currentUser.login:"vibePinnedChannelPosts";
+            const arr=JSON.parse(localStorage.getItem(key)||"[]");
+            const list=Array.isArray(arr)?arr.map(String):[];
+            const next=on ? [...new Set([...list,String(id)])] : list.filter(x=>x!==String(id));
+            localStorage.setItem(key,JSON.stringify(next));
+        }catch{}
+    }
+
+    async function openActions(post,x,y){
+        if(!post) return;
+        closeActionMenu();
+        activePost=post;
+        const menu=document.createElement("div");
+        menu.className="message-actions vibe-channel-action-menu";
+        menu.innerHTML=actionMenuHTML(post);
+        document.body.appendChild(menu);
+        const rect=menu.getBoundingClientRect();
+        const nx=Math.max(10,Math.min(Number(x)||10,innerWidth-rect.width-10));
+        const ny=Math.max(10,Math.min(Number(y)||10,innerHeight-rect.height-10));
+        menu.style.left=Math.round(nx)+"px";
+        menu.style.top=Math.round(ny)+"px";
+        activeMenu=menu;
+    }
+
+    async function copyPost(post){
+        if(!post)return;
+        const text=String(post.text||"").trim() || (post.media?(post.attachmentName||"Вложение") : "");
+        try{await navigator.clipboard.writeText(text);showVibeNotice?.("Скопировано","Текст публикации скопирован.")}catch{showVibeNotice?.("Не удалось скопировать","Браузер запретил доступ к буферу обмена.")}
+    }
+
+    async function hidePostForMe(post){
+        if(!post||!currentUser||!currentChannel)return;
+        try{
+            const r=await fetch("/channel-post-hide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,postId:post.id,login:currentUser.login})});
+            const d=await safeJson(r);
+            if(!d.success) throw new Error(d.message||"Не удалось удалить у себя");
+            window.__vibeChannelPosts=(window.__vibeChannelPosts||[]).filter(p=>String(p.id)!==String(post.id));
+            document.querySelector(`.channel-post[data-post-id="${CSS.escape(String(post.id))}"]`)?.remove();
+            setPinnedSafe(post.id,false);
+            if(typeof updatePinnedBar==="function") updatePinnedBar();
+        }catch(e){showVibeNotice?.("Не удалось удалить",e.message)}
+    }
+
+    async function deletePostForAll(post){
+        if(!post||!currentChannel||!currentUser)return;
+        if(currentChannel.owner!==currentUser.login){showVibeNotice?.("Недоступно","Только владелец канала может удалить публикацию у всех.");return;}
+        const ok=typeof showVibeChannelConfirm==="function"
+            ? await showVibeChannelConfirm("Удалить публикацию?","Она исчезнет у всех подписчиков канала.")
+            : true;
+        if(!ok)return;
+        try{
+            const r=await fetch("/channel-post-delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,postId:post.id,owner:currentUser.login})});
+            const d=await safeJson(r);
+            if(!d.success)throw new Error(d.message||"Не удалось удалить публикацию");
+            window.__vibeChannelPosts=(window.__vibeChannelPosts||[]).filter(p=>String(p.id)!==String(post.id));
+            document.querySelector(`.channel-post[data-post-id="${CSS.escape(String(post.id))}"]`)?.remove();
+            setPinnedSafe(post.id,false);
+            if(typeof updatePinnedBar==="function") updatePinnedBar();
+        }catch(e){showVibeNotice?.("Не удалось удалить",e.message)}
+    }
+
+    async function reactPost(post,emoji){
+        if(!post||!currentChannel||!currentUser)return;
+        try{
+            const r=await fetch("/channel-post-reaction",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,postId:post.id,login:currentUser.login,emoji})});
+            const d=await safeJson(r);
+            if(!d.success)throw new Error(d.message||"Не удалось поставить реакцию");
+            window.__vibeChannelPosts=(window.__vibeChannelPosts||[]).map(p=>String(p.id)===String(post.id)?d.post:p);
+            closeActionMenu();
+            if(typeof decorateChannelPosts==="function") decorateChannelPosts();
+        }catch(e){showVibeNotice?.("Не удалось поставить реакцию",e.message)}
+    }
+
+    async function forwardPost(post){
+        if(!post||!currentUser)return;
+        closeActionMenu();
+        let modal=document.getElementById("vibeChannelForwardPicker");
+        if(modal)modal.remove();
+        modal=document.createElement("div");
+        modal.id="vibeChannelForwardPicker";
+        modal.className="modal";
+        modal.innerHTML=`<div class="modal-card" style="width:min(430px,calc(100vw - 24px));max-height:min(650px,calc(100dvh - 24px));overflow:hidden;display:flex;flex-direction:column"><div class="modal-header"><div class="modal-title">Переслать публикацию</div><button type="button" data-vibe-close-forward>✕</button></div><div style="padding:0 14px 10px;color:var(--muted);font-size:12px">Выбери чат с другом</div><div style="padding:0 14px 9px"><input id="vibeForwardFriendSearch" class="input" placeholder="Поиск друга..."></div><div id="vibeForwardFriendList" style="overflow:auto;padding:0 10px 14px"></div></div>`;
+        document.body.appendChild(modal);
+        modal.querySelector("[data-vibe-close-forward]").onclick=()=>modal.remove();
+        modal.onclick=e=>{if(e.target===modal)modal.remove()};
+        const list=modal.querySelector("#vibeForwardFriendList");
+        const input=modal.querySelector("#vibeForwardFriendSearch");
+        const friends=await fetch("/friends?login="+encodeURIComponent(currentUser.login)).then(r=>r.json()).catch(()=>[]);
+        const draw=()=>{
+            const q=(input.value||"").toLowerCase().trim();
+            const arr=Array.isArray(friends)?friends.filter(f=>!q||String(f.name||f.login).toLowerCase().includes(q)||String(f.login).toLowerCase().includes(q)):[];
+            list.innerHTML="";
+            if(!arr.length){list.innerHTML='<div style="padding:22px;text-align:center;color:var(--muted)">Друзей не найдено</div>';return;}
+            arr.forEach(friend=>{
+                const b=document.createElement("button");b.type="button";b.className="vibe-forward-choice";b.style.cssText="width:100%;display:flex;align-items:center;gap:10px;padding:9px;border:0;border-radius:12px;background:transparent;color:var(--text);text-align:left;cursor:pointer";
+                const avatar=friend.photo?`<div class="vibe-forward-avatar"><img src="${escapeHTML(friend.photo)}" alt=""></div>`:`<div class="vibe-forward-avatar">${escapeHTML((friend.name||friend.login||"?").slice(0,1).toUpperCase())}</div>`;
+                b.innerHTML=avatar+`<div class="vibe-forward-name"><strong>${escapeHTML(friend.name||friend.login)}</strong><span>@${escapeHTML(friend.login)}</span></div>`;
+                b.onclick=async()=>{
+                    b.disabled=true;
+                    const body={from:currentUser.login,to:friend.login,type:post.media?"attachment":"text",text:"↗️ "+(String(post.text||"").trim()||(post.media?(post.attachmentName||"Вложение"):""))};
+                    if(post.media){body.attachment=post.media;body.attachmentType=post.mediaType||"application/octet-stream";body.attachmentName=post.attachmentName||"Пересланная публикация";}
+                    try{
+                        const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+                        const d=await safeJson(r);
+                        if(!d.success)throw new Error(d.message||"Не удалось переслать");
+                        modal.remove();
+                        showVibeNotice?.("Готово","Публикация переслана в чат с другом.");
+                    }catch(e){showVibeNotice?.("Не удалось переслать",e.message)}finally{b.disabled=false}
+                };
+                list.appendChild(b);
+            });
+        };
+        input.addEventListener("input",draw);draw();input.focus();
+    }
+
+    function ensurePollModal(){
+        if(document.getElementById("vibeChannelPollModal"))return;
+        const root=document.createElement("div");root.id="vibeChannelPollModal";root.className="hidden";
+        root.innerHTML=`<div class="vibe-poll-card"><div class="vibe-poll-head"><div class="vibe-poll-head-icon">?</div><div><div class="vibe-poll-title">Создать опрос</div><div class="vibe-poll-sub">Настрой вопрос и варианты ответа</div></div></div><div class="vibe-poll-field"><label>ВОПРОС</label><input id="vibePollQuestion" class="input" maxlength="300" placeholder="Например: Какой вариант лучше?"></div><div class="vibe-poll-field"><label>ВАРИАНТЫ ОТВЕТА</label><div id="vibePollOptions" class="vibe-poll-options"></div><button type="button" id="vibePollAddOption" class="vibe-poll-option-add">＋ Добавить вариант</button></div><div id="vibePollError" class="vibe-poll-error"></div><div class="vibe-poll-actions"><button type="button" id="vibePollCancel">Отмена</button><button type="button" id="vibePollCreate" class="primary">Создать опрос</button></div></div>`;
+        document.body.appendChild(root);
+        const options=root.querySelector("#vibePollOptions");
+        function add(value=""){
+            const count=options.children.length;if(count>=10)return;
+            const row=document.createElement("div");row.className="vibe-poll-option-row";
+            row.innerHTML=`<input class="input vibe-poll-option" maxlength="120" placeholder="Вариант ответа ${count+1}"><button type="button" class="vibe-poll-option-remove" title="Удалить">✕</button>`;
+            row.querySelector("input").value=value;
+            row.querySelector("button").onclick=()=>{if(options.children.length<=2)return;row.remove();Array.from(options.querySelectorAll(".vibe-poll-option")).forEach((i,n)=>i.placeholder="Вариант ответа "+(n+1));};
+            options.appendChild(row);
+        }
+        add();add();
+        root.querySelector("#vibePollAddOption").onclick=()=>add();
+        root.querySelector("#vibePollCancel").onclick=()=>root.classList.add("hidden");
+        root.addEventListener("click",e=>{if(e.target===root)root.classList.add("hidden")});
+        root.querySelector("#vibePollCreate").onclick=async()=>{
+            const err=root.querySelector("#vibePollError");err.style.display="none";
+            if(!ownerCanPoll()){err.textContent="Создавать опросы может только владелец канала.";err.style.display="block";return}
+            const q=root.querySelector("#vibePollQuestion").value.trim();
+            const options=Array.from(root.querySelectorAll(".vibe-poll-option")).map(i=>i.value.trim()).filter(Boolean);
+            if(!q||options.length<2){err.textContent="Нужен вопрос и минимум два варианта ответа.";err.style.display="block";return}
+            const btn=root.querySelector("#vibePollCreate");btn.disabled=true;
+            try{
+                const r=await fetch("/channel-post",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({channelId:currentChannel.id,author:currentUser.login,text:"",media:null,mediaType:"",poll:{question:q,options}})});
+                const d=await safeJson(r);if(!d.success)throw new Error(d.message||"Не удалось создать опрос");
+                root.classList.add("hidden");
+                await loadChannelPosts(true);
+            }catch(e){err.textContent=e.message;err.style.display="block"}finally{btn.disabled=false}
+        };
+    }
+
+    window.openPollComposer=function(){
+        if(!ownerCanPoll()){showVibeNotice?.("Опрос","Создавать опросы можно только внутри своего канала.");return;}
+        ensurePollModal();
+        const root=document.getElementById("vibeChannelPollModal");
+        root.querySelector("#vibePollQuestion").value="";
+        root.querySelector("#vibePollOptions").innerHTML="";
+        const add=(value="")=>{
+            const box=root.querySelector("#vibePollOptions");const count=box.children.length;if(count>=10)return;
+            const row=document.createElement("div");row.className="vibe-poll-option-row";row.innerHTML=`<input class="input vibe-poll-option" maxlength="120" placeholder="Вариант ответа ${count+1}"><button type="button" class="vibe-poll-option-remove" title="Удалить">✕</button>`;
+            row.querySelector("input").value=value;row.querySelector("button").onclick=()=>{if(box.children.length<=2)return;row.remove()};box.appendChild(row);
+        };
+        add();add();
+        root.querySelector("#vibePollAddOption").onclick=()=>add();
+        root.querySelector("#vibePollError").style.display="none";
+        root.classList.remove("hidden");
+        setTimeout(()=>root.querySelector("#vibePollQuestion")?.focus(),60);
+    };
+
+    // Disable the old text-poll sender from normal chat use.
+    window.sendPollComposer=async function(){
+        if(!ownerCanPoll()){showVibeNotice?.("Опрос","Опросы доступны только в каналах.");return;}
+        const btn=document.querySelector("#vibePollCreate");btn?.click();
+    };
+
+    // Our final context menu takes over the channel post actions.
+    document.addEventListener("contextmenu",function(event){
+        const postEl=event.target.closest?.(".channel-post");
+        if(!postEl||!currentChannel)return;
+        event.preventDefault();event.stopImmediatePropagation();
+        openActions(currentPostFromElement(postEl),event.clientX,event.clientY);
+    },true);
+
+    document.addEventListener("pointerdown",function(event){
+        if(event.pointerType!=="touch")return;
+        const postEl=event.target.closest?.(".channel-post");
+        if(!postEl||!currentChannel)return;
+        clearTimeout(longPressTimer);
+        longPressTimer=setTimeout(()=>openActions(currentPostFromElement(postEl),event.clientX||innerWidth/2,event.clientY||innerHeight/2),520);
+    },true);
+    document.addEventListener("pointerup",()=>clearTimeout(longPressTimer),true);
+    document.addEventListener("pointercancel",()=>clearTimeout(longPressTimer),true);
+
+    document.addEventListener("click",async function(event){
+        const menu=event.target.closest?.(".vibe-channel-action-menu");
+        if(!menu)return;
+        const reaction=event.target.closest?.("[data-vibe-channel-reaction]");
+        if(reaction){
+            event.preventDefault();event.stopPropagation();
+            await reactPost(activePost,reaction.dataset.vibeChannelReaction);return;
+        }
+        const action=event.target.closest?.("[data-vibe-channel-action]");
+        if(!action)return;
+        event.preventDefault();event.stopPropagation();
+        const kind=action.dataset.vibeChannelAction;
+        if(kind==="copy")await copyPost(activePost);
+        else if(kind==="forward")await forwardPost(activePost);
+        else if(kind==="pin"){
+            const now=!isPinnedSafe(activePost.id);setPinnedSafe(activePost.id,now);closeActionMenu();if(typeof updatePinnedBar==="function")updatePinnedBar();if(typeof decorateChannelPosts==="function")decorateChannelPosts();
+        } else if(kind==="self-delete") {const p=activePost;closeActionMenu();await hidePostForMe(p)}
+        else if(kind==="all-delete") {const p=activePost;closeActionMenu();await deletePostForAll(p)}
+    },true);
+
+    document.addEventListener("click",function(event){
+        if(!event.target.closest(".vibe-channel-action-menu"))closeActionMenu();
+    },false);
+
+    // Make poll availability follow the currently opened screen.
+    let lastOwnerState=null,lastChannelState=null;
+    setInterval(()=>{
+        const o=ownerCanPoll(),c=!!currentChannel;
+        if(o!==lastOwnerState||c!==lastChannelState){lastOwnerState=o;lastChannelState=c;syncPollButton();}
+    },250);
+    document.addEventListener("DOMContentLoaded",syncPollButton);
+    syncPollButton();
+})();
+</script>
+
