@@ -4801,13 +4801,6 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <label class="channel-settings-label">Название</label>
             <input id="channelProfileName" class="channel-settings-input" placeholder="Название канала">
 
-            <label class="channel-settings-label">Юзернейм</label>
-            <div class="channel-username-edit">
-                <span>@</span>
-                <input id="channelProfileUsername" class="channel-settings-input" placeholder="my_channel" maxlength="32" autocomplete="off">
-            </div>
-            <div class="channel-username-hint">Уникальный адрес канала. Только латинские буквы, цифры и _.</div>
-
             <label class="channel-settings-label">Описание</label>
             <textarea id="channelProfileDescription" class="channel-settings-input channel-settings-textarea" placeholder="Короткое описание канала"></textarea>
         </div>
@@ -7924,22 +7917,8 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             ? `<div class="group-sender">${escapeHTML(message.from || "Пользователь")}</div>`
             : "";
 
-        const forwardedHtml = message.forwardedFrom
-            ? `<div class="forwarded-from">
-                <div class="forwarded-from-avatar">${
-                    message.forwardedFrom.photo
-                        ? `<img src="${escapeHTML(message.forwardedFrom.photo)}" alt="">`
-                        : vibeIcon("channel")
-                }</div>
-                <div class="forwarded-from-copy">
-                    <div class="forwarded-from-label">Переслано из</div>
-                    <div class="forwarded-from-name">${escapeHTML(message.forwardedFrom.name || "Канал")}</div>
-                </div>
-            </div>`
-            : "";
-
         if (message.type === "voice" && message.audio) {
-            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
         } else if (message.type === "attachment" && message.attachment) {
             const mime = String(message.attachmentType || "");
             let attachmentHtml = "";
@@ -7953,9 +7932,9 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             const attachmentCaption = message.text
                 ? `<div class="attachment-caption">${escapeHTML(message.text)}</div>`
                 : "";
-            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
         } else {
-            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
 
         bubble.insertAdjacentHTML("beforeend", renderMessageReactions(message) + renderMessageReactionTools(message));
@@ -9410,7 +9389,6 @@ async function createGroup() {
             body:JSON.stringify({
                 owner:currentUser.login,
                 name,
-                username,
                 description,
                 photo,
                 public:isPublic
@@ -10185,11 +10163,11 @@ async function openChannel(channel) {
         channel.name || "Канал";
 
     $("chatStatus").textContent =
-        Number(
-            channel.subscriberCount ||
-            channel.subscribers?.length ||
-            0
-        ) + " подписчиков";
+        [
+            channel.description || "Канал Vibe",
+            channel.username ? "@" + channel.username : "",
+            Number(channel.subscriberCount || channel.subscribers?.length || 0) + " подписчиков"
+        ].filter(Boolean).join(" · ");
 
     const input =
         $("messageInput");
@@ -10260,7 +10238,11 @@ function updateChannelHeader() {
         );
 
     $("chatStatus").textContent =
-        subscriberCount + " подписчиков";
+        [
+            currentChannel.description || "Канал Vibe",
+            currentChannel.username ? "@" + currentChannel.username : "",
+            subscriberCount + " подписчиков"
+        ].filter(Boolean).join(" · ");
 
     $("chatAvatar").innerHTML =
         currentChannel.photo
@@ -10341,10 +10323,6 @@ async function openChannelProfile() {
     const own = currentChannel.owner === currentUser.login;
 
     $("channelProfileName").value = currentChannel.name || "";
-    if ($("channelProfileUsername")) {
-        $("channelProfileUsername").value =
-            currentChannel.username || "";
-    }
     $("channelProfileDescription").value = currentChannel.description || "";
     $("channelProfilePhoto").value = currentChannel.photo || "";
 
@@ -10359,9 +10337,6 @@ async function openChannelProfile() {
         : vibeIcon("channel");
 
     $("channelProfileName").disabled = !own;
-    if ($("channelProfileUsername")) {
-        $("channelProfileUsername").disabled = !own;
-    }
     $("channelProfileDescription").disabled = !own;
 
     const ownerSettings = $("channelProfileOwnerSettings");
@@ -10396,11 +10371,6 @@ async function saveChannelProfile() {
     }
 
     const name = $("channelProfileName").value.trim();
-    const username =
-        $("channelProfileUsername")?.value
-            .trim()
-            .replace(/^@+/, "")
-            .toLowerCase() || "";
     const description = $("channelProfileDescription").value.trim();
     const photo =
         $("channelProfilePhotoFile")?.dataset.photo ||
@@ -14433,26 +14403,8 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
             b.onclick=async()=>{
                 b.disabled=true;
                 try{
-                    const body={
-                        from:currentUser.login,
-                        to:user.login,
-                        type:post.media?"attachment":"text",
-                        text:post.poll
-                            ? "📊 "+String(post.poll.question||"Опрос")
-                            : String(post.text||""),
-                        forwardedFrom: currentChannel ? {
-                            type:"channel",
-                            id:String(currentChannel.id || ""),
-                            name:String(currentChannel.name || "Канал"),
-                            username:String(currentChannel.username || ""),
-                            photo:String(currentChannel.photo || "")
-                        } : null
-                    };
-                    if(post.media){
-                        body.attachment=post.media;
-                        body.attachmentType=post.mediaType||"application/octet-stream";
-                        body.attachmentName=post.attachmentName||"Пересланная публикация";
-                    }
+                    const body={from:currentUser.login,to:user.login,type:post.media?"attachment":"text",text:"↗️ "+(post.poll?"📊 "+String(post.poll.question||"Опрос"):String(post.text||""))};
+                    if(post.media){body.attachment=post.media;body.attachmentType=post.mediaType||"application/octet-stream";body.attachmentName=post.attachmentName||"Пересланная публикация";}
                     const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
                     const d=await r.json().catch(()=>({}));
                     if(!r.ok||!d.success)throw new Error(d.message||"Не удалось переслать публикацию");
@@ -14620,730 +14572,404 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 })();
 </script>
 
-<style id="vibe-channel-username-style">
-.channel-username-edit{
-    position:relative;
-    display:flex;
-    align-items:center;
-}
-.channel-username-edit > span{
-    position:absolute;
-    left:14px;
-    z-index:2;
-    color:var(--muted);
-    font-weight:800;
-    pointer-events:none;
-}
-.channel-username-edit .channel-settings-input{
-    padding-left:29px!important;
-}
-.channel-username-hint{
-    margin:6px 1px 0;
-    color:var(--muted);
-    font-size:10px;
-    line-height:1.35;
-}
-</style>
-
-<style id="vibe-forwarded-channel-style">
-.forwarded-from{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin:0 0 7px;
-    padding:6px 8px;
-    border-left:3px solid var(--accent);
-    border-radius:9px;
-    background:rgba(139,92,246,.08);
-}
-.forwarded-from-avatar{
-    width:30px;
-    height:30px;
-    min-width:30px;
-    border-radius:50%;
-    overflow:hidden;
-    display:grid;
-    place-items:center;
-    background:var(--panel2);
-    color:var(--accent);
-}
-.forwarded-from-avatar img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-.forwarded-from-avatar .vibe-icon{
-    width:17px!important;
-    height:17px!important;
-}
-.forwarded-from-copy{
-    min-width:0;
-    flex:1;
-}
-.forwarded-from-label{
-    font-size:10px;
-    color:var(--muted);
-    line-height:1.1;
-}
-.forwarded-from-name{
-    margin-top:2px;
-    font-size:12px;
-    font-weight:900;
-    color:var(--accent);
-    overflow:hidden;
-    text-overflow:ellipsis;
-    white-space:nowrap;
-}
-</style>
-
-<style id="vibe-final-channel-layout-fix">
-/* =========================================================
-   CHANNEL LAYOUT
-   Posts sit on the left like normal messenger messages.
-========================================================= */
+<style id="vibe-channel-pin-style-final">
+/* Channel posts: compact message-card style */
 .channel-post{
-    width:min(760px, calc(100% - 34px)) !important;
-    margin:7px 0 9px 16px !important;
-    border-radius:16px !important;
+    width:min(760px,calc(100% - 18px)) !important;
+    margin:7px auto 9px !important;
+    padding:0 !important;
+    background:var(--panel2) !important;
+    border:1px solid var(--border) !important;
+    border-radius:17px !important;
+    overflow:hidden !important;
+    box-shadow:0 8px 24px rgba(0,0,0,.12) !important;
 }
-
-@media(max-width:700px){
-    .channel-post{
-        width:calc(100% - 18px) !important;
-        margin:5px 0 7px 9px !important;
-    }
-}
-
-/* =========================================================
-   COMMENTS / VIEWS — compact Telegram-like footer
-========================================================= */
-.channel-post-meta{
-    display:flex !important;
-    align-items:center !important;
-    gap:9px !important;
-    min-height:34px !important;
-    padding:6px 10px 8px !important;
-}
-
-.channel-post-meta .channel-post-views{
-    margin-left:auto !important;
-    display:inline-flex !important;
-    align-items:center !important;
-    gap:4px !important;
-}
-
-.channel-comment-toggle{
-    display:inline-flex !important;
-    align-items:center !important;
-    gap:8px !important;
-    padding:4px 7px !important;
+.channel-post-head{padding:9px 13px 6px !important}
+.channel-post-head .avatar{width:32px !important;height:32px !important;min-width:32px !important}
+.channel-post-body{padding:0 13px 8px !important}
+.channel-post-text{font-size:14px !important;line-height:1.45 !important;margin:1px 0 8px !important}
+.vibe-channel-post-reactions{display:flex !important;flex-wrap:wrap !important;gap:5px !important;margin:6px 0 0 !important}
+.vibe-channel-reaction{
+    min-height:25px !important;
+    padding:3px 8px !important;
     border-radius:999px !important;
-    color:#59aefc !important;
-    background:rgba(77,155,235,.07) !important;
-}
-
-.vibe-comment-avatars{
-    display:inline-flex !important;
-    align-items:center !important;
-    height:24px !important;
-    padding-left:2px !important;
-}
-
-.vibe-comment-avatar{
-    width:24px !important;
-    height:24px !important;
-    min-width:24px !important;
-    border-radius:50% !important;
-    overflow:hidden !important;
-    display:grid !important;
-    place-items:center !important;
-    background:var(--accent) !important;
-    color:#fff !important;
-    border:2px solid var(--panel2) !important;
-    margin-left:-6px !important;
-    font-size:10px !important;
-    font-weight:900 !important;
-}
-
-.vibe-comment-avatar:first-child{
-    margin-left:0 !important;
-}
-
-.vibe-comment-avatar img{
-    width:100% !important;
-    height:100% !important;
-    object-fit:cover !important;
-}
-
-.vibe-comment-count{
-    color:#58aefb !important;
-    font-size:12px !important;
-    font-weight:800 !important;
-    white-space:nowrap !important;
-}
-
-.vibe-comment-arrow{
-    font-size:20px !important;
-    line-height:1 !important;
-    color:#58aefb !important;
-    margin-left:1px !important;
-}
-
-.channel-post-views{
-    color:var(--muted) !important;
-    font-size:11px !important;
-}
-
-/* =========================================================
-   ALL TRUE MODALS — always centered
-========================================================= */
-.modal:not(.hidden){
-    position:fixed !important;
-    inset:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    padding:14px !important;
-    box-sizing:border-box !important;
-}
-
-.modal-card{
-    margin:auto !important;
-}
-
-#vibeChannelForwardPicker{
-    position:fixed !important;
-    inset:0 !important;
-    width:100vw !important;
-    height:100dvh !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    padding:14px !important;
-    box-sizing:border-box !important;
-    z-index:70000 !important;
-    background:rgba(4,7,18,.72) !important;
-    backdrop-filter:blur(9px) !important;
-}
-
-#vibeChannelForwardPicker .modal-card{
-    margin:auto !important;
-    transform:none !important;
-    position:relative !important;
-    left:auto !important;
-    top:auto !important;
-}
-
-#vibeChannelForwardPicker .vibe-forward-list{
-    max-height:min(520px,58dvh) !important;
-}
-
-/* When the forward picker is open, the old message menu must be gone. */
-body:has(#vibeChannelForwardPicker) .message-actions{
-    display:none !important;
-}
-
-/* =========================================================
-   FORWARDED MESSAGE STYLE
-========================================================= */
-.forwarded-from{
-    display:flex !important;
-    align-items:center !important;
-    gap:8px !important;
-    margin:0 0 7px !important;
-    padding:5px 8px !important;
-    border-left:3px solid var(--accent) !important;
-    border-radius:8px !important;
-    background:rgba(139,92,246,.07) !important;
-}
-
-.forwarded-from-avatar{
-    width:30px !important;
-    height:30px !important;
-    min-width:30px !important;
-    border-radius:50% !important;
-    overflow:hidden !important;
-}
-
-.forwarded-from-label{
-    font-size:10px !important;
-    color:var(--muted) !important;
-}
-
-.forwarded-from-name{
+    background:rgba(139,92,246,.10) !important;
+    border:1px solid rgba(139,92,246,.22) !important;
     color:var(--text) !important;
     font-size:12px !important;
+    font-weight:800 !important;
+}
+.vibe-channel-reaction.active{
+    background:rgba(139,92,246,.20) !important;
+    border-color:var(--accent) !important;
+}
+.channel-post-meta{
+    min-height:30px !important;
+    padding:6px 12px 7px !important;
+    border-top:1px solid rgba(255,255,255,.05) !important;
+}
+.vibe-channel-post-pinned{
+    outline:1px solid var(--accent) !important;
+    box-shadow:0 0 0 1px rgba(139,92,246,.15) inset !important;
+}
+.vibe-channel-pin-label{
+    display:inline-flex !important;
+    align-items:center !important;
+    padding:2px 7px !important;
+    border-radius:999px !important;
+    background:rgba(139,92,246,.12) !important;
+    color:var(--accent) !important;
+    font-size:10px !important;
     font-weight:900 !important;
-    margin-top:1px !important;
 }
 
-.forwarded-from-name::before{
-    content:"" !important;
+/* Only current channel gets the persistent pin strip */
+#vibePersistentPinBar{
+    display:none;
+    align-items:center;
+    gap:9px;
+    width:100%;
+    min-height:56px;
+    padding:7px 11px;
+    box-sizing:border-box;
+    background:var(--panel2);
+    border-top:1px solid var(--border);
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+}
+#vibePersistentPinBar.show{display:flex}
+#vibePersistentPinBar .vpp-thumb{
+    width:37px;height:37px;min-width:37px;border-radius:8px;
+    overflow:hidden;display:grid;place-items:center;background:var(--panel);
+}
+#vibePersistentPinBar .vpp-thumb img{width:100%;height:100%;object-fit:cover}
+#vibePersistentPinBar .vpp-copy{min-width:0;flex:1}
+#vibePersistentPinBar .vpp-title{font-size:11px;font-weight:900;color:var(--accent)}
+#vibePersistentPinBar .vpp-text{
+    margin-top:2px;font-size:12px;color:var(--text);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+#vibePersistentPinBar .vpp-close{
+    width:30px;height:30px;min-width:30px;border:0;
+    border-radius:9px;background:transparent;color:var(--muted);
+    font-size:19px;cursor:pointer;
 }
 
-/* Poll/create dialogs also stay centered and use Vibe inputs. */
-#vibeChannelPollModal{
-    position:fixed !important;
-    inset:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    padding:14px !important;
-    box-sizing:border-box !important;
-    z-index:71000 !important;
-    background:rgba(4,7,18,.72) !important;
-    backdrop-filter:blur(9px) !important;
-}
+/* Owner only: extra action button */
+.vibe-pin-all-action{color:var(--accent)!important}
 
-#vibeChannelPollModal.hidden{
-    display:none !important;
+@media(max-width:700px){
+    .channel-post{width:calc(100% - 10px)!important;margin:5px auto 7px!important}
+    .channel-post-head{padding:8px 10px 5px!important}
+    .channel-post-body{padding:0 10px 8px!important}
+    .channel-post-meta{padding:6px 9px 7px!important}
 }
 </style>
 
-<script id="vibe-final-channel-layout-fix-script">
+<script id="vibe-channel-pin-style-final-script">
 (function(){
     "use strict";
 
-    function clearOldActionMenus(){
-        document.querySelectorAll(".message-actions").forEach(el=>el.remove());
+    const SELF_PREFIX="vibePinSelf::";
+
+    function selfKey(){
+        return currentUser && currentChannel
+            ? SELF_PREFIX+currentUser.login+"::"+String(currentChannel.id)
+            : "";
+    }
+    function getSelf(){
+        const key=selfKey();
+        if(!key)return "";
+        try{return String(localStorage.getItem(key)||"")}catch{return ""}
+    }
+    function setSelf(id){
+        const key=selfKey();
+        if(!key)return;
+        try{
+            if(id)localStorage.setItem(key,String(id));
+            else localStorage.removeItem(key);
+        }catch{}
+    }
+    function globalId(){
+        return currentChannel ? String(currentChannel.pinnedPostId||"") : "";
+    }
+    function activeId(){ return getSelf() || globalId(); }
+
+    function closeMenus(){
+        document.querySelectorAll(".message-actions,.vibe-channel-action-menu")
+            .forEach(el=>el.remove());
     }
 
-    /* ---------- comment footer ---------- */
-    function decorateCommentFooter(){
-        if(!currentChannel) return;
+    function currentPost(){
+        const id=window.__vibeActiveChannelPost ||
+                  window.__vibeSelectedChannelPost;
+        if(id && typeof id==="object") return id;
+        return null;
+    }
 
-        document.querySelectorAll(".channel-post").forEach(postEl=>{
-            const id=String(postEl.dataset.postId||"");
-            const post=(window.__vibeChannelPosts||[])
-                .find(p=>String(p.id)===id);
+    function ensureBar(){
+        const chat=document.querySelector(".chat");
+        const messages=document.getElementById("messages");
+        if(!chat||!messages)return null;
+        let bar=document.getElementById("vibePersistentPinBar");
+        if(!bar){
+            bar=document.createElement("div");
+            bar.id="vibePersistentPinBar";
+            chat.insertBefore(bar,messages);
+        }
+        return bar;
+    }
 
-            if(!post) return;
+    function renderBar(){
+        const bar=ensureBar();
+        if(!bar)return;
 
-            const meta=postEl.querySelector(".channel-post-meta");
-            const button=postEl.querySelector(".channel-comment-toggle");
+        if(!currentChannel){
+            bar.classList.remove("show");
+            bar.innerHTML="";
+            return;
+        }
 
-            if(!meta || !button) return;
+        const id=activeId();
+        const post=(window.__vibeChannelPosts||[])
+            .find(p=>String(p.id)===id);
 
-            const comments=
-                Array.isArray(post.comments)
-                    ? post.comments
-                    : [];
+        if(!post){
+            bar.classList.remove("show");
+            bar.innerHTML="";
+            return;
+        }
 
-            let avatars=button.querySelector(".vibe-comment-avatars");
-            let count=button.querySelector(".vibe-comment-count");
-            let arrow=button.querySelector(".vibe-comment-arrow");
+        let thumb="▤";
+        if(post.media && String(post.mediaType||"").startsWith("image/")){
+            thumb='<img src="'+escapeHTML(post.media)+'" alt="">';
+        }else if(post.media){
+            thumb="📎";
+        }else if(post.poll){
+            thumb="📊";
+        }
 
-            if(!avatars){
-                button.innerHTML="";
-                avatars=document.createElement("span");
-                avatars.className="vibe-comment-avatars";
+        const text=String(
+            post.text||post.poll?.question||post.attachmentName||"Публикация"
+        ).replace(/\s+/g," ").trim();
 
-                count=document.createElement("span");
-                count.className="vibe-comment-count";
+        const global=(getSelf()==="" && globalId()===id);
 
-                arrow=document.createElement("span");
-                arrow.className="vibe-comment-arrow";
-                arrow.textContent="›";
+        bar.innerHTML=
+            '<div class="vpp-thumb">'+thumb+'</div>'+
+            '<div class="vpp-copy">'+
+                '<div class="vpp-title">'+
+                    (global ? "Закреплено для всех" : "Закреплённое сообщение")+
+                '</div>'+
+                '<div class="vpp-text">'+escapeHTML(text)+'</div>'+
+            '</div>'+
+            '<button type="button" class="vpp-close">×</button>';
 
-                button.appendChild(avatars);
-                button.appendChild(count);
-                button.appendChild(arrow);
-            }
+        bar.classList.add("show");
 
-            avatars.innerHTML="";
+        bar.onclick=function(){
+            const target=document.querySelector(
+                '.channel-post[data-post-id="'+CSS.escape(id)+'"]'
+            );
+            target?.scrollIntoView({behavior:"smooth",block:"center"});
+        };
 
-            comments.slice(-3).forEach(comment=>{
-                const avatar=document.createElement("span");
-                avatar.className="vibe-comment-avatar";
+        bar.querySelector(".vpp-close").onclick=async function(e){
+            e.stopPropagation();
 
-                if(comment.photo){
-                    const img=document.createElement("img");
-                    img.src=comment.photo;
-                    img.alt="";
-                    avatar.appendChild(img);
-                }else{
-                    avatar.textContent=
-                        String(
-                            comment.name ||
-                            comment.author ||
-                            "?"
-                        )
-                        .slice(0,1)
-                        .toUpperCase();
-                }
-
-                avatars.appendChild(avatar);
-            });
-
-            if(comments.length===0){
-                avatars.style.display="none";
-                arrow.style.display="none";
+            if(global){
+                if(String(currentChannel.owner)!==
+                   String(currentUser.login)) return;
+                await setGlobal("");
             }else{
-                avatars.style.display="inline-flex";
-                arrow.style.display="inline";
+                setSelf("");
             }
 
-            count.textContent=
-                comments.length +
-                " " +
-                (
-                    comments.length===1
-                        ? "комментарий"
-                        : "комментариев"
-                );
+            renderBar();
+            if(typeof decorateChannelPosts==="function") decorateChannelPosts();
+        };
+    }
+
+    async function setGlobal(postId){
+        const r=await fetch("/channel-pin",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                channelId:currentChannel.id,
+                postId:String(postId||""),
+                login:currentUser.login,
+                scope:"all"
+            })
         });
-    }
-
-    /* ---------- forwarded text: remove the old ↗ prefix ---------- */
-    function cleanForwardedText(){
-        document.querySelectorAll(".message").forEach(bubble=>{
-            if(!bubble.querySelector(".forwarded-from")) return;
-
-            const firstText=
-                Array.from(
-                    bubble.querySelectorAll(
-                        ":scope > div"
-                    )
-                ).find(el=>
-                    !el.classList.contains("forwarded-from") &&
-                    !el.classList.contains("message-time") &&
-                    !el.classList.contains("message-reply") &&
-                    !el.classList.contains("message-reactions") &&
-                    !el.classList.contains("message-reaction-tools") &&
-                    !el.classList.contains("chat-attachment")
-                );
-
-            if(firstText && firstText.textContent){
-                firstText.textContent=
-                    firstText.textContent
-                        .replace(/^↗️\\s*/,"")
-                        .replace(/^↗\\s*/,"");
-            }
-
-            const caption=bubble.querySelector(".attachment-caption");
-            if(caption){
-                caption.textContent=
-                    caption.textContent
-                        .replace(/^↗️\\s*/,"")
-                        .replace(/^↗\\s*/,"");
-            }
-        });
-    }
-
-    /* ---------- make forward selection modal perfectly centered ---------- */
-    function keepForwardCentered(){
-        const modal=document.getElementById("vibeChannelForwardPicker");
-        if(!modal) return;
-
-        modal.style.position="fixed";
-        modal.style.inset="0";
-        modal.style.width="100vw";
-        modal.style.height="100dvh";
-        modal.style.display="flex";
-        modal.style.alignItems="center";
-        modal.style.justifyContent="center";
-        modal.style.padding="14px";
-        modal.style.boxSizing="border-box";
-    }
-
-    const observer=new MutationObserver(()=>{
-        if(document.getElementById("vibeChannelForwardPicker")){
-            clearOldActionMenus();
-            keepForwardCentered();
+        const d=await r.json().catch(()=>({}));
+        if(!r.ok||!d.success){
+            showVibeNotice?.("Закрепление",d.message||"Не удалось изменить закрепление");
+            return false;
         }
-        decorateCommentFooter();
-        cleanForwardedText();
-    });
-
-    observer.observe(document.body,{
-        childList:true,
-        subtree:true
-    });
-
-    /* Once a forwarding action is clicked, kill the action menu
-       immediately and never let it stay over the picker. */
-    document.addEventListener("click",event=>{
-        if(
-            event.target.closest?.(
-                'button[onclick*="vibeForwardChannelPost"],button[onclick*="forwardPost"]'
-            )
-        ){
-            clearOldActionMenus();
-            setTimeout(clearOldActionMenus,0);
-            setTimeout(clearOldActionMenus,50);
-            setTimeout(clearOldActionMenus,200);
-        }
-    },true);
-
-    document.addEventListener("DOMContentLoaded",()=>{
-        decorateCommentFooter();
-        cleanForwardedText();
-        keepForwardCentered();
-    });
-
-    setInterval(()=>{
-        decorateCommentFooter();
-        cleanForwardedText();
-        keepForwardCentered();
-    },450);
-})();
-</script>
-
-<style id="vibe-global-modal-emergency-fix">
-/* =========================================================
-   GLOBAL MODAL FIX
-   The previous centering rule used !important on display:flex
-   and accidentally overrode .hidden. Every hidden overlay must
-   really be hidden.
-========================================================= */
-
-.modal.hidden,
-.modal.is-hidden,
-.modal[aria-hidden="true"],
-#modalOverlay.hidden,
-#vibeChannelForwardPicker.hidden,
-#vibeChannelPollModal.hidden,
-#deleteMessageModal.hidden,
-#confirmModal.hidden,
-#channelsModal.hidden,
-#communitiesModal.hidden,
-#createChannelModal.hidden,
-#profileModal.hidden,
-#settingsModal.hidden,
-#friendsModal.hidden,
-#groupModal.hidden,
-#channelProfileModal.hidden,
-#vibePersistentPinBar.hidden {
-    display:none !important;
-}
-
-/* All Vibe modal overlays are centered, but only when visible. */
-.modal:not(.hidden):not([aria-hidden="true"]),
-.vibe-modal:not(.hidden):not([aria-hidden="true"]) {
-    position:fixed !important;
-    inset:0 !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    box-sizing:border-box !important;
-    padding:14px !important;
-}
-
-/* Forwarding overlay specifically. */
-#vibeChannelForwardPicker {
-    position:fixed !important;
-    inset:0 !important;
-    width:100vw !important;
-    height:100dvh !important;
-    box-sizing:border-box !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    padding:14px !important;
-    z-index:70000 !important;
-}
-
-#vibeChannelForwardPicker.hidden {
-    display:none !important;
-}
-
-/* Never allow an invisible dialog to block clicks. */
-[aria-hidden="true"] {
-    pointer-events:none !important;
-    visibility:hidden !important;
-}
-
-[aria-hidden="false"] {
-    visibility:visible !important;
-    pointer-events:auto !important;
-}
-
-/* Browser-native confirm/prompt must not appear over Vibe UI. */
-body.vibe-modal-open {
-    overflow:hidden !important;
-}
-
-/* Vibe action menus close cleanly while a modal is open. */
-body.vibe-modal-open .message-actions,
-body.vibe-modal-open .vibe-channel-action-menu {
-    display:none !important;
-}
-</style>
-
-<script id="vibe-global-modal-emergency-script">
-(function(){
-    "use strict";
-
-    const MODAL_SELECTORS = [
-        ".modal",
-        ".vibe-modal",
-        "#vibeChannelForwardPicker",
-        "#vibeChannelPollModal",
-        "#deleteMessageModal",
-        "#confirmModal",
-        "#channelsModal",
-        "#communitiesModal",
-        "#createChannelModal",
-        "#profileModal",
-        "#settingsModal",
-        "#friendsModal",
-        "#groupModal",
-        "#channelProfileModal"
-    ];
-
-    function visibleModal(el){
-        if(!el) return false;
-        if(el.classList.contains("hidden")) return false;
-        if(el.getAttribute("aria-hidden")==="true") return false;
-        const style=getComputedStyle(el);
-        return style.display!=="none" &&
-               style.visibility!=="hidden";
+        currentChannel.pinnedPostId=String(d.pinnedPostId||"");
+        return true;
     }
 
-    function syncModalBodyState(){
-        const any=MODAL_SELECTORS.some(selector=>
-            Array.from(document.querySelectorAll(selector))
-                .some(visibleModal)
-        );
-        document.body.classList.toggle("vibe-modal-open",any);
-    }
-
-    function forceHiddenState(el){
-        if(!el) return;
-        if(
-            el.classList.contains("hidden") ||
-            el.getAttribute("aria-hidden")==="true"
-        ){
-            el.style.setProperty("display","none","important");
-            el.style.setProperty("pointer-events","none","important");
-            el.style.setProperty("visibility","hidden","important");
-        }
-    }
-
-    function enforceModalState(){
-        document.querySelectorAll(MODAL_SELECTORS.join(",")).forEach(el=>{
-            forceHiddenState(el);
+    function injectPinAll(){
+        document.querySelectorAll(".vibe-channel-action-menu").forEach(menu=>{
+            if(menu.querySelector("[data-vibe-channel-action='pin-all']"))return;
 
             if(
-                !el.classList.contains("hidden") &&
-                el.getAttribute("aria-hidden")!=="true"
+                currentChannel &&
+                currentUser &&
+                String(currentChannel.owner)===String(currentUser.login)
             ){
-                el.style.removeProperty("visibility");
-                el.style.removeProperty("pointer-events");
+                const pin=menu.querySelector("[data-vibe-channel-action='pin']");
+                if(!pin)return;
 
-                /* Ensure actual centered overlay dimensions. */
-                if(
-                    el.matches(".modal,.vibe-modal,#vibeChannelForwardPicker")
-                ){
-                    el.style.setProperty("position","fixed","important");
-                    el.style.setProperty("inset","0","important");
-                    el.style.setProperty("align-items","center","important");
-                    el.style.setProperty("justify-content","center","important");
-                }
+                const button=document.createElement("button");
+                button.type="button";
+                button.className="vibe-pin-all-action";
+                button.dataset.vibeChannelAction="pin-all";
+                button.innerHTML=
+                    (typeof vibeIcon==="function"?vibeIcon("pin"):"📌")+
+                    "<span>"+
+                    (globalId()===(String(window.__vibeActiveChannelPost?.id||""))
+                        ? "Открепить для всех"
+                        : "Закрепить для всех")+
+                    "</span>";
+
+                pin.insertAdjacentElement("afterend",button);
             }
         });
-
-        syncModalBodyState();
     }
 
-    /*
-     * Wrap common Vibe close functions when they exist.
-     * The wrapper only synchronizes the modal state after the original
-     * function runs; it does not replace its logic.
-     */
-    const closeNames=[
-        "closeModal",
-        "closeDeleteModal",
-        "closeConfirmModal",
-        "closeChannelProfile",
-        "closeChannelForward",
-        "closePollModal",
-        "closeCommunitiesModal",
-        "closeChannelsModal",
-        "closeSettings",
-        "closeProfileModal"
-    ];
+    const mo=new MutationObserver(injectPinAll);
+    mo.observe(document.body,{childList:true,subtree:true});
 
-    const wrapped=new Set();
-
-    function wrapFunctions(){
-        closeNames.forEach(name=>{
-            if(wrapped.has(name)) return;
-            if(typeof window[name]!=="function") return;
-
-            const original=window[name];
-            window[name]=function(){
-                try{
-                    return original.apply(this,arguments);
-                }finally{
-                    setTimeout(enforceModalState,0);
-                }
-            };
-            wrapped.add(name);
-        });
-    }
-
-    /* When any close button is clicked, clear stale overlays. */
-    document.addEventListener("click",function(event){
-        const close=event.target.closest?.(
-            ".modal-close,[data-close-modal],[data-modal-close],"+
-            "[aria-label='Закрыть'],[aria-label='Close']"
+    /* Capture both pin actions before old handlers. */
+    document.addEventListener("click",async function(e){
+        const allBtn=e.target.closest?.(
+            "[data-vibe-channel-action='pin-all']"
         );
+        const selfBtn=e.target.closest?.(
+            "[data-vibe-channel-action='pin']"
+        );
+        if(!allBtn && !selfBtn)return;
 
-        if(close){
-            setTimeout(enforceModalState,0);
-            setTimeout(enforceModalState,60);
-            setTimeout(enforceModalState,180);
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const post=window.__vibeActiveChannelPost ||
+                    window.__vibeSelectedChannelPost;
+
+        if(!post || !currentChannel || !currentUser)return;
+
+        closeMenus();
+
+        if(allBtn){
+            await setGlobal(
+                globalId()===String(post.id)
+                    ? ""
+                    : String(post.id)
+            );
+        }else{
+            setSelf(
+                getSelf()===String(post.id)
+                    ? ""
+                    : String(post.id)
+            );
+        }
+
+        renderBar();
+        if(typeof decorateChannelPosts==="function")decorateChannelPosts();
+    },true);
+
+    /* Record exact post for desktop/right-click and touch/long press. */
+    document.addEventListener("pointerdown",function(e){
+        const postEl=e.target.closest?.(".channel-post");
+        if(!postEl)return;
+        const post=(window.__vibeChannelPosts||[])
+            .find(p=>String(p.id)===String(postEl.dataset.postId));
+        if(post){
+            window.__vibeActiveChannelPost=post;
+            window.__vibeSelectedChannelPost=post;
         }
     },true);
 
-    /* Escape closes the top visible modal using its own close button. */
-    document.addEventListener("keydown",function(event){
-        if(event.key!=="Escape") return;
-
-        const modals=Array.from(
-            document.querySelectorAll(MODAL_SELECTORS.join(","))
-        ).filter(visibleModal);
-
-        const top=modals[modals.length-1];
-        if(!top) return;
-
-        const close=top.querySelector(
-            ".modal-close,[data-close-modal],[data-modal-close],"+
-            "[aria-label='Закрыть'],[aria-label='Close']"
-        );
-
-        if(close){
-            close.click();
-        }else{
-            top.classList.add("hidden");
-            top.setAttribute("aria-hidden","true");
+    document.addEventListener("contextmenu",function(e){
+        const postEl=e.target.closest?.(".channel-post");
+        if(!postEl)return;
+        const post=(window.__vibeChannelPosts||[])
+            .find(p=>String(p.id)===String(postEl.dataset.postId));
+        if(post){
+            window.__vibeActiveChannelPost=post;
+            window.__vibeSelectedChannelPost=post;
         }
+    },true);
 
-        setTimeout(enforceModalState,0);
-    });
+    async function refreshGlobal(){
+        if(!currentChannel)return;
+        try{
+            const r=await fetch(
+                "/channel-pinned?channelId="+
+                encodeURIComponent(currentChannel.id),
+                {cache:"no-store"}
+            );
+            if(!r.ok)return;
+            const d=await r.json();
+            if(d.success){
+                currentChannel.pinnedPostId=
+                    String(d.pinnedPostId||"");
+                renderBar();
+                if(typeof decorateChannelPosts==="function")
+                    decorateChannelPosts();
+            }
+        }catch{}
+    }
 
-    const observer=new MutationObserver(()=>{
-        wrapFunctions();
-        enforceModalState();
-    });
+    const oldLoad=window.loadChannelPosts;
+    if(typeof oldLoad==="function"&&!window.__vibeFinalPinLoader){
+        window.__vibeFinalPinLoader=true;
+        window.loadChannelPosts=async function(){
+            const result=await oldLoad.apply(this,arguments);
+            await refreshGlobal();
+            renderBar();
+            return result;
+        };
+    }
 
-    observer.observe(document.documentElement,{
-        childList:true,
-        subtree:true,
-        attributes:true,
-        attributeFilter:["class","style","aria-hidden"]
-    });
+    const oldOpen=window.openChannel;
+    if(typeof oldOpen==="function"&&!window.__vibeFinalPinOpen){
+        window.__vibeFinalPinOpen=true;
+        window.openChannel=async function(channel){
+            const result=await oldOpen.apply(this,arguments);
+            await refreshGlobal();
+            renderBar();
+            return result;
+        };
+    }
+
+    /* Live pin state from owner. */
+    const oldSocket=window.handleSocketMessage;
+    if(typeof oldSocket==="function"&&!window.__vibeFinalPinSocket){
+        window.__vibeFinalPinSocket=true;
+        window.handleSocketMessage=function(data){
+            oldSocket(data);
+            if(
+                data?.type==="channel-pinned" &&
+                currentChannel &&
+                String(data.channelId)===String(currentChannel.id)
+            ){
+                currentChannel.pinnedPostId=
+                    String(data.postId||"");
+                renderBar();
+                if(typeof decorateChannelPosts==="function")
+                    decorateChannelPosts();
+            }
+        };
+    }
 
     document.addEventListener("DOMContentLoaded",()=>{
-        wrapFunctions();
-        enforceModalState();
-        setTimeout(enforceModalState,200);
-        setTimeout(enforceModalState,800);
+        renderBar();
+        injectPinAll();
     });
-
-    wrapFunctions();
-    enforceModalState();
 })();
 </script>
 
