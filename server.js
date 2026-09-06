@@ -4531,6 +4531,7 @@ const server =
                             ) || ""
                         );
 
+
                     const viewer =
                         String(
                             url.searchParams.get(
@@ -4538,110 +4539,67 @@ const server =
                             ) || ""
                         );
 
+
                     const posts =
                         readJSON(
                             CHANNEL_POSTS_FILE
                         );
+
 
                     const result =
                         posts
                             .filter(
                                 post =>
                                     post.channelId === channelId &&
-                                    !(
-                                        viewer &&
-                                        Array.isArray(post.hiddenFor) &&
-                                        post.hiddenFor.includes(viewer)
-                                    )
+                                    !(viewer && Array.isArray(post.hiddenFor) && post.hiddenFor.includes(viewer))
                             )
                             .map(
                                 post => {
 
                                     const author =
-                                        findUser(post.author);
+                                        findUser(
+                                            post.author
+                                        );
+
 
                                     return {
+
                                         ...post,
-                                        views:Number(post.views || 0),
-                                        comments:
-                                            Array.isArray(post.comments)
-                                                ? post.comments
-                                                : [],
+
+                                        views:Number(post.views||0),
+
+                                        comments:Array.isArray(post.comments) ? post.comments : [],
+
                                         authorUser:
                                             author
-                                                ? publicUser(author, viewer)
+                                                ? publicUser(
+                                                    author,
+                                                    viewer
+                                                )
                                                 : {
-                                                    login:post.author,
-                                                    name:post.author,
-                                                    photo:""
+                                                    login:
+                                                        post.author,
+
+                                                    name:
+                                                        post.author,
+
+                                                    photo:
+                                                        ""
                                                 }
                                     };
                                 }
                             );
 
-                    sendJSON(res,result);
+
+                    sendJSON(
+                        res,
+                        result
+                    );
+
                     return;
                 }
 
 
-
-                /* =====================================================
-                   CHANNEL POSTS VIEW BATCH
-                   One read/write for an entire channel load.
-                ===================================================== */
-                if (
-                    req.method === "POST" &&
-                    pathname === "/channel-posts-view-batch"
-                ) {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "");
-                    const viewer = String(body.viewer || "");
-                    const ids = Array.isArray(body.postIds)
-                        ? body.postIds.map(String).slice(0, 500)
-                        : [];
-
-                    if (!channelId || !viewer || !ids.length) {
-                        sendJSON(res,{success:true,views:{}});
-                        return;
-                    }
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const wanted = new Set(ids);
-                    const views = {};
-                    let changed = false;
-
-                    posts.forEach(post => {
-                        if (
-                            String(post.channelId) !== channelId ||
-                            !wanted.has(String(post.id))
-                        ) {
-                            return;
-                        }
-
-                        post.views = Number(post.views || 0);
-                        post.viewers = Array.isArray(post.viewers)
-                            ? post.viewers
-                            : [];
-
-                        if (!post.viewers.includes(viewer)) {
-                            post.viewers.push(viewer);
-                            post.views += 1;
-                            changed = true;
-                        }
-
-                        views[String(post.id)] = post.views;
-                    });
-
-                    if (changed) {
-                        saveJSON(CHANNEL_POSTS_FILE, posts);
-                    }
-
-                    sendJSON(res,{
-                        success:true,
-                        views
-                    });
-                    return;
-                }
 
                 /* =====================================================
                    CHANNEL POST VIEW

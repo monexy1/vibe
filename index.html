@@ -10559,6 +10559,17 @@ async function loadChannelPosts(forceScroll=true) {
                     { hour: "2-digit", minute: "2-digit" }
                 );
 
+            const commentPreview = comments
+                .slice(-3)
+                .map(comment => {
+                    const photo = comment?.photo || "";
+                    const name = comment?.name || comment?.author || "?";
+                    return photo
+                        ? `<span class="vibe-comment-avatar"><img src="${escapeHTML(photo)}" alt=""></span>`
+                        : `<span class="vibe-comment-avatar">${escapeHTML(String(name).slice(0,1).toUpperCase())}</span>`;
+                })
+                .join("");
+
             item.innerHTML = `
                 <div class="channel-post-head">
                     <div class="avatar">${channelAvatar}</div>
@@ -10578,23 +10589,31 @@ async function loadChannelPosts(forceScroll=true) {
                 </div>
 
                 <div class="channel-post-meta">
-                    <span>${escapeHTML(timeText)}</span>
+                    <div class="channel-post-meta-left">
+                        <span class="channel-post-views">
+                            ${vibeIcon("eye")}
+                            <span>${Number(post.views || 0)}</span>
+                        </span>
 
-                    <span class="channel-post-views">
-                        ${vibeIcon("eye")}
-                        ${Number(post.views || 0)}
+                        <button
+                            type="button"
+                            class="channel-comment-toggle"
+                            title="Комментарии"
+                        >
+                            ${commentPreview
+                                ? `<span class="vibe-comment-avatars">${commentPreview}</span>`
+                                : ""}
+                            <span class="vibe-comment-count">
+                                ${comments.length} ${comments.length === 1 ? "комментарий" : "комментариев"}
+                            </span>
+                            <span class="vibe-comment-arrow">›</span>
+                        </button>
+                    </div>
+
+                    <span class="channel-post-time">
+                        ${escapeHTML(timeText)}
                     </span>
-
-                    <button
-                        type="button"
-                        class="channel-comment-toggle"
-                        title="Комментарии"
-                    >
-                        ${vibeIcon("comment")}
-                        ${comments.length}
-                    </button>
                 </div>
-
             `;
 
             const commentButton = item.querySelector(".channel-comment-toggle");
@@ -10608,41 +10627,6 @@ async function loadChannelPosts(forceScroll=true) {
                 post.views = 0;
             }
         });
-
-        /* One request for all visible posts instead of one request per post. */
-        if (currentUser?.login && posts.length) {
-            fetch(
-                "/channel-posts-view-batch",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        channelId: currentChannel.id,
-                        viewer: currentUser.login,
-                        postIds: posts.map(post => String(post.id))
-                    })
-                }
-            )
-            .then(() => {
-                const fresh = window.__vibeChannelPosts || [];
-                fresh.forEach(post => {
-                    const node = document.querySelector(
-                        '.channel-post[data-post-id="' +
-                        CSS.escape(String(post.id)) +
-                        '"]'
-                    );
-                    const views = node?.querySelector(".channel-post-views");
-                    if (views) {
-                        views.innerHTML =
-                            vibeIcon("eye") +
-                            Number(post.views || 0);
-                    }
-                });
-            })
-            .catch(() => {});
-        }
 
         if (forceScroll || wasNearBottom) {
             box.scrollTop = box.scrollHeight;
@@ -10906,33 +10890,10 @@ async function sendChannelDiscussionComment() {
             alert(data.message || "Не удалось отправить комментарий");
             return;
         }
-        if (!Array.isArray(channelDiscussionPost.comments)) {
-            channelDiscussionPost.comments = [];
-        }
-
+        if (!Array.isArray(channelDiscussionPost.comments)) channelDiscussionPost.comments = [];
         channelDiscussionPost.comments.push(data.comment);
-
-        /* Keep the same post object in the channel cache. */
-        window.__vibeChannelPosts =
-            (window.__vibeChannelPosts || []).map(post =>
-                String(post.id) === String(channelDiscussionPost.id)
-                    ? channelDiscussionPost
-                    : post
-            );
-
         renderChannelDiscussionMessages();
-
-        /* Update only this post's comment counter. No full channel reload. */
-        const commentButton = document.querySelector(
-            '.channel-comment-toggle[data-post-id="' +
-            CSS.escape(String(channelDiscussionPost.id)) +
-            '"]'
-        );
-
-        if (commentButton) {
-            commentButton.textContent =
-                String(channelDiscussionPost.comments.length);
-        }
+        loadChannelPosts(false).catch(() => {});
     } catch {
         alert("Ошибка отправки комментария");
     }
@@ -14068,12 +14029,7 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 
     /* ---------- pinned bar ---------- */
     function pinnedKey(){
-        return currentUser && currentChannel
-            ? "vibePinnedChannelPosts:" +
-              currentUser.login +
-              ":" +
-              String(currentChannel.id)
-            : "vibePinnedChannelPosts";
+        return currentUser ? "vibePinnedChannelPosts:" + currentUser.login : "vibePinnedChannelPosts";
     }
     function readPinned(){
         try{
@@ -14343,9 +14299,7 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 
     function isPinnedSafe(id){
         try{
-            const key=currentUser&&currentChannel
-                ?"vibePinnedChannelPosts:"+currentUser.login+":"+String(currentChannel.id)
-                :"vibePinnedChannelPosts";
+            const key=currentUser?"vibePinnedChannelPosts:"+currentUser.login:"vibePinnedChannelPosts";
             const arr=JSON.parse(localStorage.getItem(key)||"[]");
             return Array.isArray(arr)&&arr.map(String).includes(String(id));
         }catch{return false}
@@ -14353,9 +14307,7 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 
     function setPinnedSafe(id,on){
         try{
-            const key=currentUser&&currentChannel
-                ?"vibePinnedChannelPosts:"+currentUser.login+":"+String(currentChannel.id)
-                :"vibePinnedChannelPosts";
+            const key=currentUser?"vibePinnedChannelPosts:"+currentUser.login:"vibePinnedChannelPosts";
             const arr=JSON.parse(localStorage.getItem(key)||"[]");
             const list=Array.isArray(arr)?arr.map(String):[];
             const next=on ? [...new Set([...list,String(id)])] : list.filter(x=>x!==String(id));
@@ -14622,7 +14574,7 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
         bar.onclick=()=>document.querySelector('.channel-post[data-post-id="'+CSS.escape(id)+'"]')?.scrollIntoView({behavior:"smooth",block:"center"});
         bar.querySelector(".vibe-pinned-close").onclick=e=>{e.stopPropagation();set("");window.updatePinnedBar();if(typeof decorateChannelPosts==="function")decorateChannelPosts()};
     };
-    /* Pin bar is refreshed only when channel state changes or a pin action occurs. */
+    setInterval(()=>{window.updatePinnedBar()},400);
 })();
 </script>
 
@@ -15027,28 +14979,191 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 })();
 </script>
 
-<script id="vibe-final-pin-performance-fix">
-(function(){
-    "use strict";
+<style id="vibe-current-channel-feed-only-fix">
+/* === Channel feed: left aligned, like a messenger feed === */
+.channel-post{
+    width:min(820px, calc(100% - 28px)) !important;
+    margin:0 0 12px 12px !important;
+    padding:0 !important;
+    overflow:hidden !important;
+}
 
-    let lastChannelId = "";
+.channel-posts{
+    display:block !important;
+    width:100% !important;
+}
 
-    function syncPinOnce(){
-        if(!currentChannel) return;
-        const id=String(currentChannel.id||"");
-        if(!id || id===lastChannelId) return;
-        lastChannelId=id;
+.channel-post-body{
+    padding:0 14px 10px !important;
+}
 
-        if(typeof updatePinnedBar==="function"){
-            updatePinnedBar();
-        }
+.channel-post-text{
+    max-width:100% !important;
+    white-space:pre-wrap !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    line-height:1.45 !important;
+}
+
+.channel-post-media{
+    max-width:100% !important;
+}
+
+.channel-post-meta{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:10px !important;
+    padding:7px 11px 8px !important;
+    min-height:35px !important;
+}
+
+.channel-post-meta-left{
+    min-width:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    gap:8px !important;
+}
+
+.channel-post-views{
+    display:inline-flex !important;
+    align-items:center !important;
+    gap:4px !important;
+    color:var(--muted) !important;
+    white-space:nowrap !important;
+}
+
+.channel-post-views svg{
+    width:15px !important;
+    height:15px !important;
+    vertical-align:0 !important;
+}
+
+.channel-post-time{
+    flex:0 0 auto !important;
+    color:var(--muted) !important;
+    font-size:11px !important;
+}
+
+.channel-comment-toggle{
+    min-width:0 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    gap:6px !important;
+    border:0 !important;
+    background:transparent !important;
+    color:#58aefb !important;
+    padding:2px 4px !important;
+    border-radius:999px !important;
+}
+
+.channel-comment-toggle:hover{
+    background:rgba(88,174,251,.08) !important;
+}
+
+.vibe-comment-avatars{
+    display:inline-flex !important;
+    align-items:center !important;
+    height:23px !important;
+    padding-left:2px !important;
+}
+
+.vibe-comment-avatar{
+    width:23px !important;
+    height:23px !important;
+    min-width:23px !important;
+    border-radius:50% !important;
+    overflow:hidden !important;
+    display:grid !important;
+    place-items:center !important;
+    background:var(--accent) !important;
+    border:2px solid var(--panel) !important;
+    margin-left:-6px !important;
+    color:#fff !important;
+    font-size:9px !important;
+    font-weight:900 !important;
+}
+
+.vibe-comment-avatar:first-child{
+    margin-left:0 !important;
+}
+
+.vibe-comment-avatar img{
+    width:100% !important;
+    height:100% !important;
+    object-fit:cover !important;
+}
+
+.vibe-comment-count{
+    color:#58aefb !important;
+    font-size:12px !important;
+    font-weight:800 !important;
+    white-space:nowrap !important;
+}
+
+.vibe-comment-arrow{
+    color:#58aefb !important;
+    font-size:19px !important;
+    line-height:1 !important;
+}
+
+/* === Forwarded direct message: keep it as a normal-size bubble === */
+.message-row .message:has(.forwarded-from){
+    max-width:min(72%, 620px) !important;
+    min-width:170px !important;
+}
+
+.message-row.mine .message:has(.forwarded-from){
+    min-width:170px !important;
+}
+
+.forwarded-from{
+    max-width:100% !important;
+    box-sizing:border-box !important;
+}
+
+.forwarded-from-copy{
+    min-width:0 !important;
+    max-width:100% !important;
+}
+
+.forwarded-from-label,
+.forwarded-from-name{
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+    white-space:nowrap !important;
+}
+
+.forwarded-from + div,
+.forwarded-from ~ .attachment-caption{
+    max-width:100% !important;
+    overflow-wrap:anywhere !important;
+    word-break:normal !important;
+    white-space:pre-wrap !important;
+}
+
+@media(max-width:700px){
+    .channel-post{
+        width:calc(100% - 14px) !important;
+        margin:0 0 9px 7px !important;
     }
 
-    document.addEventListener("DOMContentLoaded",syncPinOnce);
+    .channel-post-head{
+        padding:10px 11px 7px !important;
+    }
 
-    /* This loop only checks a primitive ID and never changes the DOM
-       unless the actual channel changed. */
-    setInterval(syncPinOnce,1000);
-})();
-</script>
+    .channel-post-body{
+        padding:0 11px 8px !important;
+    }
+
+    .channel-post-meta{
+        padding:6px 9px 7px !important;
+    }
+
+    .message-row .message:has(.forwarded-from){
+        max-width:82% !important;
+        min-width:150px !important;
+    }
+}
+</style>
 
