@@ -62,6 +62,132 @@ function saveJSON(file, data) {
 
 
 /* =========================================================
+   SUPABASE PERSISTENT MESSAGES
+   Direct messages are stored in Supabase so Render redeploys
+   cannot erase the chat history.
+========================================================= */
+
+function messageFromSupabaseRow(row) {
+    if (!row) return null;
+    let replyTo = row.reply_to ?? null;
+    if (typeof replyTo === "string") {
+        try { replyTo = JSON.parse(replyTo); } catch {}
+    }
+    let reactions = row.reactions ?? {};
+    if (typeof reactions === "string") {
+        try { reactions = JSON.parse(reactions); } catch { reactions = {}; }
+    }
+    let deletedFor = row.deleted_for ?? [];
+    if (typeof deletedFor === "string") {
+        try { deletedFor = JSON.parse(deletedFor); } catch { deletedFor = []; }
+    }
+    return {
+        id: String(row.id),
+        from: row.from_login || row.from || "",
+        to: row.to_login || row.to || "",
+        groupId: row.group_id || "",
+        postId: row.post_id || "",
+        type: row.type || "text",
+        text: row.text || "",
+        audio: row.audio || "",
+        duration: Number(row.duration || 0),
+        attachment: row.attachment || "",
+        attachmentType: row.attachment_type || "",
+        attachmentName: row.attachment_name || "",
+        replyTo,
+        reactions: reactions && typeof reactions === "object" ? reactions : {},
+        deletedFor: Array.isArray(deletedFor) ? deletedFor : [],
+        deletedForAll: !!row.deleted_for_all,
+        time: row.created_at || row.time || new Date().toISOString()
+    };
+}
+
+function messageToSupabaseRow(message) {
+    return {
+        id: String(message.id),
+        from_login: String(message.from || ""),
+        to_login: String(message.to || ""),
+        group_id: message.groupId || null,
+        post_id: message.postId || null,
+        type: message.type || "text",
+        text: message.text || "",
+        audio: message.audio || "",
+        duration: Number(message.duration || 0),
+        attachment: message.attachment || "",
+        attachment_type: message.attachmentType || "",
+        attachment_name: message.attachmentName || "",
+        reply_to: message.replyTo || null,
+        reactions: message.reactions || {},
+        deleted_for: Array.isArray(message.deletedFor) ? message.deletedFor : [],
+        deleted_for_all: !!message.deletedForAll,
+        created_at: message.time || new Date().toISOString()
+    };
+}
+
+async function getPersistentMessages() {
+    const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        console.error("Supabase messages read error:", error.message);
+        return readJSON(MESSAGES_FILE);
+    }
+
+    return Array.isArray(data)
+        ? data.map(messageFromSupabaseRow).filter(Boolean)
+        : [];
+}
+
+async function insertPersistentMessage(message) {
+    const row = messageToSupabaseRow(message);
+    const { error } = await supabase
+        .from("messages")
+        .upsert(row, { onConflict: "id" });
+
+    if (error) {
+        console.error("Supabase message insert error:", error.message);
+        throw new Error("Не удалось сохранить сообщение");
+    }
+}
+
+async function updatePersistentMessage(message) {
+    const row = messageToSupabaseRow(message);
+    const { error } = await supabase
+        .from("messages")
+        .update(row)
+        .eq("id", String(message.id));
+
+    if (error) {
+        console.error("Supabase message update error:", error.message);
+        throw new Error("Не удалось сохранить сообщение");
+    }
+}
+
+async function migrateLocalMessagesToSupabase() {
+    const local = readJSON(MESSAGES_FILE);
+    if (!Array.isArray(local) || !local.length) return;
+
+    const rows = local.map(messageToSupabaseRow);
+    const { error } = await supabase
+        .from("messages")
+        .upsert(rows, { onConflict: "id" });
+
+    if (error) {
+        console.error("Supabase message migration error:", error.message);
+        return;
+    }
+
+    console.log(`Migrated ${rows.length} local messages to Supabase.`);
+}
+
+migrateLocalMessagesToSupabase().catch(error => {
+    console.error("Message migration failed:", error.message);
+});
+
+
+/* =========================================================
    SUPABASE USERS
 ========================================================= */
 
@@ -2533,9 +2659,7 @@ const server =
 
 
                     const messages =
-                        readJSON(
-                            MESSAGES_FILE
-                        );
+                        await getPersistentMessages();
 
 
                     const users =
@@ -2693,9 +2817,7 @@ const server =
 
 
                     const messages =
-                        readJSON(
-                            MESSAGES_FILE
-                        );
+                        await getPersistentMessages();
 
 
                     const result =
@@ -2940,19 +3062,7 @@ const server =
                     };
 
 
-                    const messages =
-                        readJSON(
-                            MESSAGES_FILE
-                        );
-
-
-                    messages.push(message);
-
-
-                    saveJSON(
-                        MESSAGES_FILE,
-                        messages
-                    );
+                    await insertPersistentMessage(message);
 
 
                     sendToUser(
@@ -2996,7 +3106,7 @@ const server =
                         sendJSON(res,{success:false,message:"Пользователь не найден"},404);
                         return;
                     }
-                    const messages = readJSON(MESSAGES_FILE);
+                    const messages = await getPersistentMessages();
                     const message = messages.find(m => String(m.id) === messageId);
                     if (!message) {
                         sendJSON(res,{success:false,message:"Сообщение не найдено"},404);
@@ -3020,7 +3130,7 @@ const server =
                         message.reactions[emoji].push(login);
                     }
                     Object.keys(message.reactions).forEach(k => { if (!message.reactions[k].length) delete message.reactions[k]; });
-                    saveJSON(MESSAGES_FILE,messages);
+                    await updatePersistentMessage(message);
 
                     if (message.groupId) {
                         const group=getGroups().find(g=>g.id===message.groupId);
@@ -3045,7 +3155,7 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const mode = body.mode === "all" ? "all" : "self";
-                    const messages = readJSON(MESSAGES_FILE);
+                    const messages = await getPersistentMessages();
                     const message = messages.find(m => String(m.id) === messageId);
 
                     if (!login || !message) {
@@ -3069,7 +3179,7 @@ const server =
                         if (!message.deletedFor.includes(login)) message.deletedFor.push(login);
                     }
 
-                    saveJSON(MESSAGES_FILE, messages);
+                    await updatePersistentMessage(message);
                     sendToUser(message.from, {
                         type:"message-deleted", messageId, mode, by:login
                     });
@@ -3311,7 +3421,7 @@ const server =
                         sendJSON(res, [], 403);
                         return;
                     }
-                    const messages = readJSON(MESSAGES_FILE)
+                    const messages = (await getPersistentMessages())
                         .filter(m =>
                             m.groupId === groupId &&
                             (!postId || String(m.postId || "") === postId) &&
@@ -3371,9 +3481,7 @@ const server =
                         replyTo,
                         time:new Date().toISOString()
                     };
-                    const messages = readJSON(MESSAGES_FILE);
-                    messages.push(message);
-                    saveJSON(MESSAGES_FILE, messages);
+                    await insertPersistentMessage(message);
 
                     group.members.forEach(member => {
                         if (member !== from) {

@@ -11965,6 +11965,13 @@ window.addEventListener("scroll", () => {
 }, true);
 </script>
 
+
+<style id="vibe-chat-composer-safety">
+/* Direct chats must always show the composer once a chat is selected. */
+.chat:not(.no-selection) > .composer { display:flex !important; }
+.chat:not(.no-selection) > .chat-head { display:flex !important; }
+.chat:not(.no-selection) .welcome-panel { display:none !important; }
+</style>
 </body>
 
 
@@ -12801,11 +12808,19 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
         currentChannel = null;
         currentChat = login;
 
+        // The fast opener must also remove the initial "no selection" state.
+        // Otherwise the chat header and message composer stay hidden.
+        if (typeof setChatSelectionState === "function") setChatSelectionState(true);
+        if (chat) chat.classList.remove("no-selection");
+        const welcome = document.querySelector(".welcome-panel");
+        if (welcome) welcome.classList.add("hidden");
+
         document.querySelectorAll(".channel-only-tools").forEach(el => el.classList.add("hidden"));
         document.getElementById("attachmentPhotoButton")?.classList.remove("hidden");
         document.getElementById("attachmentFileButton")?.classList.remove("hidden");
         document.getElementById("attachmentGifButton")?.classList.remove("hidden");
         document.getElementById("mainComposer")?.classList.remove("channel-readonly-composer");
+        document.getElementById("mainComposer")?.classList.remove("hidden");
         document.getElementById("emojiPicker")?.classList.add("hidden");
         document.getElementById("callButtons")?.classList.remove("hidden");
 
