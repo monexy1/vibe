@@ -98,253 +98,6 @@ button {
     display: none !important;
 }
 
-
-/* =========================================================
-   VIBE DATE PICKER
-========================================================= */
-
-let vibeDatePickerState = null;
-
-const vibeDateMonths = [
-    "Январь","Февраль","Март","Апрель","Май","Июнь",
-    "Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"
-];
-
-const vibeDateWeekdays = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
-
-function padVibeDate(n) {
-    return String(n).padStart(2, "0");
-}
-
-function parseVibeDate(value) {
-    if (!value || !/^(\d{4})-(\d{2})-(\d{2})$/.test(value)) return null;
-    const [y,m,d] = value.split("-").map(Number);
-    const date = new Date(y, m - 1, d);
-    if (
-        date.getFullYear() !== y ||
-        date.getMonth() !== m - 1 ||
-        date.getDate() !== d
-    ) return null;
-    return date;
-}
-
-function formatVibeDate(date) {
-    return `${date.getFullYear()}-${padVibeDate(date.getMonth()+1)}-${padVibeDate(date.getDate())}`;
-}
-
-function formatVibeDateDisplay(value) {
-    const date = parseVibeDate(value);
-    if (!date) return "ДД.ММ.ГГГГ";
-    return `${padVibeDate(date.getDate())}.${padVibeDate(date.getMonth()+1)}.${date.getFullYear()}`;
-}
-
-function updateVibeDateButton(inputId) {
-    const input = $(inputId);
-    const button = $(inputId + "Button");
-    if (!input || !button) return;
-
-    const text = button.querySelector(".vibe-date-button-text");
-    if (text) text.textContent = formatVibeDateDisplay(input.value);
-
-    button.classList.toggle("has-value", !!parseVibeDate(input.value));
-}
-
-function closeVibeDatePicker() {
-    document.querySelector(".vibe-date-popover")?.remove();
-    vibeDatePickerState = null;
-}
-
-function positionVibeDatePicker(button, popover) {
-    const rect = button.getBoundingClientRect();
-    const gap = 8;
-    const width = popover.offsetWidth;
-    const height = popover.offsetHeight;
-
-    let left = rect.left;
-    let top = rect.bottom + gap;
-
-    if (left + width > innerWidth - 10) left = innerWidth - width - 10;
-    if (left < 10) left = 10;
-
-    if (top + height > innerHeight - 10 && rect.top - height - gap >= 10) {
-        top = rect.top - height - gap;
-    }
-    if (top < 10) top = 10;
-
-    popover.style.left = `${left}px`;
-    popover.style.top = `${top}px`;
-}
-
-function renderVibeDatePicker() {
-    const state = vibeDatePickerState;
-    if (!state) return;
-
-    const popover = document.querySelector(".vibe-date-popover");
-    if (!popover) return;
-
-    const year = state.year;
-    const month = state.month;
-    const selected = parseVibeDate($(state.inputId)?.value);
-
-    const first = new Date(year, month, 1);
-    const startOffset = (first.getDay() + 6) % 7;
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const prevDays = new Date(year, month, 0).getDate();
-
-    let cells = "";
-
-    for (let i = 0; i < 42; i++) {
-        const dayNumber = i - startOffset + 1;
-        let cellYear = year;
-        let cellMonth = month;
-        let day = dayNumber;
-        let other = false;
-
-        if (dayNumber < 1) {
-            cellMonth--;
-            if (cellMonth < 0) {
-                cellMonth = 11;
-                cellYear--;
-            }
-            day = prevDays + dayNumber;
-            other = true;
-        } else if (dayNumber > daysInMonth) {
-            cellMonth++;
-            if (cellMonth > 11) {
-                cellMonth = 0;
-                cellYear++;
-            }
-            day = dayNumber - daysInMonth;
-            other = true;
-        }
-
-        const value = `${cellYear}-${padVibeDate(cellMonth+1)}-${padVibeDate(day)}`;
-        const today = new Date();
-        const isToday =
-            today.getFullYear() === cellYear &&
-            today.getMonth() === cellMonth &&
-            today.getDate() === day;
-        const isSelected =
-            selected &&
-            selected.getFullYear() === cellYear &&
-            selected.getMonth() === cellMonth &&
-            selected.getDate() === day;
-
-        cells += `
-            <button type="button"
-                class="vibe-date-day${other ? " other-month" : ""}${isToday ? " today" : ""}${isSelected ? " selected" : ""}"
-                data-vibe-date="${value}">
-                ${day}
-            </button>`;
-    }
-
-    popover.querySelector(".vibe-date-month").textContent =
-        `${vibeDateMonths[month]} ${year}`;
-
-    popover.querySelector(".vibe-date-grid").innerHTML = cells;
-
-    popover.querySelectorAll("[data-vibe-date]").forEach(button => {
-        button.onclick = () => selectVibeDate(button.dataset.vibeDate);
-    });
-
-    positionVibeDatePicker(state.button, popover);
-}
-
-function openVibeDatePicker(inputId) {
-    const input = $(inputId);
-    const button = $(inputId + "Button");
-    if (!input || !button) return;
-
-    if (document.querySelector(".vibe-date-popover")) {
-        closeVibeDatePicker();
-        return;
-    }
-
-    const selected = parseVibeDate(input.value) || new Date();
-    vibeDatePickerState = {
-        inputId,
-        button,
-        year: selected.getFullYear(),
-        month: selected.getMonth()
-    };
-
-    const popover = document.createElement("div");
-    popover.className = "vibe-date-popover";
-    popover.innerHTML = `
-        <div class="vibe-date-head">
-            <button type="button" class="vibe-date-nav" data-vibe-prev aria-label="Предыдущий месяц">‹</button>
-            <div class="vibe-date-month"></div>
-            <button type="button" class="vibe-date-nav" data-vibe-next aria-label="Следующий месяц">›</button>
-        </div>
-        <div class="vibe-date-weekdays">
-            ${vibeDateWeekdays.map(day => `<div class="vibe-date-weekday">${day}</div>`).join("")}
-        </div>
-        <div class="vibe-date-grid"></div>
-        <div class="vibe-date-footer">
-            <button type="button" data-vibe-clear>Удалить</button>
-            <button type="button" data-vibe-today>Сегодня</button>
-        </div>
-    `;
-
-    document.body.appendChild(popover);
-
-    popover.querySelector("[data-vibe-prev]").onclick = () => {
-        vibeDatePickerState.month--;
-        if (vibeDatePickerState.month < 0) {
-            vibeDatePickerState.month = 11;
-            vibeDatePickerState.year--;
-        }
-        renderVibeDatePicker();
-    };
-
-    popover.querySelector("[data-vibe-next]").onclick = () => {
-        vibeDatePickerState.month++;
-        if (vibeDatePickerState.month > 11) {
-            vibeDatePickerState.month = 0;
-            vibeDatePickerState.year++;
-        }
-        renderVibeDatePicker();
-    };
-
-    popover.querySelector("[data-vibe-clear]").onclick = () => {
-        input.value = "";
-        updateVibeDateButton(inputId);
-        closeVibeDatePicker();
-    };
-
-    popover.querySelector("[data-vibe-today]").onclick = () => {
-        const today = new Date();
-        selectVibeDate(formatVibeDate(today));
-    };
-
-    renderVibeDatePicker();
-}
-
-function selectVibeDate(value) {
-    const state = vibeDatePickerState;
-    if (!state) return;
-
-    const input = $(state.inputId);
-    if (!input) return;
-
-    input.value = value;
-    updateVibeDateButton(state.inputId);
-    closeVibeDatePicker();
-}
-
-document.addEventListener("click", event => {
-    const popover = event.target.closest(".vibe-date-popover");
-    const dateButton = event.target.closest(".vibe-date-button");
-    if (!popover && !dateButton) closeVibeDatePicker();
-});
-
-window.addEventListener("resize", () => {
-    const popover = document.querySelector(".vibe-date-popover");
-    if (popover && vibeDatePickerState) {
-        positionVibeDatePicker(vibeDatePickerState.button, popover);
-    }
-});
-
 /* =========================================================
    AUTH
 ========================================================= */
@@ -436,6 +189,48 @@ select:focus {
 }
 
 /* =========================================================
+   AUTH / REGISTRATION — CENTERED + NO FLASH
+========================================================= */
+body.booting #authScreen,
+body.booting #app {
+    visibility: hidden !important;
+}
+
+#authScreen.auth {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    min-width: 100vw;
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 900;
+}
+
+#authScreen .auth-card {
+    width: min(430px, calc(100vw - 40px));
+    max-width: 430px;
+    margin: 0 auto;
+}
+
+@media (max-width: 750px) {
+    #authScreen.auth {
+        padding: 14px;
+        overflow-y: auto;
+        align-items: center;
+    }
+    #authScreen .auth-card {
+        width: 100%;
+        max-width: 430px;
+        padding: 22px 18px;
+    }
+}
+
+/* =========================================================
    PASSWORD FIELD
 ========================================================= */
 
@@ -515,12 +310,143 @@ select:focus {
     padding-right: 48px !important;
 }
 
-.birthday-icon {
+ .birthday-icon {
     position: absolute;
     right: 13px;
     top: 50%;
     transform: translateY(-50%);
-    pointer-events: none;
+    pointer-events: auto;
+}
+
+.vibe-date-picker-button {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+}
+
+.vibe-date-picker-button:hover {
+    background: rgba(139,92,246,.14);
+}
+
+.vibe-birthday-picker {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 8px);
+    z-index: 1200;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--panel);
+    box-shadow: 0 20px 55px rgba(0,0,0,.42);
+}
+
+.vibe-birthday-head {
+    display: grid;
+    grid-template-columns: 38px 1fr 38px;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.vibe-birthday-head > div {
+    text-align: center;
+    font-weight: 900;
+    font-size: 14px;
+}
+
+.vibe-birthday-head button,
+.vibe-birthday-footer button {
+    border: 0;
+    border-radius: 10px;
+    background: var(--panel2);
+    color: var(--text);
+    min-height: 34px;
+    cursor: pointer;
+}
+
+.vibe-birthday-head button:hover,
+.vibe-birthday-footer button:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.vibe-birthday-week,
+.vibe-birthday-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.vibe-birthday-week {
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.vibe-birthday-day {
+    aspect-ratio: 1;
+    min-height: 34px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.vibe-birthday-day:hover {
+    background: rgba(139,92,246,.18);
+}
+
+.vibe-birthday-day.today {
+    outline: 1px solid var(--accent);
+}
+
+.vibe-birthday-day.selected {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 900;
+}
+
+.vibe-birthday-day.muted {
+    color: var(--muted);
+    opacity: .45;
+}
+
+.vibe-birthday-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 9px;
+}
+
+.vibe-birthday-footer button {
+    padding: 7px 10px;
+    font-size: 11px;
+}
+
+@media (max-width: 750px) {
+    .vibe-birthday-picker {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        top: auto;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        width: auto;
+    }
+    .vibe-birthday-day {
+        min-height: 38px;
+    }
 }
 
 /* =========================================================
@@ -2354,182 +2280,22 @@ async function removeFriend(login) {
     min-width: 0;
     box-sizing: border-box;
 }
-
-.birthday-input-wrap {
-    position: relative;
-}
-
-.vibe-date-button {
+.birthday-input-wrap input {
+    display: block;
     width:100%;
-    min-height:46px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    padding:0 13px;
-    border:1px solid var(--border);
-    border-radius:12px;
-    background:var(--panel2);
-    color:var(--text);
-    cursor:pointer;
-    text-align:left;
-    font:inherit;
-    transition:border-color .15s ease, background .15s ease, box-shadow .15s ease;
-}
-.vibe-date-button:hover,
-.vibe-date-button:focus-visible {
-    border-color:var(--accent);
-    background:rgba(139,92,246,.10);
-    outline:none;
-    box-shadow:0 0 0 3px rgba(139,92,246,.10);
-}
-.vibe-date-button-icon {
-    width:30px;
-    height:30px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:9px;
-    background:rgba(139,92,246,.14);
-    font-size:16px;
-    flex:0 0 auto;
-}
-.vibe-date-button-text {
-    flex:1;
     min-width:0;
-    color:var(--muted);
-    font-weight:700;
-}
-.vibe-date-button.has-value .vibe-date-button-text {
-    color:var(--text);
-}
-.vibe-date-button-arrow {
-    color:var(--muted);
-    font-size:18px;
-    line-height:1;
-    transform:translateY(-2px);
-}
-
-/* Custom Vibe birthday calendar */
-.vibe-date-popover {
-    position:fixed;
-    z-index:3000;
-    width:min(340px, calc(100vw - 24px));
-    padding:12px;
-    border:1px solid var(--border);
-    border-radius:18px;
-    background:var(--panel);
-    box-shadow:0 24px 70px rgba(0,0,0,.45);
-    color:var(--text);
-}
-.vibe-date-head {
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:8px;
-    margin-bottom:10px;
-}
-.vibe-date-month {
-    flex:1;
-    text-align:center;
-    font-weight:900;
-    font-size:15px;
-}
-.vibe-date-nav {
-    width:34px;
-    height:34px;
-    border:1px solid var(--border);
-    border-radius:10px;
-    background:var(--panel2);
-    color:var(--text);
-    cursor:pointer;
-    font-size:18px;
-}
-.vibe-date-nav:hover { border-color:var(--accent); }
-.vibe-date-weekdays,
-.vibe-date-grid {
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:4px;
-}
-.vibe-date-weekdays {
-    margin-bottom:5px;
-}
-.vibe-date-weekday {
-    text-align:center;
-    color:var(--muted);
-    font-size:10px;
-    font-weight:800;
-    padding:4px 0;
-}
-.vibe-date-day {
-    min-width:0;
-    aspect-ratio:1;
-    border:0;
-    border-radius:10px;
-    background:transparent;
-    color:var(--text);
-    cursor:pointer;
-    font:inherit;
-    font-size:12px;
-    font-weight:700;
-}
-.vibe-date-day:hover {
-    background:rgba(139,92,246,.14);
-}
-.vibe-date-day.other-month {
-    color:var(--muted);
-    opacity:.45;
-}
-.vibe-date-day.today {
-    box-shadow:inset 0 0 0 1px var(--accent);
-}
-.vibe-date-day.selected {
-    background:var(--accent);
-    color:#fff;
-    box-shadow:none;
-}
-.vibe-date-footer {
-    display:flex;
-    justify-content:space-between;
-    gap:8px;
-    margin-top:10px;
-    padding-top:10px;
-    border-top:1px solid var(--border);
-}
-.vibe-date-footer button {
-    border:0;
-    background:transparent;
-    color:var(--accent);
-    font:inherit;
-    font-size:12px;
-    font-weight:800;
-    cursor:pointer;
-    padding:6px 8px;
-    border-radius:8px;
-}
-.vibe-date-footer button:hover { background:rgba(139,92,246,.10); }
-
-@media(max-width:650px){
-    .vibe-date-popover {
-        width:min(350px, calc(100vw - 20px));
-        padding:10px;
-        border-radius:16px;
-    }
-    .vibe-date-day {
-        border-radius:9px;
-        font-size:12px;
-    }
+    max-width:100%;
 }
 
 
 /* Vibe visual polish */
-#profileBirthDate,
-#registerBirthDate {
-    width:0;
-    height:0;
-    position:absolute;
-    opacity:0;
-    pointer-events:none;
+.profile-edit-section input[type="date"],
+#profileBirthDate {
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    display:block;
+    box-sizing:border-box;
 }
 .profile-edit-section input,
 .profile-edit-section select,
@@ -3490,7 +3256,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
 </head>
 
-<body>
+<body class="booting">
 
 
 <!-- =========================================================
@@ -3947,6 +3713,15 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div class="birthday-input-wrap vibe-date-picker-wrap">
 
                 <input
+                    id="registerBirthDateDisplay"
+                    type="text"
+                    placeholder="ДД.ММ.ГГГГ"
+                    autocomplete="off"
+                    readonly
+                    aria-label="Дата рождения"
+                >
+
+                <input
                     id="registerBirthDate"
                     type="hidden"
                     value=""
@@ -3954,14 +3729,26 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
                 <button
                     type="button"
-                    id="registerBirthDateButton"
-                    class="vibe-date-button"
-                    onclick="openVibeDatePicker('registerBirthDate')"
-                >
-                    <span class="vibe-date-button-icon">📅</span>
-                    <span class="vibe-date-button-text">ДД.ММ.ГГГГ</span>
-                    <span class="vibe-date-button-arrow">⌄</span>
-                </button>
+                    class="birthday-icon vibe-date-picker-button"
+                    onclick="toggleVibeBirthdayPicker(event)"
+                    aria-label="Выбрать дату"
+                >📅</button>
+
+                <div id="vibeBirthdayPicker" class="vibe-birthday-picker hidden">
+                    <div class="vibe-birthday-head">
+                        <button type="button" onclick="vibeBirthdayPrevMonth(event)" aria-label="Предыдущий месяц">‹</button>
+                        <div id="vibeBirthdayMonth"></div>
+                        <button type="button" onclick="vibeBirthdayNextMonth(event)" aria-label="Следующий месяц">›</button>
+                    </div>
+                    <div class="vibe-birthday-week">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                    </div>
+                    <div id="vibeBirthdayDays" class="vibe-birthday-days"></div>
+                    <div class="vibe-birthday-footer">
+                        <button type="button" onclick="clearVibeBirthday(event)">Очистить</button>
+                        <button type="button" onclick="setVibeBirthdayToday(event)">Сегодня</button>
+                    </div>
+                </div>
 
             </div>
 
@@ -3976,6 +3763,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <div class="modal-actions">
 
             <button
+                type="button"
                 class="primary"
                 onclick="register()"
             >
@@ -4147,26 +3935,10 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     Дата рождения — необязательно
                 </label>
 
-                <div class="vibe-date-picker-wrap">
-
-                    <input
-                        id="profileBirthDate"
-                        type="hidden"
-                        value=""
-                    >
-
-                    <button
-                        type="button"
-                        id="profileBirthDateButton"
-                        class="vibe-date-button"
-                        onclick="openVibeDatePicker('profileBirthDate')"
-                    >
-                        <span class="vibe-date-button-icon">📅</span>
-                        <span class="vibe-date-button-text">ДД.ММ.ГГГГ</span>
-                        <span class="vibe-date-button-arrow">⌄</span>
-                    </button>
-
-                </div>
+                <input
+                    id="profileBirthDate"
+                    type="date"
+                >
 
                 <input
                     id="profileEmail"
@@ -5884,12 +5656,6 @@ function setChatSelectionState(selected) {
 
     chat.classList.toggle("no-selection", !selected);
 
-    if (selected) {
-        $("welcomePanel")?.classList.add("hidden");
-    } else {
-        $("welcomePanel")?.classList.remove("hidden");
-    }
-
     if (!selected) {
         $("chatName").textContent = "Выберите чат";
         $("chatStatus").textContent = "Vibe";
@@ -5954,25 +5720,18 @@ window.addEventListener(
 ========================================================= */
 
 function openRegister() {
+    const modal = $("registerModal");
+    if (!modal) return;
 
     $("registerMessage").textContent = "";
-
-    $("registerLogin").value =
-        $("loginInput").value.trim();
-
-    $("registerPassword").value =
-        $("passwordInput").value;
-
+    $("registerLogin").value = $("loginInput").value.trim();
+    $("registerPassword").value = $("passwordInput").value;
     $("registerName").value = "";
-
     $("registerBirthDate").value = "";
-    updateVibeDateButton("registerBirthDate");
-
+    $("registerBirthDateDisplay").value = "";
     $("registerEmail").value = "";
-
-    $("registerModal")
-        .classList
-        .remove("hidden");
+    closeVibeBirthdayPicker();
+    modal.classList.remove("hidden");
 }
 
 
@@ -6068,6 +5827,143 @@ async function login() {
     }
 }
 
+
+/* =========================================================
+   VIBE BIRTHDAY PICKER
+========================================================= */
+let vibeBirthdayView = new Date();
+vibeBirthdayView.setDate(1);
+
+function vibeBirthdayMonthName(month, year) {
+    const names = [
+        "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+        "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+    ];
+    return `${names[month]} ${year}`;
+}
+
+function formatVibeBirthday(iso) {
+    if (!iso) return "";
+    const [y,m,d] = iso.split("-").map(Number);
+    if (!y || !m || !d) return "";
+    return `${String(d).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;
+}
+
+function vibeBirthdayIso(date) {
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+function renderVibeBirthdayPicker() {
+    const monthEl = $("vibeBirthdayMonth");
+    const daysEl = $("vibeBirthdayDays");
+    if (!monthEl || !daysEl) return;
+
+    const y = vibeBirthdayView.getFullYear();
+    const m = vibeBirthdayView.getMonth();
+    monthEl.textContent = vibeBirthdayMonthName(m, y);
+    daysEl.innerHTML = "";
+
+    const first = new Date(y, m, 1);
+    const start = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const prevDays = new Date(y, m, 0).getDate();
+    const selected = $("registerBirthDate")?.value || "";
+    const todayIso = vibeBirthdayIso(new Date());
+
+    for (let i = 0; i < 42; i++) {
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "vibe-birthday-day";
+        let dayNum, cellMonth = m, cellYear = y, muted = false;
+
+        if (i < start) {
+            dayNum = prevDays - start + i + 1;
+            cellMonth = m - 1;
+            if (cellMonth < 0) { cellMonth = 11; cellYear--; }
+            muted = true;
+        } else if (i >= start + daysInMonth) {
+            dayNum = i - start - daysInMonth + 1;
+            cellMonth = m + 1;
+            if (cellMonth > 11) { cellMonth = 0; cellYear++; }
+            muted = true;
+        } else {
+            dayNum = i - start + 1;
+        }
+
+        const date = new Date(cellYear, cellMonth, dayNum);
+        const iso = vibeBirthdayIso(date);
+        cell.textContent = dayNum;
+        if (muted) cell.classList.add("muted");
+        if (iso === todayIso) cell.classList.add("today");
+        if (iso === selected) cell.classList.add("selected");
+        cell.addEventListener("click", (event) => {
+            event.stopPropagation();
+            selectVibeBirthday(date);
+        });
+        daysEl.appendChild(cell);
+    }
+}
+
+function selectVibeBirthday(date) {
+    const iso = vibeBirthdayIso(date);
+    $("registerBirthDate").value = iso;
+    $("registerBirthDateDisplay").value = formatVibeBirthday(iso);
+    closeVibeBirthdayPicker();
+}
+
+function toggleVibeBirthdayPicker(event) {
+    event?.stopPropagation();
+    const picker = $("vibeBirthdayPicker");
+    if (!picker) return;
+    const willOpen = picker.classList.contains("hidden");
+    if (willOpen) {
+        const saved = $("registerBirthDate")?.value;
+        if (saved) {
+            const [y,m] = saved.split("-").map(Number);
+            if (y && m) vibeBirthdayView = new Date(y, m - 1, 1);
+        } else {
+            const now = new Date();
+            vibeBirthdayView = new Date(now.getFullYear(), now.getMonth(), 1);
+        }
+        renderVibeBirthdayPicker();
+        picker.classList.remove("hidden");
+    } else {
+        picker.classList.add("hidden");
+    }
+}
+
+function closeVibeBirthdayPicker() {
+    $("vibeBirthdayPicker")?.classList.add("hidden");
+}
+
+function vibeBirthdayPrevMonth(event) {
+    event?.stopPropagation();
+    vibeBirthdayView.setMonth(vibeBirthdayView.getMonth() - 1);
+    renderVibeBirthdayPicker();
+}
+
+function vibeBirthdayNextMonth(event) {
+    event?.stopPropagation();
+    vibeBirthdayView.setMonth(vibeBirthdayView.getMonth() + 1);
+    renderVibeBirthdayPicker();
+}
+
+function clearVibeBirthday(event) {
+    event?.stopPropagation();
+    $("registerBirthDate").value = "";
+    $("registerBirthDateDisplay").value = "";
+    closeVibeBirthdayPicker();
+}
+
+function setVibeBirthdayToday(event) {
+    event?.stopPropagation();
+    selectVibeBirthday(new Date());
+}
+
+document.addEventListener("click", (event) => {
+    const wrap = event.target.closest?.(".vibe-date-picker-wrap");
+    if (!wrap) closeVibeBirthdayPicker();
+});
 
 async function register() {
 
@@ -6567,12 +6463,6 @@ function showApp() {
 
 
 function logout() {
-
-    // Close every open Vibe modal immediately when the account session ends.
-    document.querySelectorAll(".modal").forEach(modal => {
-        modal.classList.add("hidden");
-    });
-    document.querySelectorAll(".message-actions, .vibe-date-popover").forEach(el => el.remove());
 
     localStorage.removeItem(
         "vibeLogin"
@@ -7756,9 +7646,6 @@ async function openChat(login) {
         .classList
         .add("hidden");
 
-    // Do not let the welcome screen flash while the chat data is loading.
-    $("welcomePanel")?.classList.add("hidden");
-
     openMobileChatView();
 
     /*
@@ -7965,7 +7852,7 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
 
-        // Reactions are not shown on message bubbles. Message actions stay on right-click/long-press.
+        bubble.insertAdjacentHTML("beforeend", renderMessageReactions(message) + renderMessageReactionTools(message));
 
         bubble.dataset.messageId = message.id;
         bubble.dataset.messageFrom = message.from;
@@ -8517,7 +8404,6 @@ async function openProfile() {
         user.birthDate ||
         extra.birthDate ||
         "";
-    updateVibeDateButton("profileBirthDate");
 
     $("profileEmail").value =
         user.email ||
@@ -11712,6 +11598,16 @@ document.addEventListener("click", function(event) {
         openSettings();
     }
 }, true);
+
+const registerOpenButton = $("registerButton");
+if (registerOpenButton) {
+    registerOpenButton.type = "button";
+    registerOpenButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openRegister();
+    });
+}
 
 initChannelPhotoPickers();
 setupGroupPhotoPicker();
