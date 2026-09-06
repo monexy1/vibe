@@ -158,6 +158,10 @@ function messageFromSupabaseRow(row) {
     if (typeof deletedFor === "string") {
         try { deletedFor = JSON.parse(deletedFor); } catch { deletedFor = []; }
     }
+    let forwardedFrom = row.forwarded_from ?? null;
+    if (typeof forwardedFrom === "string") {
+        try { forwardedFrom = JSON.parse(forwardedFrom); } catch { forwardedFrom = null; }
+    }
     return {
         id: String(row.id),
         from: row.from_login || row.from || "",
@@ -172,6 +176,10 @@ function messageFromSupabaseRow(row) {
         attachmentType: row.attachment_type || "",
         attachmentName: row.attachment_name || "",
         replyTo,
+        forwardedFrom:
+            forwardedFrom && typeof forwardedFrom === "object"
+                ? forwardedFrom
+                : null,
         reactions: reactions && typeof reactions === "object" ? reactions : {},
         deletedFor: Array.isArray(deletedFor) ? deletedFor : [],
         deletedForAll: !!row.deleted_for_all,
@@ -194,6 +202,7 @@ function messageToSupabaseRow(message) {
         attachment_type: message.attachmentType || "",
         attachment_name: message.attachmentName || "",
         reply_to: message.replyTo || null,
+        forwarded_from: message.forwardedFrom || null,
         reactions: message.reactions || {},
         deleted_for: Array.isArray(message.deletedFor) ? message.deletedFor : [],
         deleted_for_all: !!message.deletedForAll,
@@ -1709,68 +1718,74 @@ const server =
 
 
                 /* =====================================================
-                   USERS SEARCH
+                   USERS
                 ===================================================== */
 
                 if (
                     req.method === "GET" &&
                     pathname === "/users"
                 ) {
+                    const query = String(
+                        url.searchParams.get("q") || ""
+                    ).trim().toLowerCase();
 
-                    const query =
-                        String(
-                            url.searchParams.get(
-                                "q"
-                            ) || ""
-                        )
-                            .trim()
-                            .toLowerCase();
+                    const viewer = String(
+                        url.searchParams.get("viewer") || ""
+                    ).trim();
 
+                    const merged = new Map();
 
-                    const viewer =
-                        String(
-                            url.searchParams.get(
-                                "viewer"
-                            ) || ""
-                        );
+                    getUsers().forEach(user => {
+                        if (user?.login) {
+                            merged.set(String(user.login), user);
+                        }
+                    });
 
+                    try {
+                        const remote = await getSupabaseUsersMap();
+                        remote.forEach((row, login) => {
+                            if (!merged.has(login)) {
+                                merged.set(
+                                    login,
+                                    supabaseRowToLocalUser(row)
+                                );
+                            }
+                        });
+                    } catch {}
 
-                    const users =
-                        getUsers();
+                    const result = Array.from(merged.values())
+                        .filter(user => String(user.login) !== viewer)
+                        .filter(user => {
+                            const login = String(user.login || "").toLowerCase();
+                            const name = String(
+                                user.profile?.name ||
+                                user.name ||
+                                ""
+                            ).toLowerCase();
+                            const username = String(
+                                user.profile?.username ||
+                                user.username ||
+                                ""
+                            ).toLowerCase();
 
-
-                    const result =
-                        users
-                            .filter(
-                                user =>
-                                    user.login
-                                        .toLowerCase()
-                                        .includes(query)
-                            )
-                            .filter(
-                                user =>
-                                    user.login !== viewer
-                            )
-                            .slice(0, 20)
-                            .map(
-                                user =>
-                                    publicUser(
-                                        user,
-                                        viewer
-                                    )
+                            return (
+                                !query ||
+                                login.includes(query) ||
+                                name.includes(query) ||
+                                username.includes(query)
                             );
+                        })
+                        .slice(0, 50)
+                        .map(user => publicUser(user, viewer));
 
-
-                    sendJSON(
-                        res,
-                        result
-                    );
-
+                    sendJSON(res, result);
                     return;
                 }
 
 
                 /* =====================================================
+                   PROFILE GET
+
                    PROFILE GET
                 ===================================================== */
 
@@ -3987,6 +4002,8 @@ const server =
                         subscribers:
                             [owner],
 
+                        pinnedPostId: "",
+
                         settings: {
 
                             comments:
@@ -4695,6 +4712,58 @@ const server =
                 }
 
 
+
+                /* =====================================================
+                   CHANNEL POSTS VIEW BATCH
+                ===================================================== */
+                if (
+                    req.method === "POST" &&
+                    pathname === "/channel-posts-view-batch"
+                ) {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "");
+                    const viewer = String(body.viewer || "");
+                    const ids = Array.isArray(body.postIds)
+                        ? body.postIds.map(String).slice(0, 500)
+                        : [];
+
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const wanted = new Set(ids);
+                    const views = {};
+                    let changed = false;
+
+                    if (channelId && viewer) {
+                        posts.forEach(post => {
+                            if (
+                                String(post.channelId) !== channelId ||
+                                !wanted.has(String(post.id))
+                            ) return;
+
+                            post.views = Number(post.views || 0);
+                            post.viewers = Array.isArray(post.viewers)
+                                ? post.viewers
+                                : [];
+
+                            if (!post.viewers.includes(viewer)) {
+                                post.viewers.push(viewer);
+                                post.views += 1;
+                                changed = true;
+                            }
+
+                            views[String(post.id)] = post.views;
+                        });
+                    }
+
+                    if (changed) {
+                        saveJSON(CHANNEL_POSTS_FILE, posts);
+                    }
+
+                    sendJSON(res, {
+                        success: true,
+                        views
+                    });
+                    return;
+                }
 
                 /* =====================================================
                    CHANNEL POST VIEW
