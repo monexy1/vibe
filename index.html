@@ -6490,6 +6490,8 @@ function showApp() {
 
     loadChats();
 
+    loadGroups();
+
     loadChannels();
 }
 
@@ -7424,6 +7426,14 @@ function renderChats() {
                 channel.subscribed
         );
 
+    const joinedGroups =
+        (Array.isArray(groups) ? groups : [])
+            .filter(group =>
+                Array.isArray(group.members)
+                    ? group.members.includes(currentUser?.login)
+                    : true
+            );
+
     const items = [];
 
     chats.forEach(
@@ -7446,6 +7456,17 @@ function renderChats() {
                 data:channel,
                 time:
                     channel.lastTime || ""
+            });
+        }
+    );
+
+    joinedGroups.forEach(
+        group => {
+
+            items.push({
+                type:"group",
+                data:group,
+                time:group.lastTime || group.createdAt || ""
             });
         }
     );
@@ -7548,6 +7569,23 @@ function renderChats() {
 
                 box.appendChild(item);
 
+                return;
+            }
+
+            if (itemData.type === "group") {
+                const group = itemData.data;
+                const item = document.createElement("div");
+                item.className = "person";
+                if (currentGroup && currentGroup.id === group.id && !currentChannel) item.classList.add("active");
+                const icon = group.photo ? `<img src="${escapeHTML(group.photo)}">` : vibeIcon("community");
+                item.innerHTML = `
+                    <div class="channel-sidebar-icon">${icon}</div>
+                    <div class="person-info">
+                        <div class="person-name">${escapeHTML(group.name)}</div>
+                        <div class="person-login">Группа · ${Number(group.memberCount || group.members?.length || 0)} участников</div>
+                    </div>`;
+                item.onclick = () => openGroup(group);
+                box.appendChild(item);
                 return;
             }
 
@@ -7714,8 +7752,11 @@ async function openChat(login) {
             siteLanguage
         ].write;
 
-    const user =
-        await getUser(login);
+    const [user] =
+        await Promise.all([
+            getUser(login),
+            loadMessages(true)
+        ]);
 
     if (user) {
 
@@ -7731,8 +7772,6 @@ async function openChat(login) {
                 ? `<img src="${escapeHTML(user.photo)}">`
                 : vibeIcon("user");
     }
-
-    await loadMessages(true);
 
     await markChatAsRead(login);
 
@@ -7804,12 +7843,21 @@ async function getUser(login, viewer = currentUser?.login || "") {
 async function loadMessages(forceScroll=false) {
     if (!currentChat || !currentUser || currentChannel || currentGroup) return;
     const box = $("messages");
+    if (!window.__vibeMessageCache) window.__vibeMessageCache = {};
+    const cacheKey = currentUser.login + "::" + currentChat;
+    const cached = window.__vibeMessageCache[cacheKey];
+    if (Array.isArray(cached) && cached.length) renderMessageList(cached, false, true, false);
     const wasNearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 100;
     try {
-        const response = await fetch("/messages?user1=" + encodeURIComponent(currentUser.login) + "&user2=" + encodeURIComponent(currentChat));
+        const response = await fetch(
+            "/messages?user1=" + encodeURIComponent(currentUser.login) +
+            "&user2=" + encodeURIComponent(currentChat),
+            {cache:"no-store"}
+        );
         if (!response.ok) return;
         const messages = await response.json();
-        renderMessageList(messages, forceScroll, wasNearBottom, false);
+        window.__vibeMessageCache[cacheKey] = messages;
+        renderMessageList(messages, forceScroll || !cached, wasNearBottom || !cached, false);
     } catch {}
 }
 
@@ -10115,7 +10163,11 @@ async function openChannel(channel) {
         channel.name || "Канал";
 
     $("chatStatus").textContent =
-        (channel.description || "Канал Vibe") + " · " + Number(channel.subscriberCount || channel.subscribers?.length || 0);
+        [
+            channel.description || "Канал Vibe",
+            channel.username ? "@" + channel.username : "",
+            Number(channel.subscriberCount || channel.subscribers?.length || 0) + " подписчиков"
+        ].filter(Boolean).join(" · ");
 
     const input =
         $("messageInput");
@@ -10178,9 +10230,19 @@ function updateChannelHeader() {
     $("chatName").textContent =
         currentChannel.name || "Канал";
 
+    const subscriberCount =
+        Number(
+            currentChannel.subscriberCount ??
+            currentChannel.subscribers?.length ??
+            0
+        );
+
     $("chatStatus").textContent =
-        currentChannel.description ||
-        "Канал Vibe";
+        [
+            currentChannel.description || "Канал Vibe",
+            currentChannel.username ? "@" + currentChannel.username : "",
+            subscriberCount + " подписчиков"
+        ].filter(Boolean).join(" · ");
 
     $("chatAvatar").innerHTML =
         currentChannel.photo
@@ -13200,7 +13262,6 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
     function openChannelPostActions(post, x, y){
         document.querySelectorAll(".message-actions").forEach(el=>el.remove());
         selectedChannelPostForAction = post;
-        window.__vibeSelectedChannelPost = post;
         const menu=document.createElement("div");
         menu.className="message-actions";
         menu.innerHTML=getChannelPostMenuHTML(post);
@@ -14321,38 +14382,48 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
         modal=document.createElement("div");
         modal.id="vibeChannelForwardPicker";
         modal.className="modal";
-        modal.innerHTML=`<div class="modal-card" style="width:min(430px,calc(100vw - 24px));max-height:min(650px,calc(100dvh - 24px));overflow:hidden;display:flex;flex-direction:column"><div class="modal-header"><div class="modal-title">Переслать публикацию</div><button type="button" data-vibe-close-forward>✕</button></div><div style="padding:0 14px 10px;color:var(--muted);font-size:12px">Выбери чат с другом</div><div style="padding:0 14px 9px"><input id="vibeForwardFriendSearch" class="input" placeholder="Поиск друга..."></div><div id="vibeForwardFriendList" style="overflow:auto;padding:0 10px 14px"></div></div>`;
+        modal.innerHTML=`<div class="modal-card vibe-forward-modal-card"><div class="modal-header"><div><div class="modal-title">Переслать публикацию</div><div class="modal-subtitle">Твои чаты и поиск людей</div></div><button type="button" class="modal-close" data-vibe-close-forward>✕</button></div><input id="vibeForwardFriendSearch" class="input" placeholder="Поиск человека или чата..." autocomplete="off"><div id="vibeForwardFriendList" class="vibe-forward-list"></div></div>`;
         document.body.appendChild(modal);
-        modal.querySelector("[data-vibe-close-forward]").onclick=()=>modal.remove();
-        modal.onclick=e=>{if(e.target===modal)modal.remove()};
         const list=modal.querySelector("#vibeForwardFriendList");
         const input=modal.querySelector("#vibeForwardFriendSearch");
-        const friends=await fetch("/friends?login="+encodeURIComponent(currentUser.login)).then(r=>r.json()).catch(()=>[]);
-        const draw=()=>{
-            const q=(input.value||"").toLowerCase().trim();
-            const arr=Array.isArray(friends)?friends.filter(f=>!q||String(f.name||f.login).toLowerCase().includes(q)||String(f.login).toLowerCase().includes(q)):[];
-            list.innerHTML="";
-            if(!arr.length){list.innerHTML='<div style="padding:22px;text-align:center;color:var(--muted)">Друзей не найдено</div>';return;}
-            arr.forEach(friend=>{
-                const b=document.createElement("button");b.type="button";b.className="vibe-forward-choice";b.style.cssText="width:100%;display:flex;align-items:center;gap:10px;padding:9px;border:0;border-radius:12px;background:transparent;color:var(--text);text-align:left;cursor:pointer";
-                const avatar=friend.photo?`<div class="vibe-forward-avatar"><img src="${escapeHTML(friend.photo)}" alt=""></div>`:`<div class="vibe-forward-avatar">${escapeHTML((friend.name||friend.login||"?").slice(0,1).toUpperCase())}</div>`;
-                b.innerHTML=avatar+`<div class="vibe-forward-name"><strong>${escapeHTML(friend.name||friend.login)}</strong><span>@${escapeHTML(friend.login)}</span></div>`;
-                b.onclick=async()=>{
-                    b.disabled=true;
-                    const body={from:currentUser.login,to:friend.login,type:post.media?"attachment":"text",text:"↗️ "+(String(post.text||"").trim()||(post.media?(post.attachmentName||"Вложение"):""))};
+        const close=()=>modal.remove();
+        modal.querySelector("[data-vibe-close-forward]").onclick=close;
+        modal.onclick=e=>{if(e.target===modal)close()};
+        let recent=[],found=[],timer=null;
+
+        async function loadRecent(){try{const r=await fetch("/chats?login="+encodeURIComponent(currentUser.login));recent=r.ok?await r.json():[]}catch{recent=[]}}
+        async function searchPeople(q){try{const r=await fetch("/users?viewer="+encodeURIComponent(currentUser.login)+"&q="+encodeURIComponent(q||""));const d=await r.json().catch(()=>[]);found=Array.isArray(d)?d:[]}catch{found=[]}}
+        function header(text){const h=document.createElement("div");h.style.cssText="padding:8px 8px 6px;color:var(--muted);font-size:11px;font-weight:900";h.textContent=text;list.appendChild(h)}
+        function target(user,subtitle){
+            const b=document.createElement("button");b.type="button";b.className="vibe-forward-choice";
+            const av=document.createElement("div");av.className="vibe-forward-avatar";
+            if(user.photo){const img=document.createElement("img");img.src=user.photo;img.alt="";av.appendChild(img)}else av.textContent=String(user.name||user.login||"?").slice(0,1).toUpperCase();
+            const t=document.createElement("div");t.className="vibe-forward-name";t.innerHTML=`<strong>${escapeHTML(user.name||user.login||"")}</strong><span>${escapeHTML(subtitle||("@"+user.login))}</span>`;
+            b.append(av,t);
+            b.onclick=async()=>{
+                b.disabled=true;
+                try{
+                    const body={from:currentUser.login,to:user.login,type:post.media?"attachment":"text",text:"↗️ "+(post.poll?"📊 "+String(post.poll.question||"Опрос"):String(post.text||""))};
                     if(post.media){body.attachment=post.media;body.attachmentType=post.mediaType||"application/octet-stream";body.attachmentName=post.attachmentName||"Пересланная публикация";}
-                    try{
-                        const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-                        const d=await safeJson(r);
-                        if(!d.success)throw new Error(d.message||"Не удалось переслать");
-                        modal.remove();
-                        showVibeNotice?.("Готово","Публикация переслана в чат с другом.");
-                    }catch(e){showVibeNotice?.("Не удалось переслать",e.message)}finally{b.disabled=false}
-                };
-                list.appendChild(b);
-            });
-        };
-        input.addEventListener("input",draw);draw();input.focus();
+                    const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+                    const d=await r.json().catch(()=>({}));
+                    if(!r.ok||!d.success)throw new Error(d.message||"Не удалось переслать публикацию");
+                    close();showVibeNotice?.("Готово","Публикация переслана.");
+                }catch(e){showVibeNotice?.("Не удалось переслать",e.message)}finally{b.disabled=false}
+            };
+            list.appendChild(b);
+        }
+        function draw(q=""){
+            const query=String(q||"").trim().toLowerCase();list.innerHTML="";const used=new Set();const rc=[];
+            recent.forEach(chat=>{const u=chat.user||{};if(!u.login||u.login===currentUser.login)return;if(!query||String(u.name||"").toLowerCase().includes(query)||String(u.login||"").toLowerCase().includes(query)){rc.push(u);used.add(String(u.login))}});
+            if(rc.length){header("ТВОИ ЧАТЫ");rc.forEach(u=>target(u,"Недавний чат"));}
+            const people=found.filter(u=>!used.has(String(u.login)));
+            if(people.length){header(query?"ЛЮДИ":"ДРУГИЕ ПОЛЬЗОВАТЕЛИ");people.forEach(u=>target(u,"@"+u.login));}
+            if(!rc.length&&!people.length)list.innerHTML='<div class="vibe-forward-empty">Ничего не найдено</div>';
+        }
+        await Promise.all([loadRecent(),searchPeople("")]);draw("");
+        input.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(async()=>{await searchPeople(input.value||"");draw(input.value||"")},120)});
+        input.focus();
     }
 
     function ensurePollModal(){
@@ -14466,482 +14537,37 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 })();
 </script>
 
-<style id="vibe-channel-master-fix">
-/* Final channel fixes */
-#mobileAttachmentMenu #attachmentPollButton{display:none!important}
-body.vibe-channel-owner #mobileAttachmentMenu #attachmentPollButton{display:flex!important}
-
-#vibeChannelPollModal input,
-#vibeChannelPollModal textarea,
-#vibeChannelPollModal .input,
-#vibeFinalChannelPollModal input,
-#vibeFinalChannelPollModal textarea,
-#vibeFinalChannelPollModal .input{
-    background:var(--panel2)!important;
-    color:var(--text)!important;
-    border:1px solid var(--border)!important;
-    box-shadow:none!important;
-}
-#vibeChannelPollModal input::placeholder,
-#vibeFinalChannelPollModal input::placeholder{color:var(--muted)!important}
-#vibeChannelPollModal input:focus,
-#vibeFinalChannelPollModal input:focus{
-    border-color:rgba(139,92,246,.75)!important;
-    box-shadow:0 0 0 3px rgba(139,92,246,.12)!important;
-}
-
-#vibeChannelPinnedBar{
-    display:none!important;
-    align-items:center!important;
-    gap:10px!important;
-    min-height:58px!important;
-    padding:7px 12px!important;
-    background:var(--panel)!important;
-    border-top:1px solid var(--border)!important;
-    border-bottom:1px solid var(--border)!important;
-    box-sizing:border-box!important;
-    cursor:pointer!important;
-}
-#vibeChannelPinnedBar.show{display:flex!important}
-#vibeChannelPinnedBar .vibe-pinned-thumb{
-    width:38px!important;height:38px!important;min-width:38px!important;
-    border-radius:8px!important;overflow:hidden!important;
-    display:grid!important;place-items:center!important;
-    background:var(--panel2)!important;color:var(--accent)!important;
-}
-#vibeChannelPinnedBar .vibe-pinned-thumb img{
-    width:100%!important;height:100%!important;object-fit:cover!important;
-}
-#vibeChannelPinnedBar .vibe-pinned-copy{min-width:0;flex:1}
-#vibeChannelPinnedBar .vibe-pinned-title{color:var(--accent)!important;font-weight:900!important;font-size:12px!important}
-#vibeChannelPinnedBar .vibe-pinned-text{
-    color:var(--text)!important;font-size:12px!important;
-    white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
-}
-#vibeChannelPinnedBar .vibe-pinned-close{
-    width:32px!important;height:32px!important;min-width:32px!important;
-    border:0!important;background:transparent!important;color:var(--muted)!important;
-    font-size:20px!important;
-}
-
-.vibe-final-forward-modal{
-    position:fixed;inset:0;z-index:70000;
-    display:flex;align-items:center;justify-content:center;
-    padding:14px;background:rgba(4,7,18,.72);
-    backdrop-filter:blur(10px);
-}
-.vibe-final-forward-card{
-    width:min(440px,calc(100vw - 20px));
-    max-height:min(680px,calc(100dvh - 20px));
-    overflow:hidden;display:flex;flex-direction:column;
-    background:var(--panel);border:1px solid var(--border);
-    border-radius:20px;box-shadow:0 25px 90px rgba(0,0,0,.5);
-}
-.vibe-final-forward-head{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:15px 16px;border-bottom:1px solid var(--border);
-}
-.vibe-final-forward-title{font-size:18px;font-weight:950}
-.vibe-final-forward-close{
-    width:34px;height:34px;border:0;border-radius:10px;
-    background:var(--panel2);color:var(--text);
-}
-.vibe-final-forward-search{margin:11px 13px 9px}
-.vibe-final-forward-list{overflow:auto;padding:0 10px 12px}
-.vibe-final-forward-choice{
-    width:100%;display:flex;align-items:center;gap:10px;
-    padding:9px;border:0;border-radius:12px;background:transparent;
-    color:var(--text);text-align:left;cursor:pointer;
-}
-.vibe-final-forward-choice:hover{background:var(--panel2)}
-.vibe-final-forward-avatar{
-    width:42px;height:42px;min-width:42px;border-radius:50%;
-    overflow:hidden;display:grid;place-items:center;
-    background:var(--accent);color:#fff;font-weight:900;
-}
-.vibe-final-forward-avatar img{width:100%;height:100%;object-fit:cover}
-.vibe-final-forward-name{min-width:0;flex:1}
-.vibe-final-forward-name strong{
-    display:block;font-size:13px;overflow:hidden;
-    text-overflow:ellipsis;white-space:nowrap
-}
-.vibe-final-forward-name span{
-    display:block;margin-top:2px;color:var(--muted);font-size:11px
-}
-.vibe-final-forward-empty{
-    padding:24px 12px;text-align:center;color:var(--muted);font-size:13px
-}
+<style id="vibe-final-community-polish">
+.vibe-forward-modal-card{width:min(470px,calc(100vw - 24px))!important;max-height:min(720px,calc(100dvh - 24px))!important;overflow:hidden!important}
+.vibe-forward-list{overflow:auto!important;min-height:120px!important;max-height:540px!important;padding:0 10px 14px!important}
+.vibe-forward-choice{width:100%!important;display:flex!important;align-items:center!important;gap:10px!important;padding:9px!important;margin:2px 0!important;border:0!important;border-radius:12px!important;background:transparent!important;color:var(--text)!important;text-align:left!important;cursor:pointer}
+.vibe-forward-choice:hover{background:var(--panel2)!important}
+.vibe-forward-avatar{width:42px!important;height:42px!important;min-width:42px!important;border-radius:50%!important;overflow:hidden!important;display:grid!important;place-items:center!important;background:var(--accent)!important;color:#fff!important;font-weight:900!important}
+.vibe-forward-avatar img{width:100%!important;height:100%!important;object-fit:cover!important}
+.vibe-forward-name{min-width:0!important;flex:1!important}.vibe-forward-name strong{display:block!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}.vibe-forward-name span{display:block!important;color:var(--muted)!important;font-size:11px!important;margin-top:2px!important}
+#vibeChannelForwardPicker input,#vibeChannelPollModal input,#vibeChannelPollModal select,#vibeChannelPollModal textarea,#pollComposerModal input,#pollComposerModal select,#pollComposerModal textarea{background:var(--panel2)!important;color:var(--text)!important;border-color:var(--border)!important}
 </style>
-
-<script id="vibe-channel-master-fix-script">
+<script id="vibe-final-community-state">
 (function(){
     "use strict";
-
-    const getSelected = () => window.__vibeSelectedChannelPost || null;
-
-    function closeMenus(){
-        document.querySelectorAll(".message-actions,.vibe-channel-action-menu").forEach(el=>el.remove());
-    }
-
-    function pinKey(){
-        if(!currentUser || !currentChannel) return "";
-        return "vibePinnedChannelPost:" +
-            currentUser.login + ":" + String(currentChannel.id);
-    }
-
-    function readPin(){
-        const key=pinKey();
-        if(!key) return "";
-        try{return String(localStorage.getItem(key)||"");}catch{return ""}
-    }
-
-    function setPin(id){
-        const key=pinKey();
-        if(!key) return;
-        try{
-            if(id) localStorage.setItem(key,String(id));
-            else localStorage.removeItem(key);
-            const oldKey=currentUser
-                ? "vibePinnedChannelPosts:" + currentUser.login
-                : "";
-            if(oldKey) localStorage.removeItem(oldKey);
-        }catch{}
-    }
-
-    function currentPinned(){
-        const id=readPin();
-        if(!id) return null;
-        return (Array.isArray(window.__vibeChannelPosts)?window.__vibeChannelPosts:[])
-            .find(p=>String(p.id)===String(id)) || null;
-    }
-
-    function ensureBar(){
-        const chat=document.querySelector(".chat");
-        const messages=document.getElementById("messages");
-        if(!chat || !messages) return null;
+    function key(){return currentUser&&currentChannel?"vibePinnedChannelPost::"+currentUser.login+"::"+currentChannel.id:""}
+    function get(){const k=key();if(!k)return"";try{return String(localStorage.getItem(k)||"")}catch{return""}}
+    function set(id){const k=key();if(!k)return;try{if(id)localStorage.setItem(k,String(id));else localStorage.removeItem(k)}catch{}}
+    window.isPinned=id=>String(id)===get();
+    window.togglePinned=id=>set(String(id)===get()?"":String(id));
+    window.updatePinnedBar=function(){
         let bar=document.getElementById("vibeChannelPinnedBar");
-        if(!bar){
-            bar=document.createElement("div");
-            bar.id="vibeChannelPinnedBar";
-            chat.insertBefore(bar,messages);
-        }
-        return bar;
-    }
-
-    function renderPinned(){
-        const bar=ensureBar();
-        if(!bar) return;
-        if(!currentChannel || !currentUser){
-            bar.classList.remove("show");
-            bar.innerHTML="";
-            return;
-        }
-        const post=currentPinned();
-        if(!post){
-            bar.classList.remove("show");
-            bar.innerHTML="";
-            return;
-        }
-
-        const text=String(post.text||"").replace(/\s+/g," ").trim()
-            || (post.poll ? String(post.poll.question||"Опрос") :
-                (post.media ? String(post.attachmentName||"Вложение") : "Публикация"));
-
-        let thumb="▤";
-        if(post.media && String(post.mediaType||"").startsWith("image/"))
-            thumb='<img src="'+escapeHTML(post.media)+'" alt="">';
-        else if(post.poll) thumb="📊";
-        else if(post.media) thumb="📎";
-
-        bar.innerHTML=
-            '<div class="vibe-pinned-thumb">'+thumb+'</div>'+
-            '<div class="vibe-pinned-copy">'+
-                '<div class="vibe-pinned-title">Закреплённое сообщение</div>'+
-                '<div class="vibe-pinned-text">'+escapeHTML(text)+'</div>'+
-            '</div>'+
-            '<button type="button" class="vibe-pinned-close" aria-label="Открепить">×</button>';
+        if(!bar){const chat=document.querySelector(".chat"),messages=document.getElementById("messages");if(!chat||!messages)return;bar=document.createElement("div");bar.id="vibeChannelPinnedBar";chat.insertBefore(bar,messages)}
+        if(!currentChannel){bar.classList.remove("show");bar.innerHTML="";return}
+        const id=get(),post=(window.__vibeChannelPosts||[]).find(p=>String(p.id)===id);
+        if(!post){bar.classList.remove("show");bar.innerHTML="";return}
+        const text=String(post.text||post.poll?.question||post.attachmentName||"Публикация").replace(/\s+/g," ").trim();
+        let thumb="▤";if(post.media&&String(post.mediaType||"").startsWith("image/"))thumb=`<img src="${escapeHTML(post.media)}" alt="">`;else if(post.poll)thumb="📊";else if(post.media)thumb="📎";
+        bar.innerHTML=`<div class="vibe-pinned-thumb">${thumb}</div><div class="vibe-pinned-copy"><div class="vibe-pinned-title">Закреплённое сообщение</div><div class="vibe-pinned-text">${escapeHTML(text)}</div></div><button type="button" class="vibe-pinned-close">×</button>`;
         bar.classList.add("show");
-
-        bar.onclick=function(){
-            const el=document.querySelector(
-                '.channel-post[data-post-id="'+CSS.escape(String(post.id))+'"]'
-            );
-            el?.scrollIntoView({behavior:"smooth",block:"center"});
-        };
-
-        const close=bar.querySelector(".vibe-pinned-close");
-        if(close) close.onclick=function(e){
-            e.stopPropagation();
-            setPin("");
-            renderPinned();
-            if(typeof decorateChannelPosts==="function") decorateChannelPosts();
-        };
-    }
-
-    function postText(post){
-        if(!post) return "";
-        if(post.poll){
-            const opts=Array.isArray(post.poll.options)?post.poll.options:[];
-            return "📊 " + String(post.poll.question||"Опрос") +
-                (opts.length ? "\n\n"+opts.map((o,i)=>
-                    (i+1)+". "+String(o.text||"")
-                ).join("\n") : "");
-        }
-        return String(post.text||"");
-    }
-
-    window.vibeCopyChannelPost=async function(){
-        const post=getSelected();
-        closeMenus();
-        if(!post) return;
-        const text=postText(post);
-        if(!text){
-            window.showVibeNotice?.("Копирование","В публикации нет текста.");
-            return;
-        }
-        try{
-            await navigator.clipboard.writeText(text);
-        }catch{
-            try{
-                const ta=document.createElement("textarea");
-                ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
-                document.body.appendChild(ta);ta.select();
-                document.execCommand("copy");ta.remove();
-            }catch{}
-        }
-        window.showVibeNotice?.("Скопировано","Текст публикации скопирован.");
+        bar.onclick=()=>document.querySelector('.channel-post[data-post-id="'+CSS.escape(id)+'"]')?.scrollIntoView({behavior:"smooth",block:"center"});
+        bar.querySelector(".vibe-pinned-close").onclick=e=>{e.stopPropagation();set("");window.updatePinnedBar();if(typeof decorateChannelPosts==="function")decorateChannelPosts()};
     };
-
-    async function sendForward(target,post){
-        const body={
-            from:currentUser.login,
-            to:target,
-            type:post.media?"attachment":"text",
-            text:"↗️ "+postText(post)
-        };
-        if(post.media){
-            body.attachment=post.media;
-            body.attachmentType=post.mediaType||"application/octet-stream";
-            body.attachmentName=post.attachmentName||"Пересланная публикация";
-        }
-        const r=await fetch("/send-message",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify(body)
-        });
-        const d=await r.json().catch(()=>({}));
-        if(!r.ok || !d.success) throw new Error(d.message||"Не удалось переслать");
-    }
-
-    window.vibeForwardChannelPost=function(){
-        const post=getSelected();
-        closeMenus();
-        if(!post||!currentUser) return;
-
-        let modal=document.getElementById("vibeFinalForwardModal");
-        if(modal) modal.remove();
-
-        modal=document.createElement("div");
-        modal.id="vibeFinalForwardModal";
-        modal.className="vibe-final-forward-modal";
-        modal.innerHTML=
-            '<div class="vibe-final-forward-card">'+
-                '<div class="vibe-final-forward-head">'+
-                    '<div class="vibe-final-forward-title">Переслать публикацию</div>'+
-                    '<button type="button" class="vibe-final-forward-close">×</button>'+
-                '</div>'+
-                '<input class="input vibe-final-forward-search" placeholder="Поиск пользователя...">'+
-                '<div class="vibe-final-forward-list"></div>'+
-            '</div>';
-        document.body.appendChild(modal);
-
-        const input=modal.querySelector(".vibe-final-forward-search");
-        const list=modal.querySelector(".vibe-final-forward-list");
-        const close=()=>modal.remove();
-        modal.querySelector(".vibe-final-forward-close").onclick=close;
-        modal.onclick=e=>{if(e.target===modal) close()};
-
-        let timer=null;
-
-        async function search(q){
-            list.innerHTML='<div class="vibe-final-forward-empty">Поиск…</div>';
-            try{
-                const r=await fetch(
-                    "/users?viewer="+encodeURIComponent(currentUser.login)+
-                    "&q="+encodeURIComponent(q||"")
-                );
-                const users=await r.json().catch(()=>[]);
-                if(!Array.isArray(users)||!users.length){
-                    list.innerHTML='<div class="vibe-final-forward-empty">Пользователь не найден</div>';
-                    return;
-                }
-
-                list.innerHTML="";
-                users.forEach(user=>{
-                    const b=document.createElement("button");
-                    b.type="button";
-                    b.className="vibe-final-forward-choice";
-                    b.innerHTML=
-                        '<div class="vibe-final-forward-avatar">'+
-                            (user.photo
-                                ? '<img src="'+escapeHTML(user.photo)+'" alt="">'
-                                : escapeHTML(String(user.name||user.login||"?").slice(0,1).toUpperCase())
-                            )+
-                        '</div>'+
-                        '<div class="vibe-final-forward-name">'+
-                            '<strong>'+escapeHTML(user.name||user.login||"")+'</strong>'+
-                            '<span>@'+escapeHTML(user.login||"")+'</span>'+
-                        '</div>';
-
-                    b.onclick=async()=>{
-                        b.disabled=true;
-                        try{
-                            await sendForward(user.login,post);
-                            close();
-                            window.showVibeNotice?.("Готово","Публикация переслана в выбранный чат.");
-                        }catch(error){
-                            window.showVibeNotice?.("Не удалось переслать",error.message);
-                        }finally{b.disabled=false}
-                    };
-                    list.appendChild(b);
-                });
-            }catch{
-                list.innerHTML='<div class="vibe-final-forward-empty">Не удалось загрузить пользователей</div>';
-            }
-        }
-
-        input.oninput=function(){
-            clearTimeout(timer);
-            timer=setTimeout(()=>search(input.value||""),120);
-        };
-        search("");
-        input.focus();
-    };
-
-    window.vibeToggleChannelPostPin=function(){
-        const post=getSelected();
-        closeMenus();
-        if(!post||!currentChannel||!currentUser) return;
-        setPin(readPin()===String(post.id) ? "" : String(post.id));
-        renderPinned();
-        if(typeof decorateChannelPosts==="function") decorateChannelPosts();
-    };
-
-    window.vibeDeleteChannelPostForMe=async function(){
-        const post=getSelected();
-        closeMenus();
-        if(!post||!currentChannel||!currentUser) return;
-        try{
-            const r=await fetch("/channel-post-hide",{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
-                    channelId:currentChannel.id,
-                    postId:post.id,
-                    login:currentUser.login
-                })
-            });
-            const d=await r.json().catch(()=>({}));
-            if(!r.ok||!d.success) throw new Error(d.message||"Не удалось удалить у себя");
-
-            window.__vibeChannelPosts=(window.__vibeChannelPosts||[])
-                .filter(p=>String(p.id)!==String(post.id));
-            if(readPin()===String(post.id)) setPin("");
-
-            document.querySelector(
-                '.channel-post[data-post-id="'+CSS.escape(String(post.id))+'"]'
-            )?.remove();
-            renderPinned();
-            window.showVibeNotice?.("Удалено","Публикация удалена только у тебя.");
-        }catch(error){
-            window.showVibeNotice?.("Не удалось удалить",error.message);
-        }
-    };
-
-    window.vibeDeleteChannelPostForAll=async function(){
-        const post=getSelected();
-        closeMenus();
-        if(!post||!currentChannel||!currentUser) return;
-
-        if(String(currentChannel.owner)!==String(currentUser.login)){
-            window.showVibeNotice?.("Недоступно","Удалять публикацию у всех может только владелец.");
-            return;
-        }
-
-        const ok=typeof showVibeChannelConfirm==="function"
-            ? await showVibeChannelConfirm("Удалить публикацию?","Она будет удалена у всех подписчиков.")
-            : window.confirm("Удалить публикацию у всех?");
-
-        if(!ok) return;
-
-        try{
-            const r=await fetch("/channel-post-delete",{
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body:JSON.stringify({
-                    channelId:currentChannel.id,
-                    postId:post.id,
-                    owner:currentUser.login
-                })
-            });
-            const d=await r.json().catch(()=>({}));
-            if(!r.ok||!d.success) throw new Error(d.message||"Не удалось удалить");
-
-            window.__vibeChannelPosts=(window.__vibeChannelPosts||[])
-                .filter(p=>String(p.id)!==String(post.id));
-
-            if(readPin()===String(post.id)) setPin("");
-
-            document.querySelector(
-                '.channel-post[data-post-id="'+CSS.escape(String(post.id))+'"]'
-            )?.remove();
-
-            renderPinned();
-            window.showVibeNotice?.("Удалено","Публикация удалена у всех.");
-        }catch(error){
-            window.showVibeNotice?.("Не удалось удалить",error.message);
-        }
-    };
-
-    /* Make the old first-generation menu actions use the selected post
-       reliably, even though that menu stores it inside an older closure. */
-    window.__vibeSyncChannelPostSelection=function(post){
-        window.__vibeSelectedChannelPost=post||null;
-    };
-
-    function patchSelectedPostFromVisibleMenu(){
-        if(window.__vibeSelectedChannelPost) return;
-        const menus=document.querySelectorAll(".message-actions");
-        if(!menus.length) return;
-    }
-
-    /* Keep the pinned bar channel-scoped and hidden everywhere else. */
-    function syncContext(){
-        const owner=!!(
-            currentChannel &&
-            currentUser &&
-            String(currentChannel.owner)===String(currentUser.login)
-        );
-        document.body.classList.toggle("vibe-channel-owner",owner);
-
-        const legacy=document.getElementById("vibeChannelPinnedBar");
-        if(!currentChannel || !currentUser){
-            legacy?.classList.remove("show");
-            if(legacy) legacy.innerHTML="";
-        }
-
-        renderPinned();
-    }
-
-    document.addEventListener("DOMContentLoaded",syncContext);
-    setInterval(syncContext,250);
-
-    /* Any click on a channel action closes menus immediately. */
-    document.addEventListener("click",event=>{
-        if(event.target.closest?.(".message-actions button,.vibe-channel-action-menu button")){
-            setTimeout(closeMenus,0);
-        }
-    },true);
+    setInterval(()=>{window.updatePinnedBar()},400);
 })();
 </script>
-

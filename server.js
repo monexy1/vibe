@@ -62,25 +62,18 @@ function saveJSON(file, data) {
 
 
 /* =========================================================
-   SUPABASE STATE FOR CHANNELS
-   Keeps channels and channel posts after Render redeploys.
+   SUPABASE PERSISTENT COMMUNITY STATE
+   Channels, channel posts and groups survive Render redeploys.
 ========================================================= */
-const VIBE_STATE_CHANNELS_KEY = "channels";
-const VIBE_STATE_POSTS_KEY = "channel-posts";
+const VIBE_STATE_KEYS = { channels:"channels", channelPosts:"channel-posts", groups:"groups" };
 let vibeStateHydrated = false;
-const vibeStateTimers = {};
+const vibeStateTimers = new Map();
 
 async function getVibeState(key) {
     try {
-        const { data, error } = await supabase
-            .from("vibe_state")
-            .select("value")
-            .eq("key", key)
-            .maybeSingle();
+        const { data, error } = await supabase.from("vibe_state").select("value").eq("key", key).maybeSingle();
         if (error) {
-            if (!String(error.message || "").toLowerCase().includes("does not exist")) {
-                console.error("Supabase vibe_state read error:", error.message);
-            }
+            if (!String(error.message || "").toLowerCase().includes("does not exist")) console.error("Supabase vibe_state read error:", error.message);
             return null;
         }
         return data?.value ?? null;
@@ -92,17 +85,9 @@ async function getVibeState(key) {
 
 async function putVibeState(key, value) {
     try {
-        const { error } = await supabase
-            .from("vibe_state")
-            .upsert({
-                key,
-                value,
-                updated_at: new Date().toISOString()
-            }, { onConflict: "key" });
+        const { error } = await supabase.from("vibe_state").upsert({ key, value, updated_at:new Date().toISOString() }, { onConflict:"key" });
         if (error) {
-            if (!String(error.message || "").toLowerCase().includes("does not exist")) {
-                console.error("Supabase vibe_state write error:", error.message);
-            }
+            if (!String(error.message || "").toLowerCase().includes("does not exist")) console.error("Supabase vibe_state write error:", error.message);
             return false;
         }
         return true;
@@ -114,24 +99,29 @@ async function putVibeState(key, value) {
 
 function queueVibeStateSync(file, data) {
     if (!vibeStateHydrated) return;
-    const key = file === CHANNELS_FILE
-        ? VIBE_STATE_CHANNELS_KEY
-        : file === CHANNEL_POSTS_FILE
-            ? VIBE_STATE_POSTS_KEY
-            : null;
+    let key = "";
+    if (file === CHANNELS_FILE) key = VIBE_STATE_KEYS.channels;
+    if (file === CHANNEL_POSTS_FILE) key = VIBE_STATE_KEYS.channelPosts;
+    if (file === GROUPS_FILE) key = VIBE_STATE_KEYS.groups;
     if (!key) return;
-    clearTimeout(vibeStateTimers[key]);
-    vibeStateTimers[key] = setTimeout(() => {
-        putVibeState(key, data).catch(() => {});
-    }, 700);
+    clearTimeout(vibeStateTimers.get(key));
+    const timer = setTimeout(() => putVibeState(key, data).catch(() => {}), 200);
+    vibeStateTimers.set(key, timer);
 }
 
+const originalSaveJSON = saveJSON;
+saveJSON = function(file, data) {
+    originalSaveJSON(file, data);
+    queueVibeStateSync(file, data);
+};
+
 async function hydrateVibeState() {
-    const entries = [
-        [CHANNELS_FILE, VIBE_STATE_CHANNELS_KEY],
-        [CHANNEL_POSTS_FILE, VIBE_STATE_POSTS_KEY]
+    const items = [
+        [CHANNELS_FILE, VIBE_STATE_KEYS.channels],
+        [CHANNEL_POSTS_FILE, VIBE_STATE_KEYS.channelPosts],
+        [GROUPS_FILE, VIBE_STATE_KEYS.groups]
     ];
-    for (const [file, key] of entries) {
+    for (const [file,key] of items) {
         const local = readJSON(file);
         const remote = await getVibeState(key);
         if (Array.isArray(remote) && remote.length > 0) {
@@ -142,13 +132,6 @@ async function hydrateVibeState() {
     }
     vibeStateHydrated = true;
 }
-
-const originalSaveJSON = saveJSON;
-saveJSON = function(file, data) {
-    originalSaveJSON(file, data);
-    queueVibeStateSync(file, data);
-};
-
 const vibeStateReady = hydrateVibeState().catch(error => {
     console.error("Vibe state hydration failed:", error.message);
     vibeStateHydrated = true;
@@ -603,6 +586,16 @@ function normalizeChannel(channel) {
     if (typeof channel.description !== "string") {
         channel.description = "";
     }
+    if (typeof channel.username !== "string") {
+        channel.username = "";
+    }
+
+    channel.username = channel.username
+        .trim()
+        .replace(/^@+/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "")
+        .slice(0, 32);
 
     if (typeof channel.photo !== "string") {
         channel.photo = "";
@@ -653,6 +646,33 @@ function normalizeChannel(channel) {
     return channel;
 }
 
+
+
+function makeChannelUsernameSeed(name,id){
+    const s=String(name||"").toLowerCase()
+        .replace(/а/g,"a").replace(/б/g,"b").replace(/в/g,"v").replace(/г/g,"g").replace(/д/g,"d")
+        .replace(/е/g,"e").replace(/ё/g,"e").replace(/ж/g,"zh").replace(/з/g,"z").replace(/и/g,"i")
+        .replace(/й/g,"y").replace(/к/g,"k").replace(/л/g,"l").replace(/м/g,"m").replace(/н/g,"n")
+        .replace(/о/g,"o").replace(/п/g,"p").replace(/р/g,"r").replace(/с/g,"s").replace(/т/g,"t")
+        .replace(/у/g,"u").replace(/ф/g,"f").replace(/х/g,"h").replace(/ц/g,"c").replace(/ч/g,"ch")
+        .replace(/ш/g,"sh").replace(/щ/g,"sch").replace(/ъ/g,"").replace(/ы/g,"y").replace(/ь/g,"")
+        .replace(/э/g,"e").replace(/ю/g,"yu").replace(/я/g,"ya")
+        .replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,24);
+    return s || ("vibe_"+String(id||Date.now()).slice(-8));
+}
+function makeUniqueChannelUsername(seed,channels,exceptId=""){
+    const base=String(seed||"vibe").toLowerCase().replace(/^@+/g,"").replace(/[^a-z0-9_]/g,"").slice(0,28)||"vibe";
+    const used=new Set(channels.filter(c=>String(c.id)!==String(exceptId)).map(c=>String(c.username||"").toLowerCase()).filter(Boolean));
+    if(!used.has(base)) return base;
+    for(let i=2;i<10000;i++){ const suffix="_"+i; const candidate=base.slice(0,32-suffix.length)+suffix; if(!used.has(candidate)) return candidate; }
+    return "vibe_"+Date.now().toString().slice(-10);
+}
+function getNormalizedChannels(){
+    const channels=readJSON(CHANNELS_FILE); let changed=false;
+    for(const c of channels){ const before=JSON.stringify(c); normalizeChannel(c); if(!c.username)c.username=makeUniqueChannelUsername(makeChannelUsernameSeed(c.name,c.id),channels,c.id); if(before!==JSON.stringify(c))changed=true; }
+    if(changed) saveJSON(CHANNELS_FILE,channels);
+    return channels;
+}
 
 /* =========================================================
    GROUPS
@@ -1197,8 +1217,6 @@ const server =
     http.createServer(
         async (req, res) => {
 
-            await vibeStateReady;
-
             try {
 
                 if (
@@ -1675,34 +1693,63 @@ const server =
                     req.method === "GET" &&
                     pathname === "/users"
                 ) {
-                    const query = String(url.searchParams.get("q") || "").trim().toLowerCase();
-                    const viewer = String(url.searchParams.get("viewer") || "");
-                    const merged = new Map();
 
-                    getUsers().forEach(user => {
-                        if (user?.login) merged.set(String(user.login), user);
-                    });
+                    const query =
+                        String(
+                            url.searchParams.get(
+                                "q"
+                            ) || ""
+                        )
+                            .trim()
+                            .toLowerCase();
 
-                    try {
-                        const remoteUsers = await getSupabaseUsersMap();
-                        remoteUsers.forEach((row, login) => {
-                            if (!merged.has(login)) merged.set(login, supabaseRowToLocalUser(row));
-                        });
-                    } catch {}
 
-                    const result = Array.from(merged.values())
-                        .filter(user => String(user.login) !== viewer)
-                        .filter(user => {
-                            const login = String(user.login || "").toLowerCase();
-                            const name = String(user.profile?.name || user.name || user.login || "").toLowerCase();
-                            return !query || login.includes(query) || name.includes(query);
-                        })
-                        .slice(0, 30)
-                        .map(user => publicUser(user, viewer));
+                    const viewer =
+                        String(
+                            url.searchParams.get(
+                                "viewer"
+                            ) || ""
+                        );
 
-                    sendJSON(res, result);
+
+                    const users =
+                        getUsers();
+
+
+                    const result =
+                        users
+                            .filter(
+                                user =>
+                                    user.login
+                                        .toLowerCase()
+                                        .includes(query)
+                            )
+                            .filter(
+                                user =>
+                                    user.login !== viewer
+                            )
+                            .slice(0, 20)
+                            .map(
+                                user =>
+                                    publicUser(
+                                        user,
+                                        viewer
+                                    )
+                            );
+
+
+                    sendJSON(
+                        res,
+                        result
+                    );
+
                     return;
                 }
+
+
+                /* =====================================================
+                   PROFILE GET
+                ===================================================== */
 
                 if (
                     req.method === "GET" &&
@@ -3330,116 +3377,38 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const mode = body.mode === "all" ? "all" : "self";
-
-                    if (!login || !messageId) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Недостаточно данных"
-                        }, 400);
-                        return;
-                    }
-
                     const messages = await getPersistentMessages();
                     const message = messages.find(m => String(m.id) === messageId);
 
-                    if (!message) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Сообщение не найдено"
-                        }, 404);
+                    if (!login || !message) {
+                        sendJSON(res, { success:false, message:"Сообщение не найдено" }, 404);
                         return;
                     }
 
-                    /* Group message */
-                    if (message.groupId) {
-                        const group = getGroups().find(
-                            g => String(g.id) === String(message.groupId)
-                        );
-
-                        if (!group || !Array.isArray(group.members) || !group.members.includes(login)) {
-                            sendJSON(res, {
-                                success:false,
-                                message:"Нет доступа"
-                            }, 403);
-                            return;
-                        }
-
-                        if (mode === "all") {
-                            if (message.from !== login) {
-                                sendJSON(res, {
-                                    success:false,
-                                    message:"Удалить у всех может только отправитель"
-                                }, 403);
-                                return;
-                            }
-                            message.deletedForAll = true;
-                        } else {
-                            if (!Array.isArray(message.deletedFor)) {
-                                message.deletedFor = [];
-                            }
-                            if (!message.deletedFor.includes(login)) {
-                                message.deletedFor.push(login);
-                            }
-                        }
-
-                        await updatePersistentMessage(message);
-
-                        group.members.forEach(member => {
-                            sendToUser(member, {
-                                type:"message-deleted",
-                                messageId,
-                                mode,
-                                by:login
-                            });
-                        });
-
-                        sendJSON(res, {success:true, message});
-                        return;
-                    }
-
-                    /* Direct message */
                     if (message.from !== login && message.to !== login) {
-                        sendJSON(res, {
-                            success:false,
-                            message:"Нет доступа"
-                        }, 403);
+                        sendJSON(res, { success:false, message:"Нет доступа" }, 403);
                         return;
                     }
 
                     if (mode === "all") {
                         if (message.from !== login) {
-                            sendJSON(res, {
-                                success:false,
-                                message:"Удалить у всех может только отправитель"
-                            }, 403);
+                            sendJSON(res, { success:false, message:"Удалить у всех может только отправитель" }, 403);
                             return;
                         }
                         message.deletedForAll = true;
                     } else {
-                        if (!Array.isArray(message.deletedFor)) {
-                            message.deletedFor = [];
-                        }
-                        if (!message.deletedFor.includes(login)) {
-                            message.deletedFor.push(login);
-                        }
+                        if (!Array.isArray(message.deletedFor)) message.deletedFor = [];
+                        if (!message.deletedFor.includes(login)) message.deletedFor.push(login);
                     }
 
                     await updatePersistentMessage(message);
-
                     sendToUser(message.from, {
-                        type:"message-deleted",
-                        messageId,
-                        mode,
-                        by:login
+                        type:"message-deleted", messageId, mode, by:login
                     });
                     sendToUser(message.to, {
-                        type:"message-deleted",
-                        messageId,
-                        mode,
-                        by:login
+                        type:"message-deleted", messageId, mode, by:login
                     });
-
-                    sendJSON(res, {success:true, message});
+                    sendJSON(res, { success:true, message });
                     return;
                 }
 
@@ -3771,6 +3740,7 @@ const server =
 
                             const haystack = [
                                 channel.name,
+                                channel.username,
                                 channel.description,
                                 channel.id
                             ].join(" ").toLowerCase();
@@ -3795,90 +3765,30 @@ const server =
                 /* =====================================================
                    CHANNELS GET
                 ===================================================== */
-
-                if (
-                    req.method === "GET" &&
-                    pathname === "/channels"
-                ) {
-
-                    const login =
-                        String(
-                            url.searchParams.get(
-                                "login"
-                            ) || ""
-                        );
-
-
-                    const channels =
-                        readJSON(
-                            CHANNELS_FILE
-                        ).map(
-                            normalizeChannel
-                        );
-
-
-                    saveJSON(
-                        CHANNELS_FILE,
-                        channels
-                    );
-
-
-                    const posts =
-                        readJSON(
-                            CHANNEL_POSTS_FILE
-                        );
-
-
-                    const result =
-                        channels.map(
-                            channel => {
-
-                                const channelPosts =
-                                    posts.filter(
-                                        post =>
-                                            post.channelId ===
-                                            channel.id
-                                    );
-
-
-                                const last =
-                                    channelPosts[
-                                        channelPosts.length - 1
-                                    ];
-
-
-                                return {
-
-                                    ...channel,
-
-                                    subscribed:
-                                        channel.subscribers
-                                            .includes(login),
-
-                                    postCount:
-                                        channelPosts.length,
-
-                                    lastTime:
-                                        last
-                                            ? last.time
-                                            : ""
-                                };
-                            }
-                        );
-
-
-                    sendJSON(
-                        res,
-                        result
-                    );
-
+                if (req.method === "GET" && pathname === "/channels") {
+                    const login = String(url.searchParams.get("login") || "");
+                    const channels = getNormalizedChannels();
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const result = channels.map(channel => {
+                        const channelPosts = posts.filter(post => post.channelId === channel.id);
+                        const last = channelPosts[channelPosts.length - 1];
+                        return {
+                            ...channel,
+                            username: channel.username || "",
+                            subscriberCount: channel.subscribers.length,
+                            subscribed: channel.subscribers.includes(login),
+                            postCount: channelPosts.length,
+                            lastTime: last ? last.time : ""
+                        };
+                    });
+                    sendJSON(res,result);
                     return;
                 }
-
 
                 /* =====================================================
                    CREATE CHANNEL
                 ===================================================== */
+
 
                 if (
                     req.method === "POST" &&
@@ -3962,20 +3872,21 @@ const server =
                         );
 
 
+                    const channelId =
+                        Date.now().toString() +
+                        Math.random().toString(36).slice(2);
+
+                    const username = makeUniqueChannelUsername(
+                        makeChannelUsernameSeed(name, channelId),
+                        channels
+                    );
+
                     const channel = {
-
-                        id:
-                            Date.now().toString() +
-                            Math.random()
-                                .toString(36)
-                                .slice(2),
-
+                        id: channelId,
                         name,
-
+                        username,
                         description,
-
                         photo,
-
                         owner,
 
                         subscribers:
@@ -4094,6 +4005,15 @@ const server =
                             body.name
                                 .trim()
                                 .slice(0, 80);
+                    }
+
+                    if (typeof body.username === "string") {
+                        const requestedUsername = body.username.trim().replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0,32);
+                        if (!requestedUsername) {
+                            sendJSON(res,{success:false,message:"Некорректный юзернейм канала"},400);
+                            return;
+                        }
+                        channel.username = makeUniqueChannelUsername(requestedUsername,channels,channel.id);
                     }
 
 
@@ -4354,6 +4274,126 @@ const server =
                 }
 
 
+
+                /* =====================================================
+                   CHANNEL DELETE
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-delete") {
+                    const body=await getBody(req);
+                    const channelId=String(body.channelId||"");
+                    const owner=String(body.owner||"");
+                    const channels=getNormalizedChannels();
+                    const channel=channels.find(c=>String(c.id)===channelId);
+                    if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
+                    if(String(channel.owner)!==owner){sendJSON(res,{success:false,message:"Только владелец может удалить канал"},403);return;}
+                    saveJSON(CHANNEL_POSTS_FILE,readJSON(CHANNEL_POSTS_FILE).filter(p=>String(p.channelId)!==channelId));
+                    saveJSON(CHANNELS_FILE,channels.filter(c=>String(c.id)!==channelId));
+                    (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-deleted",channelId}));
+                    sendJSON(res,{success:true,channelId}); return;
+                }
+
+                /* =====================================================
+                   CHANNEL POST HIDE FOR ME
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-hide") {
+                    const body=await getBody(req);
+                    const channelId=String(body.channelId||"");
+                    const postId=String(body.postId||"");
+                    const login=String(body.login||"");
+                    const channel=getNormalizedChannels().find(c=>String(c.id)===channelId);
+                    if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
+                    const posts=readJSON(CHANNEL_POSTS_FILE);
+                    const post=posts.find(p=>String(p.id)===postId&&String(p.channelId)===channelId);
+                    if(!post){sendJSON(res,{success:false,message:"Публикация не найдена"},404);return;}
+                    if(!Array.isArray(post.hiddenFor))post.hiddenFor=[];
+                    if(login&&!post.hiddenFor.includes(login))post.hiddenFor.push(login);
+                    saveJSON(CHANNEL_POSTS_FILE,posts);
+                    sendJSON(res,{success:true,post}); return;
+                }
+
+                /* =====================================================
+                   CHANNEL POST DELETE FOR ALL
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-delete") {
+                    const body=await getBody(req);
+                    const channelId=String(body.channelId||"");
+                    const postId=String(body.postId||"");
+                    const owner=String(body.owner||"");
+                    const channels=getNormalizedChannels();
+                    const channel=channels.find(c=>String(c.id)===channelId);
+                    if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
+                    if(String(channel.owner)!==owner){sendJSON(res,{success:false,message:"Только владелец канала может удалить публикацию у всех"},403);return;}
+                    const posts=readJSON(CHANNEL_POSTS_FILE);
+                    if(!posts.some(p=>String(p.id)===postId&&String(p.channelId)===channelId)){sendJSON(res,{success:false,message:"Публикация не найдена"},404);return;}
+                    saveJSON(CHANNEL_POSTS_FILE,posts.filter(p=>!(String(p.id)===postId&&String(p.channelId)===channelId)));
+                    (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-post-deleted",channelId,postId}));
+                    sendJSON(res,{success:true,channelId,postId}); return;
+                }
+
+                /* =====================================================
+                   CHANNEL POST REACTION
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-reaction") {
+                    const body=await getBody(req);
+                    const channelId=String(body.channelId||"");
+                    const postId=String(body.postId||"");
+                    const login=String(body.login||"");
+                    const emoji=String(body.emoji||"");
+                    if(!["❤️","😂","👍","🔥","😮","😢","🎉","👀"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
+                    const channels=getNormalizedChannels();
+                    const channel=channels.find(c=>String(c.id)===channelId);
+                    if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
+                    if(!channel.subscribers.includes(login)){sendJSON(res,{success:false,message:"Подпишись на канал, чтобы ставить реакции"},403);return;}
+                    const posts=readJSON(CHANNEL_POSTS_FILE);
+                    const post=posts.find(p=>String(p.id)===postId&&String(p.channelId)===channelId);
+                    if(!post){sendJSON(res,{success:false,message:"Публикация не найдена"},404);return;}
+                    if(!post.reactions||typeof post.reactions!=="object")post.reactions={};
+                    let selected=false;
+                    for(const key of Object.keys(post.reactions)){
+                        if(!Array.isArray(post.reactions[key]))post.reactions[key]=[];
+                        if(post.reactions[key].includes(login)){
+                            if(key===emoji)selected=true;
+                            post.reactions[key]=post.reactions[key].filter(u=>u!==login);
+                        }
+                    }
+                    if(!selected){if(!Array.isArray(post.reactions[emoji]))post.reactions[emoji]=[];post.reactions[emoji].push(login);}
+                    for(const key of Object.keys(post.reactions))if(!post.reactions[key].length)delete post.reactions[key];
+                    saveJSON(CHANNEL_POSTS_FILE,posts);
+                    (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-post-reaction",channelId,postId,post}));
+                    sendJSON(res,{success:true,post}); return;
+                }
+
+                /* =====================================================
+                   CHANNEL POLL VOTE
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-poll-vote") {
+                    const body=await getBody(req);
+                    const channelId=String(body.channelId||"");
+                    const postId=String(body.postId||"");
+                    const login=String(body.login||"");
+                    const optionId=String(body.optionId||"");
+                    const channels=getNormalizedChannels();
+                    const channel=channels.find(c=>String(c.id)===channelId);
+                    if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
+                    if(!channel.subscribers.includes(login)){sendJSON(res,{success:false,message:"Подпишись на канал, чтобы голосовать"},403);return;}
+                    const posts=readJSON(CHANNEL_POSTS_FILE);
+                    const post=posts.find(p=>String(p.id)===postId&&String(p.channelId)===channelId&&p.poll);
+                    if(!post){sendJSON(res,{success:false,message:"Опрос не найден"},404);return;}
+                    if(!post.poll.voters||typeof post.poll.voters!=="object")post.poll.voters={};
+                    if(!Array.isArray(post.poll.options))post.poll.options=[];
+                    const option=post.poll.options.find(o=>String(o.id)===optionId);
+                    if(!option){sendJSON(res,{success:false,message:"Вариант ответа не найден"},400);return;}
+                    const previous=post.poll.voters[login];
+                    if(previous===undefined||String(previous)!==optionId){
+                        if(previous!==undefined){const prev=post.poll.options.find(o=>String(o.id)===String(previous));if(prev)prev.votes=Math.max(0,Number(prev.votes||0)-1);}
+                        option.votes=Number(option.votes||0)+1;
+                        post.poll.voters[login]=optionId;
+                        saveJSON(CHANNEL_POSTS_FILE,posts);
+                    }
+                    (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-poll-vote",channelId,postId,post}));
+                    sendJSON(res,{success:true,post}); return;
+                }
+
                 /* =====================================================
                    CHANNEL POSTS GET
                 ===================================================== */
@@ -4387,9 +4427,10 @@ const server =
 
                     const result =
                         posts
-                            .filter(post =>
-                                post.channelId === channelId &&
-                                !(Array.isArray(post.hiddenFor) && viewer && post.hiddenFor.map(String).includes(String(viewer)))
+                            .filter(
+                                post =>
+                                    post.channelId === channelId &&
+                                    !(viewer && Array.isArray(post.hiddenFor) && post.hiddenFor.includes(viewer))
                             )
                             .map(
                                 post => {
@@ -4440,189 +4481,6 @@ const server =
 
 
                 /* =====================================================
-                   CHANNEL DELETE
-                   Deletes the channel itself and every publication/comment
-                   stored with it. A linked discussion group is left intact
-                   because it may be a separate user-owned group.
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-delete") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "").trim();
-                    const owner = String(body.owner || "").trim();
-                    if (!channelId || !owner) {
-                        sendJSON(res,{success:false,message:"Недостаточно данных"},400);
-                        return;
-                    }
-
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => String(c.id) === channelId);
-                    if (!channel) {
-                        sendJSON(res,{success:false,message:"Канал не найден"},404);
-                        return;
-                    }
-                    if (channel.owner !== owner) {
-                        sendJSON(res,{success:false,message:"Только владелец может удалить канал"},403);
-                        return;
-                    }
-
-                    const recipients = Array.from(new Set([
-                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
-                        channel.owner
-                    ].filter(Boolean)));
-
-                    const filteredChannels = channels.filter(c => String(c.id) !== channelId);
-                    saveJSON(CHANNELS_FILE, filteredChannels);
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const filteredPosts = posts.filter(post => String(post.channelId) !== channelId);
-                    saveJSON(CHANNEL_POSTS_FILE, filteredPosts);
-
-                    recipients.forEach(login => sendToUser(login, {
-                        type:"channel-deleted",
-                        channelId
-                    }));
-
-                    sendJSON(res,{success:true,channelId});
-                    return;
-                }
-
-                /* =====================================================
-                   CHANNEL POST REACTION
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-post-reaction") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "").trim();
-                    const postId = String(body.postId || "").trim();
-                    const login = String(body.login || "").trim();
-                    const emoji = String(body.emoji || "").trim();
-                    const allowed = ["❤️","😂","👍","🔥","😮","😢"];
-
-                    if (!channelId || !postId || !login || !allowed.includes(emoji)) {
-                        sendJSON(res,{success:false,message:"Некорректная реакция"},400);
-                        return;
-                    }
-                    if (!findUser(login)) {
-                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
-                        return;
-                    }
-
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => String(c.id) === channelId);
-                    if (!channel) {
-                        sendJSON(res,{success:false,message:"Канал не найден"},404);
-                        return;
-                    }
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
-                    if (!post) {
-                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
-                        return;
-                    }
-
-                    if (!post.reactions || typeof post.reactions !== "object") post.reactions = {};
-                    const hadReaction = Array.isArray(post.reactions[emoji]) && post.reactions[emoji].includes(login);
-                    Object.keys(post.reactions).forEach(key => {
-                        if (!Array.isArray(post.reactions[key])) post.reactions[key] = [];
-                        post.reactions[key] = post.reactions[key].filter(item => item !== login);
-                    });
-                    if (!hadReaction) {
-                        if (!post.reactions[emoji]) post.reactions[emoji] = [];
-                        post.reactions[emoji].push(login);
-                    }
-                    Object.keys(post.reactions).forEach(key => {
-                        if (!post.reactions[key].length) delete post.reactions[key];
-                    });
-
-                    saveJSON(CHANNEL_POSTS_FILE, posts);
-
-                    const recipients = Array.from(new Set([
-                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
-                        channel.owner
-                    ].filter(Boolean)));
-                    recipients.forEach(target => sendToUser(target, {
-                        type:"channel-post-reaction",
-                        channelId,
-                        postId,
-                        post
-                    }));
-
-                    sendJSON(res,{success:true,post});
-                    return;
-                }
-
-                /* =====================================================
-                   CHANNEL POLL VOTE
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-poll-vote") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "").trim();
-                    const postId = String(body.postId || "").trim();
-                    const login = String(body.login || "").trim();
-                    const optionId = String(body.optionId || "").trim();
-
-                    if (!channelId || !postId || !login || optionId === "") {
-                        sendJSON(res,{success:false,message:"Некорректный голос"},400);
-                        return;
-                    }
-                    if (!findUser(login)) {
-                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
-                        return;
-                    }
-
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => String(c.id) === channelId);
-                    if (!channel) {
-                        sendJSON(res,{success:false,message:"Канал не найден"},404);
-                        return;
-                    }
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
-                    if (!post || !post.poll) {
-                        sendJSON(res,{success:false,message:"Опрос не найден"},404);
-                        return;
-                    }
-
-                    if (!Array.isArray(post.poll.options) || !post.poll.options.some(o => String(o.id) === optionId)) {
-                        sendJSON(res,{success:false,message:"Вариант не найден"},400);
-                        return;
-                    }
-                    if (!post.poll.voters || typeof post.poll.voters !== "object") post.poll.voters = {};
-
-                    const previous = post.poll.voters[login];
-                    if (previous !== undefined && String(previous) === optionId) {
-                        sendJSON(res,{success:true,post});
-                        return;
-                    }
-
-                    if (previous !== undefined) {
-                        const oldOption = post.poll.options.find(o => String(o.id) === String(previous));
-                        if (oldOption) oldOption.votes = Math.max(0, Number(oldOption.votes || 0) - 1);
-                    }
-
-                    const selected = post.poll.options.find(o => String(o.id) === optionId);
-                    if (selected) selected.votes = Number(selected.votes || 0) + 1;
-                    post.poll.voters[login] = optionId;
-
-                    saveJSON(CHANNEL_POSTS_FILE, posts);
-
-                    const recipients = Array.from(new Set([
-                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
-                        channel.owner
-                    ].filter(Boolean)));
-                    recipients.forEach(target => sendToUser(target, {
-                        type:"channel-poll-vote",
-                        channelId,
-                        postId,
-                        post
-                    }));
-
-                    sendJSON(res,{success:true,post});
-                    return;
-                }
-
-                /* =====================================================
                    CHANNEL POST VIEW
                 ===================================================== */
                 if (req.method === "POST" && pathname === "/channel-post-view") {
@@ -4667,96 +4525,6 @@ const server =
                     post.comments.push(comment);
                     saveJSON(CHANNEL_POSTS_FILE,posts);
                     sendJSON(res,{success:true,comment});
-                    return;
-                }
-
-                /* =====================================================
-                   CHANNEL POST HIDE FOR ONE USER
-                   Hides one channel publication only for the requesting user.
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-post-hide") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "").trim();
-                    const postId = String(body.postId || "").trim();
-                    const login = String(body.login || "").trim();
-
-                    if (!channelId || !postId || !login) {
-                        sendJSON(res,{success:false,message:"Недостаточно данных"},400);
-                        return;
-                    }
-                    if (!findUser(login)) {
-                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
-                        return;
-                    }
-
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => String(c.id) === channelId);
-                    if (!channel) {
-                        sendJSON(res,{success:false,message:"Канал не найден"},404);
-                        return;
-                    }
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
-                    if (!post) {
-                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
-                        return;
-                    }
-
-                    if (!Array.isArray(post.hiddenFor)) post.hiddenFor = [];
-                    if (!post.hiddenFor.map(String).includes(login)) post.hiddenFor.push(login);
-                    saveJSON(CHANNEL_POSTS_FILE, posts);
-
-                    sendJSON(res,{success:true,channelId,postId,login});
-                    return;
-                }
-
-                /* =====================================================
-                   CHANNEL POST DELETE
-                   Owner-only delete for everyone.
-                ===================================================== */
-                if (req.method === "POST" && pathname === "/channel-post-delete") {
-                    const body = await getBody(req);
-                    const channelId = String(body.channelId || "").trim();
-                    const postId = String(body.postId || "").trim();
-                    const owner = String(body.owner || "").trim();
-
-                    if (!channelId || !postId || !owner) {
-                        sendJSON(res,{success:false,message:"Недостаточно данных"},400);
-                        return;
-                    }
-
-                    const channels = readJSON(CHANNELS_FILE);
-                    const channel = channels.find(c => String(c.id) === channelId);
-                    if (!channel) {
-                        sendJSON(res,{success:false,message:"Канал не найден"},404);
-                        return;
-                    }
-                    if (String(channel.owner) !== owner) {
-                        sendJSON(res,{success:false,message:"Только владелец может удалить публикацию у всех"},403);
-                        return;
-                    }
-
-                    const posts = readJSON(CHANNEL_POSTS_FILE);
-                    const exists = posts.some(p => String(p.id) === postId && String(p.channelId) === channelId);
-                    if (!exists) {
-                        sendJSON(res,{success:false,message:"Публикация не найдена"},404);
-                        return;
-                    }
-
-                    saveJSON(CHANNEL_POSTS_FILE, posts.filter(p => !(String(p.id) === postId && String(p.channelId) === channelId)));
-
-                    const recipients = Array.from(new Set([
-                        ...(Array.isArray(channel.subscribers) ? channel.subscribers : []),
-                        channel.owner
-                    ].filter(Boolean)));
-                    recipients.forEach(target => sendToUser(target, {
-                        type:"channel-post-deleted",
-                        channelId,
-                        postId
-                    }));
-
-                    sendJSON(res,{success:true,channelId,postId});
                     return;
                 }
 
@@ -4841,30 +4609,20 @@ const server =
                             ? body.mediaType
                             : "";
 
-                    const rawPoll = body.poll && typeof body.poll === "object"
-                        ? body.poll
-                        : null;
+
+                    const rawPoll = body.poll && typeof body.poll === "object" ? body.poll : null;
                     let poll = null;
-
                     if (rawPoll) {
-                        const question = String(rawPoll.question || "").trim().slice(0, 300);
-                        const rawOptions = Array.isArray(rawPoll.options) ? rawPoll.options : [];
-                        const options = rawOptions
-                            .map(value => String(value || "").trim().slice(0, 120))
-                            .filter(Boolean)
-                            .slice(0, 10);
-
-                        if (question && options.length >= 2) {
-                            poll = {
-                                question,
-                                options: options.map((option, index) => ({
-                                    id: String(index),
-                                    text: option,
-                                    votes: 0
-                                })),
-                                voters: {}
-                            };
+                        const question = String(rawPoll.question || "").trim().slice(0,300);
+                        const optionTexts = (Array.isArray(rawPoll.options) ? rawPoll.options : [])
+                            .map(v => typeof v === "string" ? v : String(v?.text || ""))
+                            .map(v => v.trim().slice(0,120))
+                            .filter(Boolean).slice(0,10);
+                        if (!question || optionTexts.length < 2) {
+                            sendJSON(res,{success:false,message:"Для опроса нужен вопрос и минимум 2 варианта ответа"},400);
+                            return;
                         }
+                        poll = { question, options:optionTexts.map((text,i)=>({id:String(i+1),text,votes:0})), voters:{}, multiple:false };
                     }
 
                     if (
@@ -4908,9 +4666,9 @@ const server =
                         mediaType,
                         poll,
                         reactions: {},
+                        hiddenFor: [],
                         views: 0,
                         viewers: [],
-                        hiddenFor: [],
                         comments: [],
 
                         time:
