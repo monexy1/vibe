@@ -2866,6 +2866,43 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 .community-empty{padding:28px 10px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:14px}
 
 
+
+/* =========================================================
+   VIBE 2026 POLISH: REACTIONS / QUICK MESSAGES / CONNECTION
+========================================================= */
+.auth{position:relative;overflow:hidden;background:
+    radial-gradient(circle at 15% 20%,rgba(124,58,237,.24),transparent 32%),
+    radial-gradient(circle at 85% 80%,rgba(34,211,238,.16),transparent 30%),
+    linear-gradient(135deg,#0b0b12,#11101c 45%,#090d16);}
+.auth::before{content:"";position:absolute;inset:-20%;pointer-events:none;opacity:.34;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px;transform:rotate(-7deg);}
+.auth::after{content:"";position:absolute;width:360px;height:360px;border-radius:50%;border:1px solid rgba(255,255,255,.08);box-shadow:0 0 0 55px rgba(255,255,255,.018),0 0 0 110px rgba(255,255,255,.012);top:-120px;right:-100px;pointer-events:none;}
+.auth-card{position:relative;z-index:1;box-shadow:0 28px 90px rgba(0,0,0,.45);backdrop-filter:blur(12px);}
+.connection-indicator{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-right:8px;white-space:nowrap;}
+.connection-indicator .connection-dot{width:8px;height:8px;border-radius:50%;background:#facc15;box-shadow:0 0 8px rgba(250,204,21,.45);}
+.connection-indicator.connected .connection-dot{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.5);}
+.connection-indicator.offline .connection-dot{background:#ef4444;box-shadow:0 0 8px rgba(239,68,68,.35);}
+.connection-indicator.offline{color:#fca5a5;}
+.quick-messages-wrap{position:relative;display:flex;align-items:center;}
+.quick-messages-panel{position:absolute;right:0;bottom:54px;width:min(310px,calc(100vw - 28px));padding:10px;border:1px solid var(--border);border-radius:16px;background:var(--panel);box-shadow:0 18px 45px rgba(0,0,0,.38);z-index:50;display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.quick-message-item{border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:11px;padding:9px 10px;text-align:left;cursor:pointer;font-size:12px;}
+.quick-message-item:hover{border-color:var(--accent);background:rgba(139,92,246,.12);}
+.message-reaction-tools{position:absolute;right:6px;bottom:6px;display:flex;align-items:center;gap:4px;opacity:0;transform:translateY(3px);transition:.16s;z-index:3;}
+.message:hover .message-reaction-tools,.message:focus-within .message-reaction-tools{opacity:1;transform:translateY(0);}
+.message-reaction-plus{width:26px;height:26px;border:1px solid var(--border);border-radius:9px;background:var(--panel);color:var(--text);cursor:pointer;font-size:15px;line-height:1;}
+.message-reaction-picker{position:absolute;right:0;bottom:31px;display:flex;gap:4px;padding:6px;border:1px solid var(--border);border-radius:12px;background:var(--panel);box-shadow:0 12px 30px rgba(0,0,0,.35);}
+.message-reaction-picker button{border:0;background:transparent;border-radius:8px;padding:5px;cursor:pointer;font-size:18px;}
+.message-reaction-picker button:hover{background:var(--panel2);}
+.message-reactions{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.message-reaction{border:1px solid var(--border);background:var(--panel2);border-radius:10px;padding:3px 7px;color:var(--text);font-size:12px;cursor:pointer;}
+.message-reaction.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:rgba(139,92,246,.14);}
+@media(max-width:650px){
+ .connection-indicator{font-size:0;margin-right:3px;}
+ .connection-indicator .connection-dot{width:9px;height:9px;}
+ .message-reaction-tools{opacity:1;transform:none;}
+ .message-reaction-plus{width:28px;height:28px;}
+ .quick-messages-panel{bottom:58px;}
+}
+
 /* =========================================================
    VIBE GROUP SETTINGS / COMMUNITY AVATAR POLISH
 ========================================================= */
@@ -3228,6 +3265,11 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
                 </div>
 
+                <div id="connectionIndicator" class="connection-indicator" title="Состояние подключения">
+                    <span class="connection-dot"></span>
+                    <span id="connectionIndicatorText">Подключение...</span>
+                </div>
+
                 <div id="callButtons" class="call-buttons">
 
                     <button onclick="startCall(false)">
@@ -3373,6 +3415,18 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 >
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M8.5 9h.01M15.5 9h.01"/></svg>
                 </button>
+
+                <div class="quick-messages-wrap">
+                    <button id="quickMessagesButton" class="composer-icon-btn" type="button" onclick="toggleQuickMessages()" title="Быстрые сообщения">⚡</button>
+                    <div id="quickMessagesPanel" class="quick-messages-panel hidden">
+                        <button type="button" class="quick-message-item" onclick="sendQuickMessage('Привет! 👋')">Привет! 👋</button>
+                        <button type="button" class="quick-message-item" onclick="sendQuickMessage('Как дела?')">Как дела?</button>
+                        <button type="button" class="quick-message-item" onclick="sendQuickMessage('Спасибо! 🙌')">Спасибо! 🙌</button>
+                        <button type="button" class="quick-message-item" onclick="sendQuickMessage('Окей 👍')">Окей 👍</button>
+                        <button type="button" class="quick-message-item" onclick="sendQuickMessage('Сейчас напишу')">Сейчас напишу</button>
+                        <button type="button" class="quick-message-item" onclick="sendQuickMessage('До связи! 👋')">До связи! 👋</button>
+                    </div>
+                </div>
 
                 <button
                     id="voiceRecordButton"
@@ -5541,15 +5595,7 @@ async function login() {
         currentUser =
             data.user;
 
-        localStorage.setItem(
-            "vibeLogin",
-            currentUser.login
-        );
-
-        localStorage.setItem(
-            "vibeUser",
-            JSON.stringify(currentUser)
-        );
+        saveLoginState(currentUser);
 
         const extra =
             getExtraProfile(
@@ -5715,15 +5761,7 @@ async function register() {
             siteLanguage
         );
 
-        localStorage.setItem(
-            "vibeLogin",
-            currentUser.login
-        );
-
-        localStorage.setItem(
-            "vibeUser",
-            JSON.stringify(currentUser)
-        );
+        saveLoginState(currentUser);
 
 
         /*
@@ -5893,6 +5931,62 @@ function vibeIcon(name, extraClass="") {
 }
 
 /* =========================================================
+   SESSION PERSISTENCE
+========================================================= */
+
+function saveLoginState(user) {
+    if (!user || !user.login) return;
+
+    const value = JSON.stringify(user);
+
+    try {
+        localStorage.setItem("vibeLogin", user.login);
+        localStorage.setItem("vibeUser", value);
+    } catch {}
+
+    // Fallback for browsers/environments where localStorage is unreliable.
+    try {
+        sessionStorage.setItem("vibeLogin", user.login);
+        sessionStorage.setItem("vibeUser", value);
+    } catch {}
+}
+
+function getSavedLoginState() {
+    let cachedUser = null;
+    let cachedLogin = "";
+
+    const sources = [localStorage, sessionStorage];
+
+    for (const storage of sources) {
+        try {
+            const savedUser = storage.getItem("vibeUser");
+            if (savedUser) {
+                const parsed = JSON.parse(savedUser);
+                if (parsed && typeof parsed.login === "string" && parsed.login.trim()) {
+                    cachedUser = parsed;
+                    cachedLogin = parsed.login.trim();
+                    break;
+                }
+            }
+        } catch {}
+    }
+
+    if (!cachedLogin) {
+        for (const storage of sources) {
+            try {
+                const login = String(storage.getItem("vibeLogin") || "").trim();
+                if (login) {
+                    cachedLogin = login;
+                    break;
+                }
+            } catch {}
+        }
+    }
+
+    return { cachedUser, cachedLogin };
+}
+
+/* =========================================================
    AUTO LOGIN
 ========================================================= */
 
@@ -5906,27 +6000,7 @@ async function autoLogin() {
 
     applyLanguage();
 
-    let cachedUser = null;
-    let cachedLogin = "";
-
-    try {
-        const savedUser = localStorage.getItem("vibeUser");
-        if (savedUser) {
-            const parsed = JSON.parse(savedUser);
-            if (parsed && typeof parsed.login === "string" && parsed.login.trim()) {
-                cachedUser = parsed;
-                cachedLogin = parsed.login.trim();
-            }
-        }
-    } catch {}
-
-    if (!cachedLogin) {
-        try {
-            cachedLogin = String(
-                localStorage.getItem("vibeLogin") || ""
-            ).trim();
-        } catch {}
-    }
+    const { cachedUser, cachedLogin } = getSavedLoginState();
 
     // Restore the app from local storage FIRST.
     // A temporary server/Render connection problem must never log the user out.
@@ -6063,6 +6137,11 @@ function logout() {
     localStorage.removeItem(
         "vibeUser"
     );
+
+    try {
+        sessionStorage.removeItem("vibeLogin");
+        sessionStorage.removeItem("vibeUser");
+    } catch {}
 
     localStorage.removeItem(
         "vibeReadCounts"
@@ -6357,6 +6436,16 @@ async function changePassword() {
    WEBSOCKET
 ========================================================= */
 
+function setConnectionIndicator(state) {
+    const el = $("connectionIndicator");
+    const text = $("connectionIndicatorText");
+    if (!el || !text) return;
+    el.classList.remove("connected","offline");
+    if (state === "connected") { el.classList.add("connected"); text.textContent = siteLanguage === "ru" ? "Подключен" : "Connected"; }
+    else if (state === "offline") { el.classList.add("offline"); text.textContent = siteLanguage === "ru" ? "Нет связи" : "Offline"; }
+    else { text.textContent = siteLanguage === "ru" ? "Подключение..." : "Connecting..."; }
+}
+
 function connectSocket() {
 
     if (!currentUser) {
@@ -6373,6 +6462,8 @@ function connectSocket() {
         return;
     }
 
+    setConnectionIndicator("connecting");
+
     try {
 
         const protocol =
@@ -6388,6 +6479,7 @@ function connectSocket() {
             );
 
         socket.onopen = () => {
+            setConnectionIndicator("connected");
 
             socket.send(
                 JSON.stringify({
@@ -6415,6 +6507,7 @@ function connectSocket() {
         socket.onclose = () => {
 
             socket = null;
+            setConnectionIndicator("offline");
 
             if (currentUser) {
 
@@ -6434,7 +6527,11 @@ function connectSocket() {
             }
         };
 
-    } catch {}
+        socket.onerror = () => setConnectionIndicator("offline");
+
+    } catch {
+        setConnectionIndicator("offline");
+    }
 }
 
 
@@ -6478,6 +6575,15 @@ function handleSocketMessage(data) {
     if (data.type === "recording-voice") {
         if (currentChat === data.from && !currentChannel) {
             $("chatStatus").textContent = data.recording ? "записывает голосовое…" : "онлайн";
+        }
+        return;
+    }
+
+    if (data.type === "message-reaction") {
+        if (currentGroup && data.message?.groupId === currentGroup.id) {
+            loadGroupMessages(false);
+        } else if (currentChat && data.message && !currentChannel && (data.message.from === currentChat || data.message.to === currentChat)) {
+            loadMessages(false);
         }
         return;
     }
@@ -7336,6 +7442,35 @@ async function loadMessages(forceScroll=false) {
     } catch {}
 }
 
+function renderMessageReactions(message) {
+    const reactions = message && message.reactions && typeof message.reactions === "object" ? message.reactions : {};
+    const entries = Object.entries(reactions).filter(([, users]) => Array.isArray(users) && users.length);
+    if (!entries.length) return "";
+    return `<div class="message-reactions">${entries.map(([emoji, users]) => {
+        const active = users.includes(currentUser?.login);
+        return `<button type="button" class="message-reaction${active ? " active" : ""}" data-reaction="${escapeHTML(emoji)}" data-message-id="${escapeHTML(message.id)}">${escapeHTML(emoji)} ${users.length}</button>`;
+    }).join("")}</div>`;
+}
+
+function renderMessageReactionTools(message) {
+    const emojis = ["❤️","😂","👍","🔥","😮","😢"];
+    return `<div class="message-reaction-tools">
+        <button type="button" class="message-reaction-plus" data-reaction-toggle="${escapeHTML(message.id)}" title="Реакция">+</button>
+        <div class="message-reaction-picker hidden" data-reaction-picker="${escapeHTML(message.id)}">${emojis.map(e => `<button type="button" data-reaction="${escapeHTML(e)}" data-message-id="${escapeHTML(message.id)}">${e}</button>`).join("")}</div>
+    </div>`;
+}
+
+async function setMessageReaction(messageId, emoji) {
+    if (!currentUser || !messageId || !emoji) return;
+    try {
+        const r = await fetch("/message-reaction", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({login:currentUser.login, messageId, emoji})});
+        const d = await r.json();
+        if (!d.success) return;
+        if (currentChat && !currentChannel) await loadMessages(false);
+        if (currentGroup) await loadGroupMessages(false);
+    } catch {}
+}
+
 function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
     const box = $("messages");
     box.innerHTML = "";
@@ -7382,6 +7517,8 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
         } else {
             bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
+
+        bubble.insertAdjacentHTML("beforeend", renderMessageReactions(message) + renderMessageReactionTools(message));
 
         bubble.dataset.messageId = message.id;
         bubble.dataset.messageFrom = message.from;
@@ -7520,6 +7657,43 @@ document.addEventListener("pointerdown", event => {
 document.addEventListener("pointerup", () => clearTimeout(window._messageLongPress));
 document.addEventListener("pointercancel", () => clearTimeout(window._messageLongPress));
 document.addEventListener("click", event => { if (!event.target.closest(".message-actions")) closeMessageActions(); });
+
+document.addEventListener("click", event => {
+    const toggle = event.target.closest("[data-reaction-toggle]");
+    if (toggle) {
+        event.stopPropagation();
+        const id = toggle.dataset.reactionToggle;
+        document.querySelectorAll(".message-reaction-picker").forEach(p => {
+            if (p.dataset.reactionPicker !== id) p.classList.add("hidden");
+        });
+        document.querySelector(`[data-reaction-picker="${CSS.escape(id)}"]`)?.classList.toggle("hidden");
+        return;
+    }
+    const reaction = event.target.closest("[data-reaction][data-message-id]");
+    if (reaction) {
+        event.stopPropagation();
+        document.querySelectorAll(".message-reaction-picker").forEach(p => p.classList.add("hidden"));
+        setMessageReaction(reaction.dataset.messageId, reaction.dataset.reaction);
+        return;
+    }
+    if (!event.target.closest(".message-reaction-tools")) {
+        document.querySelectorAll(".message-reaction-picker").forEach(p => p.classList.add("hidden"));
+    }
+});
+
+function toggleQuickMessages() {
+    const panel = $("quickMessagesPanel");
+    if (!panel) return;
+    panel.classList.toggle("hidden");
+}
+
+async function sendQuickMessage(text) {
+    $("quickMessagesPanel")?.classList.add("hidden");
+    if (!currentUser || (!currentChat && !currentGroup) || currentChannel) return;
+    const input = $("messageInput");
+    if (input) input.value = text;
+    await sendMessage();
+}
 
 function formatVoiceDuration(seconds) {
     const n = Math.max(0, Number(seconds) || 0);
@@ -8668,7 +8842,6 @@ async function saveProfile() {
    CHANNELS
 ========================================================= */
 
-async 
 async function openCommunities() {
     closeModal("channelsModal");
     $("communitiesModal").classList.remove("hidden");

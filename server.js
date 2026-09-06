@@ -1,9 +1,17 @@
+require("dotenv").config();
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const WebSocket = require("ws");
+const { createClient } = require("@supabase/supabase-js");
 
 const PORT = process.env.PORT || 3000;
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SECRET_KEY
+);
 
 const USERS_FILE = path.join(__dirname, "users.json");
 const MESSAGES_FILE = path.join(__dirname, "messages.json");
@@ -52,6 +60,100 @@ function saveJSON(file, data) {
     );
 }
 
+
+/* =========================================================
+   SUPABASE USERS
+========================================================= */
+
+async function getSupabaseUser(login) {
+    const normalizedLogin = String(login || "").trim();
+
+    if (!normalizedLogin) {
+        return null;
+    }
+
+    const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("login", normalizedLogin)
+        .maybeSingle();
+
+    if (error) {
+        console.error("Supabase get user error:", error.message);
+        throw new Error("Ошибка подключения к Supabase");
+    }
+
+    return data || null;
+}
+
+async function createSupabaseUser(user) {
+    const profile = user.profile || {};
+
+    const row = {
+        login: user.login,
+        password: user.password,
+        name: profile.name || user.login,
+        about: profile.about || "",
+        photo: profile.photo || "",
+        background: profile.background || "",
+        language: profile.language === "en" ? "en" : "ru",
+        birth_date: profile.birthDate || null,
+        email: profile.email || ""
+    };
+
+    const { data, error } = await supabase
+        .from("users")
+        .insert(row)
+        .select("*")
+        .single();
+
+    if (error) {
+        console.error("Supabase create user error:", error.message);
+        throw new Error(error.code === "23505"
+            ? "Такой логин уже существует"
+            : "Не удалось сохранить аккаунт в Supabase");
+    }
+
+    return data;
+}
+
+async function updateSupabaseUser(login, changes) {
+    const { data, error } = await supabase
+        .from("users")
+        .update(changes)
+        .eq("login", login)
+        .select("*")
+        .maybeSingle();
+
+    if (error) {
+        console.error("Supabase update user error:", error.message);
+        throw new Error("Не удалось сохранить изменения в Supabase");
+    }
+
+    return data || null;
+}
+
+function applySupabaseUserToLocalUser(localUser, row) {
+    if (!localUser || !row) {
+        return localUser;
+    }
+
+    normalizeUser(localUser);
+
+    localUser.login = row.login || localUser.login;
+    localUser.password = row.password || localUser.password;
+
+    if (typeof row.name === "string") localUser.profile.name = row.name;
+    if (typeof row.about === "string") localUser.profile.about = row.about;
+    if (typeof row.photo === "string") localUser.profile.photo = row.photo;
+    if (typeof row.background === "string") localUser.profile.background = row.background;
+    if (row.language === "ru" || row.language === "en") localUser.profile.language = row.language;
+    if (typeof row.birth_date === "string") localUser.profile.birthDate = row.birth_date;
+    if (row.birth_date === null) localUser.profile.birthDate = "";
+    if (typeof row.email === "string") localUser.profile.email = row.email;
+
+    return localUser;
+}
 
 /* =========================================================
    USER NORMALIZATION
@@ -897,204 +999,142 @@ const server =
                         await getBody(req);
 
                     const login =
-                        String(
-                            body.login || ""
-                        ).trim();
+                        String(body.login || "").trim();
 
                     const password =
-                        String(
-                            body.password || ""
-                        );
+                        String(body.password || "");
 
                     const name =
-                        String(
-                            body.name || ""
-                        ).trim();
+                        String(body.name || "").trim();
 
                     const email =
-                        String(
-                            body.email || ""
-                        ).trim();
+                        String(body.email || "").trim();
 
                     const birthDate =
-                        String(
-                            body.birthDate || ""
-                        ).trim();
+                        String(body.birthDate || "").trim();
 
                     const language =
                         body.language === "en"
                             ? "en"
                             : "ru";
 
-
-                    if (
-                        !login ||
-                        !password
-                    ) {
-
+                    if (!login || !password) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Введите логин и пароль"
+                                message: "Введите логин и пароль"
                             },
                             400
                         );
-
                         return;
                     }
 
-
-                    if (
-                        login.length > 40
-                    ) {
-
+                    if (login.length > 40) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Логин слишком длинный"
+                                message: "Логин слишком длинный"
                             },
                             400
                         );
-
                         return;
                     }
 
-
-                    if (
-                        password.length < 4
-                    ) {
-
+                    if (password.length < 4) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Пароль должен содержать минимум 4 символа"
+                                message: "Пароль должен содержать минимум 4 символа"
                             },
                             400
                         );
-
                         return;
                     }
 
-
-                    const users =
-                        getUsers();
-
-
-                    const exists =
-                        users.find(
-                            user =>
-                                user.login.toLowerCase() ===
-                                login.toLowerCase()
+                    let exists;
+                    try {
+                        exists = await getSupabaseUser(login);
+                    } catch (error) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: error.message
+                            },
+                            500
                         );
-
+                        return;
+                    }
 
                     if (exists) {
-
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Такой логин уже существует"
+                                message: "Такой логин уже существует"
                             },
                             400
                         );
-
                         return;
                     }
 
-
                     const user = {
-
                         login,
-
                         password,
-
                         friends: [],
-
                         friendRequestsIncoming: [],
-
                         friendRequestsOutgoing: [],
-
+                        contacts: [],
+                        blockedUsers: [],
                         profile: {
-
-                            name:
-                                name.slice(
-                                    0,
-                                    60
-                                ) ||
-                                login,
-
+                            name: name.slice(0, 60) || login,
                             about: "",
-
                             photo: "",
-
                             background: "",
-
-                            messageStyle:
-                                "classic",
-
+                            messageStyle: "classic",
                             language,
-
                             birthDate,
-
-                            email:
-                                email.slice(
-                                    0,
-                                    150
-                                ),
-
+                            email: email.slice(0, 150),
                             privacy: {
-
-                                profile:
-                                    "everyone",
-
-                                birthDate:
-                                    "friends",
-
-                                age:
-                                    "friends",
-
-                                photo:
-                                    "everyone",
-
-                                about:
-                                    "everyone",
-
-                                allowFriendRequests:
-                                    "everyone",
-
-                                showOnline:
-                                    true
+                                profile: "everyone",
+                                birthDate: "friends",
+                                age: "friends",
+                                photo: "everyone",
+                                about: "everyone",
+                                allowFriendRequests: "everyone",
+                                showOnline: true
                             }
                         }
                     };
 
+                    try {
+                        await createSupabaseUser(user);
+                    } catch (error) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: error.message
+                            },
+                            400
+                        );
+                        return;
+                    }
 
+                    // Keep the JSON mirror for the existing Vibe features
+                    // (friends, groups, channels, messages, etc.).
+                    const users = getUsers();
                     users.push(user);
-
-                    saveJSON(
-                        USERS_FILE,
-                        users
-                    );
-
+                    saveJSON(USERS_FILE, users);
 
                     sendJSON(
                         res,
                         {
                             success: true,
-
-                            user:
-                                publicUser(
-                                    user,
-                                    login
-                                )
+                            user: publicUser(user, login)
                         }
                     );
 
@@ -1115,48 +1155,82 @@ const server =
                         await getBody(req);
 
                     const login =
-                        String(
-                            body.login || ""
-                        ).trim();
+                        String(body.login || "").trim();
 
                     const password =
-                        String(
-                            body.password || ""
-                        );
+                        String(body.password || "");
 
-                    const user =
-                        findUser(login);
-
-
-                    if (
-                        !user ||
-                        user.password !== password
-                    ) {
-
+                    if (!login || !password) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Неверный логин или пароль"
+                                message: "Введите логин и пароль"
                             },
-                            401
+                            400
                         );
-
                         return;
                     }
 
+                    let row;
+
+                    try {
+                        row = await getSupabaseUser(login);
+                    } catch (error) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: error.message
+                            },
+                            500
+                        );
+                        return;
+                    }
+
+                    if (!row || row.password !== password) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Неверный логин или пароль"
+                            },
+                            401
+                        );
+                        return;
+                    }
+
+                    // Load the existing local data so friends/privacy/etc.
+                    // keep working, then refresh account/profile fields
+                    // from Supabase.
+                    const users = getUsers();
+                    let user = users.find(
+                        item => item.login === row.login
+                    );
+
+                    if (!user) {
+                        user = {
+                            login: row.login,
+                            password: row.password,
+                            friends: [],
+                            friendRequestsIncoming: [],
+                            friendRequestsOutgoing: [],
+                            contacts: [],
+                            blockedUsers: [],
+                            profile: {}
+                        };
+                        normalizeUser(user);
+                        users.push(user);
+                    }
+
+                    applySupabaseUserToLocalUser(user, row);
+                    saveJSON(USERS_FILE, users);
 
                     sendJSON(
                         res,
                         {
                             success: true,
-
-                            user:
-                                publicUser(
-                                    user,
-                                    login
-                                )
+                            user: publicUser(user, login)
                         }
                     );
 
@@ -1176,163 +1250,135 @@ const server =
                     const body =
                         await getBody(req);
 
-
                     const login =
-                        String(
-                            body.login || ""
-                        ).trim();
-
+                        String(body.login || "").trim();
 
                     const currentPassword =
-                        String(
-                            body.currentPassword || ""
-                        );
-
+                        String(body.currentPassword || "");
 
                     const newPassword =
-                        String(
-                            body.newPassword || ""
-                        );
+                        String(body.newPassword || "");
 
-
-                    if (
-                        !login ||
-                        !currentPassword ||
-                        !newPassword
-                    ) {
-
+                    if (!login || !currentPassword || !newPassword) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Заполните все поля"
+                                message: "Заполните все поля"
                             },
                             400
                         );
-
                         return;
                     }
 
-
-                    if (
-                        newPassword.length < 4
-                    ) {
-
+                    if (newPassword.length < 4) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Новый пароль должен содержать минимум 4 символа"
+                                message: "Новый пароль должен содержать минимум 4 символа"
                             },
                             400
                         );
-
                         return;
                     }
 
-
-                    if (
-                        newPassword.length > 200
-                    ) {
-
+                    if (newPassword.length > 200) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Новый пароль слишком длинный"
+                                message: "Новый пароль слишком длинный"
                             },
                             400
                         );
-
                         return;
                     }
 
+                    let row;
 
-                    const users =
-                        getUsers();
-
-
-                    const user =
-                        users.find(
-                            item =>
-                                item.login ===
-                                login
-                        );
-
-
-                    if (!user) {
-
+                    try {
+                        row = await getSupabaseUser(login);
+                    } catch (error) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Пользователь не найден"
+                                message: error.message
+                            },
+                            500
+                        );
+                        return;
+                    }
+
+                    if (!row) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Пользователь не найден"
                             },
                             404
                         );
-
                         return;
                     }
 
-
-                    if (
-                        user.password !==
-                        currentPassword
-                    ) {
-
+                    if (row.password !== currentPassword) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Текущий пароль указан неправильно"
+                                message: "Текущий пароль указан неправильно"
                             },
                             401
                         );
-
                         return;
                     }
 
-
-                    if (
-                        currentPassword ===
-                        newPassword
-                    ) {
-
+                    if (currentPassword === newPassword) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Новый пароль должен отличаться от текущего"
+                                message: "Новый пароль должен отличаться от текущего"
                             },
                             400
                         );
-
                         return;
                     }
 
+                    try {
+                        await updateSupabaseUser(
+                            login,
+                            { password: newPassword }
+                        );
+                    } catch (error) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: error.message
+                            },
+                            500
+                        );
+                        return;
+                    }
 
-                    user.password =
-                        newPassword;
-
-
-                    saveJSON(
-                        USERS_FILE,
-                        users
+                    const users = getUsers();
+                    const user = users.find(
+                        item => item.login === login
                     );
 
+                    if (user) {
+                        user.password = newPassword;
+                        saveJSON(USERS_FILE, users);
+                    }
 
                     sendJSON(
                         res,
                         {
                             success: true,
-                            message:
-                                "Пароль успешно изменён"
+                            message: "Пароль успешно изменён"
                         }
                     );
 
@@ -1413,50 +1459,70 @@ const server =
 
                     const login =
                         String(
-                            url.searchParams.get(
-                                "login"
-                            ) || ""
+                            url.searchParams.get("login") || ""
                         );
-
 
                     const viewer =
                         String(
-                            url.searchParams.get(
-                                "viewer"
-                            ) || ""
+                            url.searchParams.get("viewer") || ""
                         );
 
+                    let row;
 
-                    const user =
-                        findUser(login);
-
-
-                    if (!user) {
-
+                    try {
+                        row = await getSupabaseUser(login);
+                    } catch (error) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Пользователь не найден"
+                                message: error.message
                             },
-                            404
+                            500
                         );
-
                         return;
                     }
 
+                    if (!row) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Пользователь не найден"
+                            },
+                            404
+                        );
+                        return;
+                    }
+
+                    const users = getUsers();
+                    let user = users.find(
+                        item => item.login === row.login
+                    );
+
+                    if (!user) {
+                        user = {
+                            login: row.login,
+                            password: row.password || "",
+                            friends: [],
+                            friendRequestsIncoming: [],
+                            friendRequestsOutgoing: [],
+                            contacts: [],
+                            blockedUsers: [],
+                            profile: {}
+                        };
+                        normalizeUser(user);
+                        users.push(user);
+                    }
+
+                    applySupabaseUserToLocalUser(user, row);
+                    saveJSON(USERS_FILE, users);
 
                     sendJSON(
                         res,
                         {
                             success: true,
-
-                            user:
-                                publicUser(
-                                    user,
-                                    viewer
-                                )
+                            user: publicUser(user, viewer)
                         }
                     );
 
@@ -1476,151 +1542,123 @@ const server =
                     const body =
                         await getBody(req);
 
-
                     const login =
-                        String(
-                            body.login || ""
-                        ).trim();
+                        String(body.login || "").trim();
 
+                    let row;
 
-                    const users =
-                        getUsers();
-
-
-                    const user =
-                        users.find(
-                            item =>
-                                item.login ===
-                                login
-                        );
-
-
-                    if (!user) {
-
+                    try {
+                        row = await getSupabaseUser(login);
+                    } catch (error) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message:
-                                    "Пользователь не найден"
+                                message: error.message
                             },
-                            404
+                            500
                         );
-
                         return;
                     }
 
+                    if (!row) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Пользователь не найден"
+                            },
+                            404
+                        );
+                        return;
+                    }
 
+                    const users = getUsers();
+
+                    let user = users.find(
+                        item => item.login === login
+                    );
+
+                    if (!user) {
+                        user = {
+                            login,
+                            password: row.password || "",
+                            friends: [],
+                            friendRequestsIncoming: [],
+                            friendRequestsOutgoing: [],
+                            contacts: [],
+                            blockedUsers: [],
+                            profile: {}
+                        };
+                        normalizeUser(user);
+                        users.push(user);
+                    }
+
+                    applySupabaseUserToLocalUser(user, row);
                     normalizeUser(user);
 
+                    const supabaseChanges = {};
 
-                    if (
-                        typeof body.name ===
-                        "string"
-                    ) {
-
+                    if (typeof body.name === "string") {
                         user.profile.name =
-                            body.name
-                                .trim()
-                                .slice(0, 60) ||
-                            user.login;
+                            body.name.trim().slice(0, 60) || user.login;
+                        supabaseChanges.name = user.profile.name;
                     }
 
-
-                    if (
-                        typeof body.about ===
-                        "string"
-                    ) {
-
+                    if (typeof body.about === "string") {
                         user.profile.about =
-                            body.about
-                                .trim()
-                                .slice(0, 500);
+                            body.about.trim().slice(0, 500);
+                        supabaseChanges.about = user.profile.about;
                     }
 
-
-                    if (
-                        typeof body.photo ===
-                        "string"
-                    ) {
-
-                        user.profile.photo =
-                            body.photo.trim();
+                    if (typeof body.photo === "string") {
+                        user.profile.photo = body.photo.trim();
+                        supabaseChanges.photo = user.profile.photo;
                     }
 
-
-                    if (
-                        typeof body.background ===
-                        "string"
-                    ) {
-
+                    if (typeof body.background === "string") {
                         user.profile.background =
-                            body.background
-                                .trim()
-                                .slice(0, 2000000);
+                            body.background.trim().slice(0, 2000000);
+                        supabaseChanges.background = user.profile.background;
                     }
 
-
                     if (
-                        typeof body.messageStyle ===
-                        "string"
+                        body.language === "ru" ||
+                        body.language === "en"
                     ) {
+                        user.profile.language = body.language;
+                        supabaseChanges.language = body.language;
+                    }
 
+                    if (typeof body.email === "string") {
+                        user.profile.email =
+                            body.email.trim().slice(0, 150);
+                        supabaseChanges.email = user.profile.email;
+                    }
+
+                    if (typeof body.birthDate === "string") {
+                        user.profile.birthDate =
+                            body.birthDate.trim();
+                        supabaseChanges.birth_date =
+                            user.profile.birthDate || null;
+                    }
+
+                    if (typeof body.messageStyle === "string") {
                         const allowedStyles = [
                             "classic",
                             "square",
                             "neon"
                         ];
 
-
-                        if (
-                            allowedStyles.includes(
-                                body.messageStyle
-                            )
-                        ) {
-
+                        if (allowedStyles.includes(body.messageStyle)) {
                             user.profile.messageStyle =
                                 body.messageStyle;
                         }
                     }
 
-
-                    if (
-                        body.language === "ru" ||
-                        body.language === "en"
-                    ) {
-
-                        user.profile.language =
-                            body.language;
-                    }
-
-
-                    if (
-                        typeof body.email ===
-                        "string"
-                    ) {
-
-                        user.profile.email =
-                            body.email
-                                .trim()
-                                .slice(0, 150);
-                    }
-
-
-                    if (
-                        typeof body.birthDate ===
-                        "string"
-                    ) {
-
-                        user.profile.birthDate =
-                            body.birthDate.trim();
-                    }
-
-
                     if (
                         body.privacy &&
-                        typeof body.privacy ===
-                        "object"
+                        typeof body.privacy === "object"
                     ) {
 
                         const allowed = [
@@ -1629,32 +1667,22 @@ const server =
                             "nobody"
                         ];
 
+                        Object.keys(body.privacy).forEach(key => {
 
-                        Object.keys(
-                            body.privacy
-                        ).forEach(
-                            key => {
-
-                                if (
-                                    [
-                                        "profile",
-                                        "birthDate",
-                                        "age",
-                                        "photo",
-                                        "about"
-                                    ].includes(key) &&
-                                    allowed.includes(
-                                        body.privacy[key]
-                                    )
-                                ) {
-
-                                    user.profile
-                                        .privacy[key] =
-                                        body.privacy[key];
-                                }
+                            if (
+                                [
+                                    "profile",
+                                    "birthDate",
+                                    "age",
+                                    "photo",
+                                    "about"
+                                ].includes(key) &&
+                                allowed.includes(body.privacy[key])
+                            ) {
+                                user.profile.privacy[key] =
+                                    body.privacy[key];
                             }
-                        );
-
+                        });
 
                         if (
                             ["everyone", "friends", "nobody"].includes(
@@ -1665,44 +1693,60 @@ const server =
                                 body.privacy.allowFriendRequests;
                         }
 
-                        // Backward compatibility with old boolean data.
-                        if (typeof body.privacy.allowFriendRequests === "boolean") {
-                            user.profile.privacy.allowFriendRequests =
-                                body.privacy.allowFriendRequests ? "everyone" : "nobody";
-                        }
-
-
                         if (
-                            typeof body.privacy
-                                .showOnline ===
+                            typeof body.privacy.allowFriendRequests ===
                             "boolean"
                         ) {
+                            user.profile.privacy.allowFriendRequests =
+                                body.privacy.allowFriendRequests
+                                    ? "everyone"
+                                    : "nobody";
+                        }
 
-                            user.profile
-                                .privacy
-                                .showOnline =
-                                body.privacy
-                                    .showOnline;
+                        if (
+                            typeof body.privacy.showOnline ===
+                            "boolean"
+                        ) {
+                            user.profile.privacy.showOnline =
+                                body.privacy.showOnline;
                         }
                     }
 
+                    try {
+                        if (Object.keys(supabaseChanges).length > 0) {
+                            const updated =
+                                await updateSupabaseUser(
+                                    login,
+                                    supabaseChanges
+                                );
 
-                    saveJSON(
-                        USERS_FILE,
-                        users
-                    );
+                            if (updated) {
+                                applySupabaseUserToLocalUser(
+                                    user,
+                                    updated
+                                );
+                            }
+                        }
+                    } catch (error) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: error.message
+                            },
+                            500
+                        );
+                        return;
+                    }
 
+                    // Keep JSON mirror for the rest of Vibe.
+                    saveJSON(USERS_FILE, users);
 
                     sendJSON(
                         res,
                         {
                             success: true,
-
-                            user:
-                                publicUser(
-                                    user,
-                                    login
-                                )
+                            user: publicUser(user, login)
                         }
                     );
 
@@ -2888,6 +2932,8 @@ const server =
 
                         replyTo,
 
+                        reactions: {},
+
                         time:
                             new Date()
                                 .toISOString()
@@ -2932,6 +2978,60 @@ const server =
                     return;
                 }
 
+
+                /* =====================================================
+                   MESSAGE REACTIONS
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/message-reaction") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const messageId = String(body.messageId || "").trim();
+                    const emoji = String(body.emoji || "").trim();
+                    const allowed = ["❤️","😂","👍","🔥","😮","😢"];
+                    if (!login || !messageId || !allowed.includes(emoji)) {
+                        sendJSON(res,{success:false,message:"Некорректная реакция"},400);
+                        return;
+                    }
+                    if (!findUser(login)) {
+                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
+                        return;
+                    }
+                    const messages = readJSON(MESSAGES_FILE);
+                    const message = messages.find(m => String(m.id) === messageId);
+                    if (!message) {
+                        sendJSON(res,{success:false,message:"Сообщение не найдено"},404);
+                        return;
+                    }
+                    const directAllowed = message.groupId
+                        ? (() => { const g=getGroups().find(x=>x.id===message.groupId); return !!g && g.members.includes(login); })()
+                        : (message.from === login || message.to === login);
+                    if (!directAllowed) {
+                        sendJSON(res,{success:false,message:"Нет доступа"},403);
+                        return;
+                    }
+                    if (!message.reactions || typeof message.reactions !== "object") message.reactions = {};
+                    const hadSelectedReaction = Array.isArray(message.reactions[emoji]) && message.reactions[emoji].includes(login);
+                    for (const key of Object.keys(message.reactions)) {
+                        if (!Array.isArray(message.reactions[key])) message.reactions[key] = [];
+                        message.reactions[key] = message.reactions[key].filter(x => x !== login);
+                    }
+                    if (!hadSelectedReaction) {
+                        if (!message.reactions[emoji]) message.reactions[emoji] = [];
+                        message.reactions[emoji].push(login);
+                    }
+                    Object.keys(message.reactions).forEach(k => { if (!message.reactions[k].length) delete message.reactions[k]; });
+                    saveJSON(MESSAGES_FILE,messages);
+
+                    if (message.groupId) {
+                        const group=getGroups().find(g=>g.id===message.groupId);
+                        group?.members?.forEach(member => sendToUser(member,{type:"message-reaction",message}));
+                    } else {
+                        sendToUser(message.from,{type:"message-reaction",message});
+                        sendToUser(message.to,{type:"message-reaction",message});
+                    }
+                    sendJSON(res,{success:true,message});
+                    return;
+                }
 
                 /* =====================================================
                    DELETE MESSAGE
