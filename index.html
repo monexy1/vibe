@@ -4801,6 +4801,13 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <label class="channel-settings-label">Название</label>
             <input id="channelProfileName" class="channel-settings-input" placeholder="Название канала">
 
+            <label class="channel-settings-label">Юзернейм</label>
+            <div class="channel-username-edit">
+                <span>@</span>
+                <input id="channelProfileUsername" class="channel-settings-input" placeholder="my_channel" maxlength="32" autocomplete="off">
+            </div>
+            <div class="channel-username-hint">Уникальный адрес канала. Только латинские буквы, цифры и _.</div>
+
             <label class="channel-settings-label">Описание</label>
             <textarea id="channelProfileDescription" class="channel-settings-input channel-settings-textarea" placeholder="Короткое описание канала"></textarea>
         </div>
@@ -7917,8 +7924,22 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             ? `<div class="group-sender">${escapeHTML(message.from || "Пользователь")}</div>`
             : "";
 
+        const forwardedHtml = message.forwardedFrom
+            ? `<div class="forwarded-from">
+                <div class="forwarded-from-avatar">${
+                    message.forwardedFrom.photo
+                        ? `<img src="${escapeHTML(message.forwardedFrom.photo)}" alt="">`
+                        : vibeIcon("channel")
+                }</div>
+                <div class="forwarded-from-copy">
+                    <div class="forwarded-from-label">Переслано из</div>
+                    <div class="forwarded-from-name">${escapeHTML(message.forwardedFrom.name || "Канал")}</div>
+                </div>
+            </div>`
+            : "";
+
         if (message.type === "voice" && message.audio) {
-            bubble.innerHTML = `${senderHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div class="voice-message"><button type="button" class="voice-play-btn" data-audio="${escapeHTML(message.audio)}">▶️</button><div class="voice-wave"></div><span>${formatVoiceDuration(message.duration)}</span></div><div class="message-time">${time}</div>`;
         } else if (message.type === "attachment" && message.attachment) {
             const mime = String(message.attachmentType || "");
             let attachmentHtml = "";
@@ -7932,9 +7953,9 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
             const attachmentCaption = message.text
                 ? `<div class="attachment-caption">${escapeHTML(message.text)}</div>`
                 : "";
-            bubble.innerHTML = `${senderHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}${attachmentHtml}${attachmentCaption}<div class="message-time">${time}</div>`;
         } else {
-            bubble.innerHTML = `${senderHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
+            bubble.innerHTML = `${senderHtml}${forwardedHtml}${replyHtml}<div>${escapeHTML(message.text || "")}</div><div class="message-time">${time}</div>`;
         }
 
         bubble.insertAdjacentHTML("beforeend", renderMessageReactions(message) + renderMessageReactionTools(message));
@@ -9389,6 +9410,7 @@ async function createGroup() {
             body:JSON.stringify({
                 owner:currentUser.login,
                 name,
+                username,
                 description,
                 photo,
                 public:isPublic
@@ -10163,11 +10185,11 @@ async function openChannel(channel) {
         channel.name || "Канал";
 
     $("chatStatus").textContent =
-        [
-            channel.description || "Канал Vibe",
-            channel.username ? "@" + channel.username : "",
-            Number(channel.subscriberCount || channel.subscribers?.length || 0) + " подписчиков"
-        ].filter(Boolean).join(" · ");
+        Number(
+            channel.subscriberCount ||
+            channel.subscribers?.length ||
+            0
+        ) + " подписчиков";
 
     const input =
         $("messageInput");
@@ -10238,11 +10260,7 @@ function updateChannelHeader() {
         );
 
     $("chatStatus").textContent =
-        [
-            currentChannel.description || "Канал Vibe",
-            currentChannel.username ? "@" + currentChannel.username : "",
-            subscriberCount + " подписчиков"
-        ].filter(Boolean).join(" · ");
+        subscriberCount + " подписчиков";
 
     $("chatAvatar").innerHTML =
         currentChannel.photo
@@ -10323,6 +10341,10 @@ async function openChannelProfile() {
     const own = currentChannel.owner === currentUser.login;
 
     $("channelProfileName").value = currentChannel.name || "";
+    if ($("channelProfileUsername")) {
+        $("channelProfileUsername").value =
+            currentChannel.username || "";
+    }
     $("channelProfileDescription").value = currentChannel.description || "";
     $("channelProfilePhoto").value = currentChannel.photo || "";
 
@@ -10337,6 +10359,9 @@ async function openChannelProfile() {
         : vibeIcon("channel");
 
     $("channelProfileName").disabled = !own;
+    if ($("channelProfileUsername")) {
+        $("channelProfileUsername").disabled = !own;
+    }
     $("channelProfileDescription").disabled = !own;
 
     const ownerSettings = $("channelProfileOwnerSettings");
@@ -10371,6 +10396,11 @@ async function saveChannelProfile() {
     }
 
     const name = $("channelProfileName").value.trim();
+    const username =
+        $("channelProfileUsername")?.value
+            .trim()
+            .replace(/^@+/, "")
+            .toLowerCase() || "";
     const description = $("channelProfileDescription").value.trim();
     const photo =
         $("channelProfilePhotoFile")?.dataset.photo ||
@@ -14403,8 +14433,26 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
             b.onclick=async()=>{
                 b.disabled=true;
                 try{
-                    const body={from:currentUser.login,to:user.login,type:post.media?"attachment":"text",text:"↗️ "+(post.poll?"📊 "+String(post.poll.question||"Опрос"):String(post.text||""))};
-                    if(post.media){body.attachment=post.media;body.attachmentType=post.mediaType||"application/octet-stream";body.attachmentName=post.attachmentName||"Пересланная публикация";}
+                    const body={
+                        from:currentUser.login,
+                        to:user.login,
+                        type:post.media?"attachment":"text",
+                        text:post.poll
+                            ? "📊 "+String(post.poll.question||"Опрос")
+                            : String(post.text||""),
+                        forwardedFrom: currentChannel ? {
+                            type:"channel",
+                            id:String(currentChannel.id || ""),
+                            name:String(currentChannel.name || "Канал"),
+                            username:String(currentChannel.username || ""),
+                            photo:String(currentChannel.photo || "")
+                        } : null
+                    };
+                    if(post.media){
+                        body.attachment=post.media;
+                        body.attachmentType=post.mediaType||"application/octet-stream";
+                        body.attachmentName=post.attachmentName||"Пересланная публикация";
+                    }
                     const r=await fetch("/send-message",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
                     const d=await r.json().catch(()=>({}));
                     if(!r.ok||!d.success)throw new Error(d.message||"Не удалось переслать публикацию");
@@ -14571,3 +14619,79 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
     setInterval(()=>{window.updatePinnedBar()},400);
 })();
 </script>
+
+<style id="vibe-channel-username-style">
+.channel-username-edit{
+    position:relative;
+    display:flex;
+    align-items:center;
+}
+.channel-username-edit > span{
+    position:absolute;
+    left:14px;
+    z-index:2;
+    color:var(--muted);
+    font-weight:800;
+    pointer-events:none;
+}
+.channel-username-edit .channel-settings-input{
+    padding-left:29px!important;
+}
+.channel-username-hint{
+    margin:6px 1px 0;
+    color:var(--muted);
+    font-size:10px;
+    line-height:1.35;
+}
+</style>
+
+<style id="vibe-forwarded-channel-style">
+.forwarded-from{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin:0 0 7px;
+    padding:6px 8px;
+    border-left:3px solid var(--accent);
+    border-radius:9px;
+    background:rgba(139,92,246,.08);
+}
+.forwarded-from-avatar{
+    width:30px;
+    height:30px;
+    min-width:30px;
+    border-radius:50%;
+    overflow:hidden;
+    display:grid;
+    place-items:center;
+    background:var(--panel2);
+    color:var(--accent);
+}
+.forwarded-from-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+.forwarded-from-avatar .vibe-icon{
+    width:17px!important;
+    height:17px!important;
+}
+.forwarded-from-copy{
+    min-width:0;
+    flex:1;
+}
+.forwarded-from-label{
+    font-size:10px;
+    color:var(--muted);
+    line-height:1.1;
+}
+.forwarded-from-name{
+    margin-top:2px;
+    font-size:12px;
+    font-weight:900;
+    color:var(--accent);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+</style>
