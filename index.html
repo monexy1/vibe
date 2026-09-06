@@ -14797,7 +14797,7 @@ body.vibe-channel-owner #attachmentPollButton { display:flex !important; }
 /* =========================================================
    ALL TRUE MODALS — always centered
 ========================================================= */
-.modal{
+.modal:not(.hidden){
     position:fixed !important;
     inset:0 !important;
     display:flex !important;
@@ -15086,6 +15086,264 @@ body:has(#vibeChannelForwardPicker) .message-actions{
         cleanForwardedText();
         keepForwardCentered();
     },450);
+})();
+</script>
+
+<style id="vibe-global-modal-emergency-fix">
+/* =========================================================
+   GLOBAL MODAL FIX
+   The previous centering rule used !important on display:flex
+   and accidentally overrode .hidden. Every hidden overlay must
+   really be hidden.
+========================================================= */
+
+.modal.hidden,
+.modal.is-hidden,
+.modal[aria-hidden="true"],
+#modalOverlay.hidden,
+#vibeChannelForwardPicker.hidden,
+#vibeChannelPollModal.hidden,
+#deleteMessageModal.hidden,
+#confirmModal.hidden,
+#channelsModal.hidden,
+#communitiesModal.hidden,
+#createChannelModal.hidden,
+#profileModal.hidden,
+#settingsModal.hidden,
+#friendsModal.hidden,
+#groupModal.hidden,
+#channelProfileModal.hidden,
+#vibePersistentPinBar.hidden {
+    display:none !important;
+}
+
+/* All Vibe modal overlays are centered, but only when visible. */
+.modal:not(.hidden):not([aria-hidden="true"]),
+.vibe-modal:not(.hidden):not([aria-hidden="true"]) {
+    position:fixed !important;
+    inset:0 !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    box-sizing:border-box !important;
+    padding:14px !important;
+}
+
+/* Forwarding overlay specifically. */
+#vibeChannelForwardPicker {
+    position:fixed !important;
+    inset:0 !important;
+    width:100vw !important;
+    height:100dvh !important;
+    box-sizing:border-box !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    padding:14px !important;
+    z-index:70000 !important;
+}
+
+#vibeChannelForwardPicker.hidden {
+    display:none !important;
+}
+
+/* Never allow an invisible dialog to block clicks. */
+[aria-hidden="true"] {
+    pointer-events:none !important;
+    visibility:hidden !important;
+}
+
+[aria-hidden="false"] {
+    visibility:visible !important;
+    pointer-events:auto !important;
+}
+
+/* Browser-native confirm/prompt must not appear over Vibe UI. */
+body.vibe-modal-open {
+    overflow:hidden !important;
+}
+
+/* Vibe action menus close cleanly while a modal is open. */
+body.vibe-modal-open .message-actions,
+body.vibe-modal-open .vibe-channel-action-menu {
+    display:none !important;
+}
+</style>
+
+<script id="vibe-global-modal-emergency-script">
+(function(){
+    "use strict";
+
+    const MODAL_SELECTORS = [
+        ".modal",
+        ".vibe-modal",
+        "#vibeChannelForwardPicker",
+        "#vibeChannelPollModal",
+        "#deleteMessageModal",
+        "#confirmModal",
+        "#channelsModal",
+        "#communitiesModal",
+        "#createChannelModal",
+        "#profileModal",
+        "#settingsModal",
+        "#friendsModal",
+        "#groupModal",
+        "#channelProfileModal"
+    ];
+
+    function visibleModal(el){
+        if(!el) return false;
+        if(el.classList.contains("hidden")) return false;
+        if(el.getAttribute("aria-hidden")==="true") return false;
+        const style=getComputedStyle(el);
+        return style.display!=="none" &&
+               style.visibility!=="hidden";
+    }
+
+    function syncModalBodyState(){
+        const any=MODAL_SELECTORS.some(selector=>
+            Array.from(document.querySelectorAll(selector))
+                .some(visibleModal)
+        );
+        document.body.classList.toggle("vibe-modal-open",any);
+    }
+
+    function forceHiddenState(el){
+        if(!el) return;
+        if(
+            el.classList.contains("hidden") ||
+            el.getAttribute("aria-hidden")==="true"
+        ){
+            el.style.setProperty("display","none","important");
+            el.style.setProperty("pointer-events","none","important");
+            el.style.setProperty("visibility","hidden","important");
+        }
+    }
+
+    function enforceModalState(){
+        document.querySelectorAll(MODAL_SELECTORS.join(",")).forEach(el=>{
+            forceHiddenState(el);
+
+            if(
+                !el.classList.contains("hidden") &&
+                el.getAttribute("aria-hidden")!=="true"
+            ){
+                el.style.removeProperty("visibility");
+                el.style.removeProperty("pointer-events");
+
+                /* Ensure actual centered overlay dimensions. */
+                if(
+                    el.matches(".modal,.vibe-modal,#vibeChannelForwardPicker")
+                ){
+                    el.style.setProperty("position","fixed","important");
+                    el.style.setProperty("inset","0","important");
+                    el.style.setProperty("align-items","center","important");
+                    el.style.setProperty("justify-content","center","important");
+                }
+            }
+        });
+
+        syncModalBodyState();
+    }
+
+    /*
+     * Wrap common Vibe close functions when they exist.
+     * The wrapper only synchronizes the modal state after the original
+     * function runs; it does not replace its logic.
+     */
+    const closeNames=[
+        "closeModal",
+        "closeDeleteModal",
+        "closeConfirmModal",
+        "closeChannelProfile",
+        "closeChannelForward",
+        "closePollModal",
+        "closeCommunitiesModal",
+        "closeChannelsModal",
+        "closeSettings",
+        "closeProfileModal"
+    ];
+
+    const wrapped=new Set();
+
+    function wrapFunctions(){
+        closeNames.forEach(name=>{
+            if(wrapped.has(name)) return;
+            if(typeof window[name]!=="function") return;
+
+            const original=window[name];
+            window[name]=function(){
+                try{
+                    return original.apply(this,arguments);
+                }finally{
+                    setTimeout(enforceModalState,0);
+                }
+            };
+            wrapped.add(name);
+        });
+    }
+
+    /* When any close button is clicked, clear stale overlays. */
+    document.addEventListener("click",function(event){
+        const close=event.target.closest?.(
+            ".modal-close,[data-close-modal],[data-modal-close],"+
+            "[aria-label='Закрыть'],[aria-label='Close']"
+        );
+
+        if(close){
+            setTimeout(enforceModalState,0);
+            setTimeout(enforceModalState,60);
+            setTimeout(enforceModalState,180);
+        }
+    },true);
+
+    /* Escape closes the top visible modal using its own close button. */
+    document.addEventListener("keydown",function(event){
+        if(event.key!=="Escape") return;
+
+        const modals=Array.from(
+            document.querySelectorAll(MODAL_SELECTORS.join(","))
+        ).filter(visibleModal);
+
+        const top=modals[modals.length-1];
+        if(!top) return;
+
+        const close=top.querySelector(
+            ".modal-close,[data-close-modal],[data-modal-close],"+
+            "[aria-label='Закрыть'],[aria-label='Close']"
+        );
+
+        if(close){
+            close.click();
+        }else{
+            top.classList.add("hidden");
+            top.setAttribute("aria-hidden","true");
+        }
+
+        setTimeout(enforceModalState,0);
+    });
+
+    const observer=new MutationObserver(()=>{
+        wrapFunctions();
+        enforceModalState();
+    });
+
+    observer.observe(document.documentElement,{
+        childList:true,
+        subtree:true,
+        attributes:true,
+        attributeFilter:["class","style","aria-hidden"]
+    });
+
+    document.addEventListener("DOMContentLoaded",()=>{
+        wrapFunctions();
+        enforceModalState();
+        setTimeout(enforceModalState,200);
+        setTimeout(enforceModalState,800);
+    });
+
+    wrapFunctions();
+    enforceModalState();
 })();
 </script>
 
