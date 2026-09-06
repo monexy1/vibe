@@ -13426,3 +13426,491 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
     }
 })();
 </script>
+
+<style id="vibe-final-channel-file-fixes">
+/* =========================================================
+   FINAL VIBE FIXES
+   - no polls in attachment menu
+   - prettier forwarding
+   - no channel/community modal returning after channel creation
+   - channel document/file posts render correctly
+========================================================= */
+
+/* Polls are removed from the UI completely. */
+#attachmentPollButton,
+#pollComposerModal {
+    display: none !important;
+}
+
+/* Pretty forwarding modal */
+#vibeForwardModal {
+    position: fixed;
+    inset: 0;
+    z-index: 50000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(4,7,18,.72);
+    backdrop-filter: blur(10px);
+}
+#vibeForwardModal.hidden { display: none !important; }
+
+.vibe-forward-card {
+    width: min(430px, calc(100vw - 28px));
+    max-height: min(680px, calc(100dvh - 28px));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: linear-gradient(145deg, var(--panel), var(--panel2));
+    box-shadow: 0 28px 90px rgba(0,0,0,.5);
+}
+
+.vibe-forward-head {
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:16px 18px;
+    border-bottom:1px solid var(--border);
+}
+
+.vibe-forward-title {
+    font-size:18px;
+    font-weight:900;
+}
+
+.vibe-forward-close {
+    width:36px;
+    height:36px;
+    border:0;
+    border-radius:11px;
+    background:var(--panel2);
+    color:var(--text);
+}
+
+.vibe-forward-search {
+    margin:12px 14px 8px;
+    width:calc(100% - 28px) !important;
+    box-sizing:border-box;
+}
+
+.vibe-forward-list {
+    padding:8px 12px 14px;
+    overflow:auto;
+}
+
+.vibe-forward-person {
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:9px 10px;
+    border:0;
+    border-radius:13px;
+    background:transparent;
+    color:var(--text);
+    text-align:left;
+}
+
+.vibe-forward-person:hover {
+    background:var(--panel2);
+}
+
+.vibe-forward-avatar {
+    width:42px;
+    height:42px;
+    min-width:42px;
+    border-radius:50%;
+    overflow:hidden;
+    display:grid;
+    place-items:center;
+    background:var(--accent);
+    color:#fff;
+    font-weight:900;
+}
+
+.vibe-forward-avatar img {
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
+
+.vibe-forward-name {
+    min-width:0;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+}
+
+.vibe-forward-name strong {
+    font-size:13px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.vibe-forward-name span {
+    color:var(--muted);
+    font-size:11px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.vibe-forward-empty {
+    padding:20px;
+    color:var(--muted);
+    text-align:center;
+    font-size:13px;
+}
+
+.channel-post-file {
+    display:flex;
+    align-items:center;
+    gap:11px;
+    margin:5px 0 8px;
+    padding:12px 13px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:var(--panel2);
+    color:var(--text);
+    text-decoration:none;
+}
+
+.channel-post-file-icon {
+    width:40px;
+    height:40px;
+    min-width:40px;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    background:rgba(139,92,246,.16);
+    color:var(--accent);
+    font-size:19px;
+}
+
+.channel-post-file-name {
+    min-width:0;
+    flex:1;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-weight:800;
+    font-size:13px;
+}
+
+.channel-post-file-type {
+    color:var(--muted);
+    font-size:10px;
+    margin-top:2px;
+}
+
+@media(max-width:520px){
+    .vibe-forward-card{
+        width:calc(100vw - 18px);
+        max-height:calc(100dvh - 18px);
+        border-radius:19px;
+    }
+}
+</style>
+
+<div id="vibeForwardModal" class="hidden" aria-hidden="true">
+    <div class="vibe-forward-card">
+        <div class="vibe-forward-head">
+            <div class="vibe-forward-title">Переслать публикацию</div>
+            <button type="button" class="vibe-forward-close" onclick="closeVibeForwardModal()">✕</button>
+        </div>
+        <input id="vibeForwardSearch" class="input vibe-forward-search" type="text" placeholder="Поиск друга...">
+        <div id="vibeForwardList" class="vibe-forward-list"></div>
+    </div>
+</div>
+
+<script id="vibe-final-channel-file-script">
+(function(){
+    "use strict";
+
+    function closeCommunityOverlays(){
+        document.getElementById("channelsModal")?.classList.add("hidden");
+        document.getElementById("communitiesModal")?.classList.add("hidden");
+        document.getElementById("createChannelModal")?.classList.add("hidden");
+    }
+
+    /* ---------------------------------------------------------
+       Channel creation: never leave the communities/channels
+       modal visible behind the newly opened channel.
+    --------------------------------------------------------- */
+    const originalCreateChannel = window.createChannel;
+    if (typeof originalCreateChannel === "function") {
+        window.createChannel = async function(){
+            try {
+                return await originalCreateChannel.apply(this, arguments);
+            } finally {
+                closeCommunityOverlays();
+            }
+        };
+    }
+
+    const originalOpenChannel = window.openChannel;
+    if (typeof originalOpenChannel === "function") {
+        window.openChannel = async function(channel){
+            closeCommunityOverlays();
+            const result = await originalOpenChannel.apply(this, arguments);
+            closeCommunityOverlays();
+            return result;
+        };
+    }
+
+    /* ---------------------------------------------------------
+       Forwarding: replace browser prompt() with a Vibe modal.
+    --------------------------------------------------------- */
+    function getForwardModal(){
+        return document.getElementById("vibeForwardModal");
+    }
+
+    window.closeVibeForwardModal = function(){
+        const modal = getForwardModal();
+        if (!modal) return;
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden","true");
+    };
+
+    function postForwardText(post){
+        if (!post) return "";
+        if (post.poll) {
+            const options = Array.isArray(post.poll.options)
+                ? post.poll.options
+                : [];
+            return "📊 Опрос\n" +
+                String(post.poll.question || "") +
+                (options.length ? "\n\n" + options.map((o,i) =>
+                    (i+1) + ". " + String(o.text || o)
+                ).join("\n") : "");
+        }
+        return String(post.text || "");
+    }
+
+    async function sendForwardTo(target, post){
+        if (!target || !post || !window.currentUser) return false;
+
+        const text = postForwardText(post);
+        const body = {
+            from: window.currentUser.login,
+            to: target,
+            type: post.media ? "attachment" : "text",
+            text: "↗️ " + text
+        };
+
+        if (post.media) {
+            body.attachment = post.media;
+            body.attachmentType = post.mediaType || "application/octet-stream";
+            body.attachmentName = "Пересланная публикация";
+        }
+
+        try {
+            const r = await fetch("/send-message", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify(body)
+            });
+
+            const d = await r.json().catch(() => ({}));
+            if (!d.success) {
+                if (typeof window.showVibeNotice === "function") {
+                    window.showVibeNotice("Не удалось переслать", d.message || "Неизвестная ошибка.");
+                } else {
+                    alert(d.message || "Не удалось переслать публикацию");
+                }
+                return false;
+            }
+
+            return true;
+        } catch {
+            if (typeof window.showVibeNotice === "function") {
+                window.showVibeNotice("Ошибка", "Не удалось связаться с сервером.");
+            } else {
+                alert("Ошибка отправки");
+            }
+            return false;
+        }
+    }
+
+    async function renderForwardFriends(){
+        const list = document.getElementById("vibeForwardList");
+        const search = document.getElementById("vibeForwardSearch");
+        if (!list || !window.currentUser) return;
+
+        list.innerHTML = `<div class="vibe-forward-empty">Загрузка друзей…</div>`;
+
+        try {
+            const r = await fetch(
+                "/friends?login=" + encodeURIComponent(window.currentUser.login)
+            );
+            const friends = r.ok ? await r.json() : [];
+
+            const draw = function(){
+                const q = String(search?.value || "").trim().toLowerCase();
+                const filtered = friends.filter(user => {
+                    const name = String(user.name || "").toLowerCase();
+                    const login = String(user.login || "").toLowerCase();
+                    return !q || name.includes(q) || login.includes(q);
+                });
+
+                list.innerHTML = "";
+
+                if (!filtered.length) {
+                    list.innerHTML = `<div class="vibe-forward-empty">${
+                        friends.length ? "Ничего не найдено" : "У тебя пока нет друзей"
+                    }</div>`;
+                    return;
+                }
+
+                filtered.forEach(user => {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "vibe-forward-person";
+
+                    const avatar = document.createElement("div");
+                    avatar.className = "vibe-forward-avatar";
+
+                    if (user.photo) {
+                        const img = document.createElement("img");
+                        img.src = user.photo;
+                        img.alt = "";
+                        avatar.appendChild(img);
+                    } else {
+                        avatar.textContent = (user.name || user.login || "?").slice(0,1).toUpperCase();
+                    }
+
+                    const text = document.createElement("div");
+                    text.className = "vibe-forward-name";
+                    text.innerHTML =
+                        `<strong>${typeof escapeHTML === "function" ? escapeHTML(user.name || user.login) : String(user.name || user.login)}</strong>` +
+                        `<span>@${typeof escapeHTML === "function" ? escapeHTML(user.login) : String(user.login)}</span>`;
+
+                    button.appendChild(avatar);
+                    button.appendChild(text);
+
+                    button.onclick = async function(){
+                        const post = window.__vibeForwardPost;
+                        button.disabled = true;
+                        button.style.opacity = ".7";
+                        const ok = await sendForwardTo(user.login, post);
+                        if (ok) closeVibeForwardModal();
+                        button.disabled = false;
+                        button.style.opacity = "";
+                    };
+
+                    list.appendChild(button);
+                });
+            };
+
+            if (search) {
+                search.value = "";
+                search.oninput = draw;
+            }
+            draw();
+        } catch {
+            list.innerHTML = `<div class="vibe-forward-empty">Не удалось загрузить друзей</div>`;
+        }
+    }
+
+    window.vibeForwardChannelPost = async function(){
+        const post = typeof selectedChannelPostForAction !== "undefined"
+            ? selectedChannelPostForAction
+            : window.__vibeSelectedChannelPost;
+
+        if (!post || !window.currentUser) return;
+
+        window.__vibeForwardPost = post;
+        const modal = getForwardModal();
+        if (!modal) return;
+
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden","false");
+        await renderForwardFriends();
+        document.getElementById("vibeForwardSearch")?.focus();
+    };
+
+    /* ---------------------------------------------------------
+       Channel document posts: render PDFs/docs/other files as a
+       proper file card instead of a blank publication.
+    --------------------------------------------------------- */
+    function enhanceChannelPostFiles(){
+        const posts = Array.isArray(window.__vibeChannelPosts)
+            ? window.__vibeChannelPosts
+            : [];
+
+        posts.forEach(post => {
+            if (!post || !post.media) return;
+
+            const item = document.querySelector(
+                '.channel-post[data-post-id="' + CSS.escape(String(post.id)) + '"]'
+            );
+            if (!item) return;
+
+            const body = item.querySelector(".channel-post-body");
+            if (!body) return;
+
+            const media = String(post.mediaType || "").toLowerCase();
+            if (media.startsWith("image/") || media.startsWith("video/")) return;
+            if (body.querySelector(".channel-post-file")) return;
+
+            const link = document.createElement("a");
+            link.className = "channel-post-file";
+            link.href = post.media;
+            link.download = post.attachmentName || post.fileName || "Файл";
+            link.target = "_blank";
+            link.rel = "noopener";
+
+            const icon = document.createElement("span");
+            icon.className = "channel-post-file-icon";
+            icon.textContent = "↧";
+
+            const wrap = document.createElement("span");
+            wrap.style.minWidth = "0";
+            wrap.style.flex = "1";
+
+            const name = document.createElement("span");
+            name.className = "channel-post-file-name";
+            name.textContent =
+                post.attachmentName ||
+                post.fileName ||
+                (media ? media.split("/").pop() : "Файл");
+
+            const type = document.createElement("span");
+            type.className = "channel-post-file-type";
+            type.textContent = media || "Файл";
+
+            wrap.appendChild(name);
+            wrap.appendChild(type);
+            link.appendChild(icon);
+            link.appendChild(wrap);
+            body.insertBefore(link, body.firstChild);
+        });
+    }
+
+    const originalLoadChannelPosts = window.loadChannelPosts;
+    if (typeof originalLoadChannelPosts === "function") {
+        window.loadChannelPosts = async function(){
+            const result = await originalLoadChannelPosts.apply(this, arguments);
+            requestAnimationFrame(enhanceChannelPostFiles);
+            setTimeout(enhanceChannelPostFiles, 80);
+            return result;
+        };
+    }
+
+    document.addEventListener("DOMContentLoaded", function(){
+        const modal = getForwardModal();
+        if (modal) {
+            modal.addEventListener("click", function(event){
+                if (event.target === modal) closeVibeForwardModal();
+            });
+        }
+    });
+})();
+</script>
+

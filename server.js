@@ -3263,38 +3263,116 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const mode = body.mode === "all" ? "all" : "self";
-                    const messages = await getPersistentMessages();
-                    const message = messages.find(m => String(m.id) === messageId);
 
-                    if (!login || !message) {
-                        sendJSON(res, { success:false, message:"Сообщение не найдено" }, 404);
+                    if (!login || !messageId) {
+                        sendJSON(res, {
+                            success:false,
+                            message:"Недостаточно данных"
+                        }, 400);
                         return;
                     }
 
+                    const messages = await getPersistentMessages();
+                    const message = messages.find(m => String(m.id) === messageId);
+
+                    if (!message) {
+                        sendJSON(res, {
+                            success:false,
+                            message:"Сообщение не найдено"
+                        }, 404);
+                        return;
+                    }
+
+                    /* Group message */
+                    if (message.groupId) {
+                        const group = getGroups().find(
+                            g => String(g.id) === String(message.groupId)
+                        );
+
+                        if (!group || !Array.isArray(group.members) || !group.members.includes(login)) {
+                            sendJSON(res, {
+                                success:false,
+                                message:"Нет доступа"
+                            }, 403);
+                            return;
+                        }
+
+                        if (mode === "all") {
+                            if (message.from !== login) {
+                                sendJSON(res, {
+                                    success:false,
+                                    message:"Удалить у всех может только отправитель"
+                                }, 403);
+                                return;
+                            }
+                            message.deletedForAll = true;
+                        } else {
+                            if (!Array.isArray(message.deletedFor)) {
+                                message.deletedFor = [];
+                            }
+                            if (!message.deletedFor.includes(login)) {
+                                message.deletedFor.push(login);
+                            }
+                        }
+
+                        await updatePersistentMessage(message);
+
+                        group.members.forEach(member => {
+                            sendToUser(member, {
+                                type:"message-deleted",
+                                messageId,
+                                mode,
+                                by:login
+                            });
+                        });
+
+                        sendJSON(res, {success:true, message});
+                        return;
+                    }
+
+                    /* Direct message */
                     if (message.from !== login && message.to !== login) {
-                        sendJSON(res, { success:false, message:"Нет доступа" }, 403);
+                        sendJSON(res, {
+                            success:false,
+                            message:"Нет доступа"
+                        }, 403);
                         return;
                     }
 
                     if (mode === "all") {
                         if (message.from !== login) {
-                            sendJSON(res, { success:false, message:"Удалить у всех может только отправитель" }, 403);
+                            sendJSON(res, {
+                                success:false,
+                                message:"Удалить у всех может только отправитель"
+                            }, 403);
                             return;
                         }
                         message.deletedForAll = true;
                     } else {
-                        if (!Array.isArray(message.deletedFor)) message.deletedFor = [];
-                        if (!message.deletedFor.includes(login)) message.deletedFor.push(login);
+                        if (!Array.isArray(message.deletedFor)) {
+                            message.deletedFor = [];
+                        }
+                        if (!message.deletedFor.includes(login)) {
+                            message.deletedFor.push(login);
+                        }
                     }
 
                     await updatePersistentMessage(message);
+
                     sendToUser(message.from, {
-                        type:"message-deleted", messageId, mode, by:login
+                        type:"message-deleted",
+                        messageId,
+                        mode,
+                        by:login
                     });
                     sendToUser(message.to, {
-                        type:"message-deleted", messageId, mode, by:login
+                        type:"message-deleted",
+                        messageId,
+                        mode,
+                        by:login
                     });
-                    sendJSON(res, { success:true, message });
+
+                    sendJSON(res, {success:true, message});
                     return;
                 }
 
