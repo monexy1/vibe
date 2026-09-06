@@ -11683,7 +11683,424 @@ autoLogin();
   </div>
 </div>
 
+
+<div id="vibeDeleteConfirmModal" class="modal hidden" aria-hidden="true">
+  <div class="vibe-delete-card">
+    <div class="vibe-delete-icon">🗑</div>
+    <div id="vibeDeleteConfirmTitle" class="vibe-delete-title">Удалить сообщение?</div>
+    <div id="vibeDeleteConfirmText" class="vibe-delete-text">Сообщение будет удалено.</div>
+    <div class="vibe-delete-actions">
+      <button type="button" onclick="cancelVibeDelete()">Отмена</button>
+      <button type="button" class="danger" onclick="confirmVibeDelete()">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<script id="vibe-final-fix-script">
+/* =========================================================
+   FINAL VIBE FIXES
+========================================================= */
+
+/* Remove the accidental quick-message feature completely. */
+function hideQuickMessagesForever() {
+    document.querySelectorAll('.quick-messages-wrap, #quickMessagesPanel, #quickMessagesButton')
+        .forEach(el => el.remove());
+}
+hideQuickMessagesForever();
+
+/* Compact calendar positioning: keep the whole month visible. */
+function positionVibeBirthdayPicker() {
+    const picker = $("vibeBirthdayPicker");
+    const anchor = $("registerBirthDateDisplay");
+    if (!picker || !anchor || picker.classList.contains("hidden")) return;
+
+    const r = anchor.getBoundingClientRect();
+    const margin = 10;
+    const gap = 7;
+    const width = Math.min(360, window.innerWidth - margin * 2);
+    picker.style.width = width + "px";
+
+    const pickerHeight = Math.min(picker.scrollHeight || picker.offsetHeight || 360, window.innerHeight - margin * 2);
+    let left = Math.max(margin, Math.min(r.left, window.innerWidth - width - margin));
+    let top = r.bottom + gap;
+
+    if (top + pickerHeight > window.innerHeight - margin) {
+        top = r.top - pickerHeight - gap;
+    }
+    if (top < margin) top = margin;
+
+    picker.style.left = Math.round(left) + "px";
+    picker.style.top = Math.round(top) + "px";
+}
+
+function toggleVibeBirthdayPicker(event) {
+    event?.stopPropagation();
+    const picker = $("vibeBirthdayPicker");
+    if (!picker) return;
+    const willOpen = picker.classList.contains("hidden");
+    if (!willOpen) {
+        picker.classList.add("hidden");
+        return;
+    }
+
+    const saved = $("registerBirthDate")?.value || "";
+    if (saved) {
+        const parts = saved.split("-").map(Number);
+        if (parts.length === 3 && parts[0] && parts[1]) {
+            vibeBirthdayView = new Date(parts[0], parts[1] - 1, 1);
+        }
+    } else {
+        const now = new Date();
+        vibeBirthdayView = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    renderVibeBirthdayPicker();
+    picker.classList.remove("hidden");
+    requestAnimationFrame(() => requestAnimationFrame(positionVibeBirthdayPicker));
+}
+
+/* Reactions are available only from the message context menu. */
+function renderMessageReactionTools() {
+    return "";
+}
+
+function openMessageActions(messageInfo, x, y) {
+    closeMessageActions();
+    if (!messageInfo || !currentUser) return;
+
+    selectedMessageForAction = messageInfo;
+
+    const menu = document.createElement("div");
+    menu.className = "message-actions";
+
+    const menuWidth = Math.min(330, innerWidth - 20);
+    let left = Number(x) || innerWidth / 2;
+    let top = Number(y) || innerHeight / 2;
+    left = Math.max(10, Math.min(left, innerWidth - menuWidth - 10));
+    top = Math.max(10, Math.min(top, innerHeight - 420));
+
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+
+    const reactions = ["❤️","👍","🔥","😁","😱","🎉","👀","💜"];
+    menu.innerHTML = `
+      <div class="message-actions-reactions" aria-label="Реакции">
+        ${reactions.map(e => `<button type="button" title="${e}" data-reaction="${escapeHTML(e)}" data-message-id="${escapeHTML(messageInfo.id)}">${e}</button>`).join("")}
+      </div>
+      <button type="button" onclick="replySelectedMessage()">${vibeIcon("reply")}<span>Ответить</span></button>
+      <button type="button" onclick="copySelectedMessage()">${vibeIcon("copy")}<span>Копировать текст</span></button>
+      <button type="button" onclick="copySelectedMessageLink()">${vibeIcon("link")}<span>Копировать ссылку на сообщение</span></button>
+      <button type="button" onclick="forwardSelectedMessage()">${vibeIcon("forward")}<span>Переслать</span></button>
+      <button type="button" onclick="reportSelectedMessage()">${vibeIcon("info")}<span>Пожаловаться</span></button>
+      <button type="button" onclick="selectSelectedMessage()">${vibeIcon("check")}<span>Выделить</span></button>
+      <div class="message-actions-divider"></div>
+      <button type="button" class="message-actions-danger" onclick="deleteSelectedMessage('${messageInfo.from === currentUser.login ? "all" : "self"}')">${vibeIcon("trash")}<span>${messageInfo.from === currentUser.login ? "Удалить у всех" : "Удалить у себя"}</span></button>
+    `;
+
+    document.body.appendChild(menu);
+
+    requestAnimationFrame(() => {
+        const rect = menu.getBoundingClientRect();
+        let nx = Math.min(Math.max(10, Number(x) || 10), innerWidth - rect.width - 10);
+        let ny = Number(y) || 10;
+        if (ny + rect.height > innerHeight - 10) ny = innerHeight - rect.height - 10;
+        if (ny < 10) ny = 10;
+        menu.style.left = Math.round(nx) + "px";
+        menu.style.top = Math.round(ny) + "px";
+    });
+}
+
+async function copySelectedMessageLink() {
+    const info = selectedMessageForAction;
+    closeMessageActions();
+    if (!info) return;
+    const link = location.origin + location.pathname + "#message-" + encodeURIComponent(info.id);
+    try { await navigator.clipboard.writeText(link); } catch {}
+}
+
+function selectSelectedMessage() {
+    const info = selectedMessageForAction;
+    closeMessageActions();
+    if (!info?.bubble) return;
+    const selection = window.getSelection();
+    const range = document.createRange();
+    range.selectNodeContents(info.bubble);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function reportSelectedMessage() {
+    closeMessageActions();
+    showVibeNotice("Жалоба", "Жалоба на сообщение будет добавлена в следующей версии.");
+}
+
+function showVibeNotice(title, text) {
+    let modal = $("vibeNoticeModal");
+    if (!modal) {
+        modal = document.createElement("div");
+        modal.id = "vibeNoticeModal";
+        modal.className = "modal";
+        modal.innerHTML = `<div class="vibe-delete-card"><div class="vibe-delete-icon">ℹ️</div><div class="vibe-delete-title"></div><div class="vibe-delete-text"></div><div class="vibe-delete-actions"><button type="button" class="danger">Понятно</button></div></div>`;
+        document.body.appendChild(modal);
+        modal.querySelector(".danger").onclick = () => modal.classList.add("hidden");
+    }
+    modal.querySelector(".vibe-delete-title").textContent = title;
+    modal.querySelector(".vibe-delete-text").textContent = text;
+    modal.classList.remove("hidden");
+}
+
+let vibeDeleteMode = "";
+let vibeDeleteMessage = null;
+
+function deleteSelectedMessage(mode) {
+    const info = selectedMessageForAction;
+    closeMessageActions();
+    if (!info || !currentUser) return;
+
+    vibeDeleteMode = mode || "self";
+    vibeDeleteMessage = info;
+
+    const title = $("vibeDeleteConfirmTitle");
+    const text = $("vibeDeleteConfirmText");
+    if (vibeDeleteMode === "all") {
+        title.textContent = "Удалить сообщение у всех?";
+        text.textContent = "Сообщение будет удалено у тебя и у собеседника.";
+    } else {
+        title.textContent = "Удалить сообщение?";
+        text.textContent = "Сообщение исчезнет из твоего чата.";
+    }
+    $("vibeDeleteConfirmModal").classList.remove("hidden");
+}
+
+function cancelVibeDelete() {
+    $("vibeDeleteConfirmModal")?.classList.add("hidden");
+    vibeDeleteMode = "";
+    vibeDeleteMessage = null;
+}
+
+async function confirmVibeDelete() {
+    const info = vibeDeleteMessage;
+    const mode = vibeDeleteMode;
+    cancelVibeDelete();
+    if (!info || !currentUser) return;
+
+    try {
+        const r = await fetch("/delete-message", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({login:currentUser.login,messageId:info.id,mode})
+        });
+        const d = await r.json();
+        if (!d.success) {
+            showVibeNotice("Не удалось удалить", d.message || "Ошибка удаления сообщения.");
+            return;
+        }
+        if (currentGroup) await loadGroupMessages(false);
+        else await loadMessages(false);
+        await loadChats();
+    } catch {
+        showVibeNotice("Ошибка", "Не удалось связаться с сервером.");
+    }
+}
+
+/* Make logout close every overlay before switching to auth. */
+function logout() {
+    [
+        "settingsModal","profileModal","registerModal","changePasswordModal",
+        "channelsModal","communitiesModal","createChannelModal","channelProfileModal",
+        "groupManageModal","friendRequestsModal","incomingCallModal","pollComposerModal",
+        "attachmentPreviewModal","vibeDeleteConfirmModal","vibeNoticeModal"
+    ].forEach(id => $(id)?.classList.add("hidden"));
+    closeVibeBirthdayPicker();
+    closeMessageActions();
+    selectedMessageForAction = null;
+    vibeDeleteMessage = null;
+    vibeDeleteMode = "";
+
+    try { localStorage.removeItem("vibeLogin"); localStorage.removeItem("vibeUser"); } catch {}
+    try { sessionStorage.removeItem("vibeLogin"); sessionStorage.removeItem("vibeUser"); } catch {}
+    try { localStorage.removeItem("vibeReadCounts"); localStorage.removeItem("vibeChannelReadCounts"); } catch {}
+
+    if (socket) { try { socket.close(); } catch {} socket = null; }
+    if (chatTimer) { clearInterval(chatTimer); chatTimer = null; }
+    try { endCallUI(); } catch {}
+
+    currentUser = null;
+    currentChat = "";
+    currentChannel = null;
+    currentGroup = null;
+    chats = [];
+    friends = [];
+    channels = [];
+    readMessageCounts = {};
+    readChannelCounts = {};
+
+    $("app")?.classList.add("hidden");
+    $("authScreen")?.classList.remove("hidden");
+    $("loginInput") && ($("loginInput").value = "");
+    $("passwordInput") && ($("passwordInput").value = "");
+    document.body.classList.remove("booting");
+    document.body.classList.add("logged-out");
+    requestAnimationFrame(() => document.body.classList.remove("logged-out"));
+}
+
+/* Keep auth hidden during boot and reveal it only when no saved session exists. */
+(function hardenAuthStartup(){
+    const revealAuthIfNeeded = () => {
+        const saved = getSavedLoginState();
+        if (!saved.cachedUser && !saved.cachedLogin) {
+            $("authScreen")?.classList.remove("hidden");
+            $("app")?.classList.add("hidden");
+            document.body.classList.remove("booting");
+        }
+    };
+    setTimeout(revealAuthIfNeeded, 0);
+})();
+
+window.addEventListener("resize", () => {
+    positionVibeBirthdayPicker();
+});
+window.addEventListener("scroll", () => {
+    positionVibeBirthdayPicker();
+}, true);
+</script>
+
 </body>
+
+
+<style id="vibe-final-fixes">
+/* =========================================================
+   FINAL VIBE FIXES — reactions / quick messages / birthday / modals
+========================================================= */
+.quick-messages-wrap,
+#quickMessagesPanel,
+#quickMessagesButton { display:none !important; }
+
+/* Context menu with reactions on top */
+.message-actions {
+    position:fixed !important;
+    z-index:10000 !important;
+    width:min(330px, calc(100vw - 20px)) !important;
+    min-width:0 !important;
+    max-width:calc(100vw - 20px) !important;
+    padding:7px !important;
+    border:1px solid var(--border) !important;
+    border-radius:16px !important;
+    background:var(--panel) !important;
+    color:var(--text) !important;
+    box-shadow:0 22px 65px rgba(0,0,0,.48) !important;
+    backdrop-filter:blur(18px);
+}
+.message-actions-reactions {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    padding:4px 3px 7px;
+    margin-bottom:4px;
+    border-bottom:1px solid var(--border);
+}
+.message-actions-reactions button {
+    width:40px !important;
+    height:38px !important;
+    min-width:40px !important;
+    padding:0 !important;
+    display:grid !important;
+    place-items:center !important;
+    border:0 !important;
+    border-radius:11px !important;
+    background:transparent !important;
+    color:var(--text) !important;
+    font-size:21px !important;
+    cursor:pointer;
+}
+.message-actions-reactions button:hover { background:var(--panel2) !important; transform:none !important; }
+.message-actions-divider { height:1px; background:var(--border); margin:4px 0; }
+.message-actions > button {
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+    width:100% !important;
+    min-height:40px !important;
+    padding:9px 11px !important;
+    border:0 !important;
+    background:transparent !important;
+    color:var(--text) !important;
+    text-align:left !important;
+    border-radius:10px !important;
+    font-size:13px !important;
+}
+.message-actions > button:hover { background:var(--panel2) !important; }
+.message-actions > button .vibe-icon { width:19px; min-width:19px; height:19px; }
+.message-actions > button .vibe-icon svg { width:19px; height:19px; }
+.message-actions-danger { color:#ff9a9a !important; }
+
+/* Compact Vibe birthday calendar */
+.vibe-birthday-picker {
+    width:min(360px, calc(100vw - 20px)) !important;
+    max-width:calc(100vw - 20px) !important;
+    padding:10px !important;
+    border-radius:17px !important;
+    max-height:min(390px, calc(100dvh - 24px)) !important;
+    overflow:hidden !important;
+}
+.vibe-birthday-head { grid-template-columns:36px 1fr 36px !important; gap:6px !important; margin-bottom:6px !important; }
+.vibe-birthday-head button { min-height:32px !important; height:32px !important; }
+.vibe-birthday-head > div { font-size:13px !important; }
+.vibe-birthday-week { margin-bottom:2px !important; font-size:9px !important; }
+.vibe-birthday-days { gap:2px !important; }
+.vibe-birthday-day {
+    min-height:0 !important;
+    height:34px !important;
+    aspect-ratio:auto !important;
+    border-radius:9px !important;
+    font-size:12px !important;
+}
+.vibe-birthday-footer { margin-top:6px !important; }
+.vibe-birthday-footer button { min-height:32px !important; padding:6px 10px !important; }
+@media(max-width:750px){
+    .vibe-birthday-picker {
+        width:calc(100vw - 20px) !important;
+        max-width:calc(100vw - 20px) !important;
+        padding:9px !important;
+    }
+    .vibe-birthday-day { height:36px !important; font-size:12px !important; }
+}
+@media(max-width:390px){
+    .vibe-birthday-day { height:32px !important; font-size:11px !important; }
+    .vibe-birthday-head > div { font-size:12px !important; }
+}
+
+/* Custom Vibe delete confirmation */
+#vibeDeleteConfirmModal { z-index:12000 !important; }
+.vibe-delete-card {
+    width:min(410px, calc(100vw - 28px));
+    padding:22px;
+    border-radius:22px;
+    background:linear-gradient(145deg,var(--panel),var(--panel2));
+    border:1px solid var(--border);
+    box-shadow:0 28px 90px rgba(0,0,0,.55);
+}
+.vibe-delete-icon {
+    width:48px;height:48px;border-radius:15px;
+    display:grid;place-items:center;
+    margin-bottom:13px;
+    background:rgba(239,68,68,.13);
+    color:#ff8f8f;
+    font-size:23px;
+}
+.vibe-delete-title { font-size:19px;font-weight:900;margin-bottom:7px; }
+.vibe-delete-text { color:var(--muted);font-size:13px;line-height:1.45; }
+.vibe-delete-actions { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:18px; }
+.vibe-delete-actions button { min-height:42px;border:0;border-radius:12px;font-weight:800;background:var(--panel);color:var(--text); }
+.vibe-delete-actions .danger { background:#ef4444;color:#fff; }
+
+/* Never show native date input/calendar in profile/birthday where Vibe picker is used */
+#registerBirthDate { display:none !important; }
+
+/* Prevent a tiny auth flash during startup */
+body.booting #authScreen, body.booting #app { visibility:hidden !important; }
+</style>
 
 </html>
 <style>
