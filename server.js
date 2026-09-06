@@ -212,6 +212,65 @@ async function getSupabaseUser(login) {
     return data || null;
 }
 
+
+async function getSupabaseUsersMap() {
+    const { data, error } = await supabase
+        .from("users")
+        .select("*");
+
+    if (error) {
+        console.error("Supabase users list error:", error.message);
+        return new Map();
+    }
+
+    const map = new Map();
+
+    (Array.isArray(data) ? data : []).forEach(row => {
+        if (row && row.login) {
+            map.set(String(row.login), row);
+        }
+    });
+
+    return map;
+}
+
+function supabaseRowToLocalUser(row) {
+    if (!row) return null;
+
+    const user = {
+        login: row.login || "",
+        password: row.password || "",
+        friends: [],
+        friendRequestsIncoming: [],
+        friendRequestsOutgoing: [],
+        contacts: [],
+        blockedUsers: [],
+        profile: {
+            name: row.name || row.login || "",
+            about: row.about || "",
+            photo: row.photo || "",
+            background: row.background || "",
+            messageStyle: "classic",
+            language: row.language === "en" ? "en" : "ru",
+            birthDate: row.birth_date || "",
+            email: row.email || "",
+            privacy: {
+                profile: "everyone",
+                birthDate: "friends",
+                age: "friends",
+                photo: "everyone",
+                about: "everyone",
+                allowFriendRequests: "everyone",
+                showOnline: true
+            }
+        }
+    };
+
+    normalizeUser(user);
+    return user;
+}
+
+
 async function createSupabaseUser(user) {
     const profile = user.profile || {};
 
@@ -2655,15 +2714,39 @@ const server =
                             url.searchParams.get(
                                 "login"
                             ) || ""
-                        );
+                        ).trim();
 
 
-                    const messages =
-                        await getPersistentMessages();
+                    if (!login) {
+                        sendJSON(res, []);
+                        return;
+                    }
 
 
-                    const users =
+                    // Load messages and all Supabase users in parallel.
+                    // This is important on Render: the other user may not
+                    // exist in users.json after a deploy, even though the
+                    // account is already registered in Supabase.
+                    const [messages, supabaseUsers] =
+                        await Promise.all([
+                            getPersistentMessages(),
+                            getSupabaseUsersMap()
+                        ]);
+
+
+                    const localUsers =
                         getUsers();
+
+
+                    const localUsersMap =
+                        new Map(
+                            localUsers.map(
+                                user => [
+                                    String(user.login),
+                                    user
+                                ]
+                            )
+                        );
 
 
                     const map =
@@ -2687,6 +2770,11 @@ const server =
                                     : message.from;
 
 
+                            if (!other || other === login) {
+                                return;
+                            }
+
+
                             const previous =
                                 map.get(other);
 
@@ -2697,7 +2785,7 @@ const server =
                                     message.time
                                 ) >
                                 new Date(
-                                    previous.lastTime
+                                    previous.time
                                 )
                             ) {
 
@@ -2717,14 +2805,23 @@ const server =
                             .map(
                                 ([other, last]) => {
 
-                                    const user =
-                                        users.find(
-                                            item =>
-                                                item.login ===
-                                                other
-                                        );
+                                    // Prefer the local record because it
+                                    // contains friends/contacts/privacy
+                                    // state. If it is missing, fall back to
+                                    // the persistent Supabase account.
+                                    let user =
+                                        localUsersMap.get(other);
+
+                                    if (!user) {
+                                        user =
+                                            supabaseRowToLocalUser(
+                                                supabaseUsers.get(other)
+                                            );
+                                    }
 
 
+                                    // A message can only be shown as a chat
+                                    // when we can resolve the recipient.
                                     if (!user) {
                                         return null;
                                     }
@@ -2746,8 +2843,12 @@ const server =
                                             "voice"
                                                 ? "🎙 Голосовое сообщение"
                                                 : (
-                                                    last.text ||
-                                                    ""
+                                                    last.type === "attachment"
+                                                        ? "📎 " + (last.attachmentName || "Вложение")
+                                                        : (
+                                                            last.text ||
+                                                            ""
+                                                        )
                                                 ),
 
                                         lastTime:
@@ -2763,7 +2864,14 @@ const server =
                                                 m.from === other &&
                                                 m.to === login &&
                                                 !m.deletedForAll &&
-                                                !(Array.isArray(m.deletedFor) && m.deletedFor.includes(login))
+                                                !(
+                                                    Array.isArray(
+                                                        m.deletedFor
+                                                    ) &&
+                                                    m.deletedFor.includes(
+                                                        login
+                                                    )
+                                                )
                                             ).length
                                     };
                                 }
