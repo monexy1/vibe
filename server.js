@@ -3330,7 +3330,8 @@ const server =
                                 postId:String(body.forwardedFrom.postId || ""),
                                 name:String(body.forwardedFrom.name || "").slice(0,120),
                                 username:String(body.forwardedFrom.username || "").slice(0,40),
-                                photo:String(body.forwardedFrom.photo || "").slice(0,2000000)
+                                photo:String(body.forwardedFrom.photo || "").slice(0,2000000),
+                                text:String(body.forwardedFrom.text || "").slice(0,5000)
                             }
                             : null;
 
@@ -3375,7 +3376,8 @@ const server =
 
                     if (
                         type === "text" &&
-                        !text
+                        !text &&
+                        !forwardedFrom
                     ) {
 
                         sendJSON(
@@ -4643,25 +4645,61 @@ const server =
                     const channels=getNormalizedChannels();
                     const channel=channels.find(c=>String(c.id)===channelId);
                     if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
+                    if(!login || !findUser(login)){sendJSON(res,{success:false,message:"Пользователь не найден"},404);return;}
                     if(!channel.subscribers.includes(login)){sendJSON(res,{success:false,message:"Подпишись на канал, чтобы голосовать"},403);return;}
                     const posts=readJSON(CHANNEL_POSTS_FILE);
                     const post=posts.find(p=>String(p.id)===postId&&String(p.channelId)===channelId&&p.poll);
                     if(!post){sendJSON(res,{success:false,message:"Опрос не найден"},404);return;}
-                    if(!post.poll.voters||typeof post.poll.voters!=="object")post.poll.voters={};
-                    if(!Array.isArray(post.poll.options))post.poll.options=[];
-                    const option=post.poll.options.find(o=>String(o.id)===optionId);
+
+                    const poll=post.poll;
+                    if(!Array.isArray(poll.options))poll.options=[];
+                    if(!poll.voters || typeof poll.voters!=="object" || Array.isArray(poll.voters))poll.voters={};
+                    const option=poll.options.find(o=>String(o.id)===optionId);
                     if(!option){sendJSON(res,{success:false,message:"Вариант ответа не найден"},400);return;}
-                    const previous=post.poll.voters[login];
-                    if(previous===undefined||String(previous)!==optionId){
-                        if(previous!==undefined){const prev=post.poll.options.find(o=>String(o.id)===String(previous));if(prev)prev.votes=Math.max(0,Number(prev.votes||0)-1);}
-                        option.votes=Number(option.votes||0)+1;
-                        post.poll.voters[login]=optionId;
-                        saveJSON(CHANNEL_POSTS_FILE,posts);
+
+                    const previous=poll.voters[login];
+                    const previousIds=Array.isArray(previous) ? previous.map(String) : (previous!==undefined && previous!==null && previous!=="" ? [String(previous)] : []);
+                    const multiple=poll.multiple===true;
+                    const allowChange=poll.allowChange!==false;
+
+                    if(previousIds.length && !allowChange){
+                        sendJSON(res,{success:false,message:"Изменение ответа в этом опросе отключено",post},409);
+                        return;
                     }
+
+                    let nextIds=[];
+                    if(multiple){
+                        nextIds=previousIds.slice();
+                        const idx=nextIds.indexOf(optionId);
+                        if(idx>=0){
+                            nextIds.splice(idx,1);
+                            option.votes=Math.max(0,Number(option.votes||0)-1);
+                        }else{
+                            nextIds.push(optionId);
+                            option.votes=Number(option.votes||0)+1;
+                        }
+                    }else{
+                        nextIds=[optionId];
+                        const oldId=previousIds[0]||"";
+                        if(oldId && oldId!==optionId){
+                            const previousOption=poll.options.find(o=>String(o.id)===oldId);
+                            if(previousOption)previousOption.votes=Math.max(0,Number(previousOption.votes||0)-1);
+                        }
+                        if(oldId!==optionId){
+                            option.votes=Number(option.votes||0)+1;
+                        }
+                    }
+
+                    if(multiple){
+                        if(nextIds.length)poll.voters[login]=nextIds;
+                        else delete poll.voters[login];
+                    }else{
+                        poll.voters[login]=nextIds[0]||"";
+                    }
+                    saveJSON(CHANNEL_POSTS_FILE,posts);
                     (channel.subscribers||[]).forEach(s=>sendToUser(s,{type:"channel-poll-vote",channelId,postId,post}));
                     sendJSON(res,{success:true,post}); return;
                 }
-
 
                 /* =====================================================
                    PERSISTENT CHANNEL PIN
@@ -5054,12 +5092,21 @@ const server =
                         const optionTexts = (Array.isArray(rawPoll.options) ? rawPoll.options : [])
                             .map(v => typeof v === "string" ? v : String(v?.text || ""))
                             .map(v => v.trim().slice(0,120))
-                            .filter(Boolean).slice(0,10);
+                            .filter(Boolean).slice(0,12);
                         if (!question || optionTexts.length < 2) {
                             sendJSON(res,{success:false,message:"Для опроса нужен вопрос и минимум 2 варианта ответа"},400);
                             return;
                         }
-                        poll = { question, options:optionTexts.map((text,i)=>({id:String(i+1),text,votes:0})), voters:{}, multiple:false };
+                        const rawSettings = rawPoll.settings && typeof rawPoll.settings === "object" ? rawPoll.settings : rawPoll;
+                        poll = {
+                            question,
+                            options:optionTexts.slice(0,12).map((text,i)=>({id:String(i+1),text,votes:0})),
+                            voters:{},
+                            anonymous: rawSettings.anonymous !== false,
+                            multiple: rawSettings.multiple === true,
+                            allowChange: rawSettings.allowChange !== false,
+                            randomOrder: rawSettings.randomOrder === true
+                        };
                     }
 
                     if (
