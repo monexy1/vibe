@@ -3327,9 +3327,11 @@ const server =
                             ? {
                                 type:String(body.forwardedFrom.type || ""),
                                 id:String(body.forwardedFrom.id || ""),
+                                postId:String(body.forwardedFrom.postId || ""),
                                 name:String(body.forwardedFrom.name || "").slice(0,120),
                                 username:String(body.forwardedFrom.username || "").slice(0,40),
-                                photo:String(body.forwardedFrom.photo || "").slice(0,2000000)
+                                photo:String(body.forwardedFrom.photo || "").slice(0,2000000),
+                                caption:String(body.forwardedFrom.caption || "").slice(0,1000)
                             }
                             : null;
 
