@@ -12991,6 +12991,144 @@ body.vibe-group-admin #mobileAttachmentMenu #attachmentPollButton{display:flex !
 })();
 </script>
 
+
+
+<style id="vibe-groups-v10-fix-style">
+/* Reliable group message menu trigger. */
+.vibe-group-action-menu{z-index:2147483000!important;pointer-events:auto!important;}
+</style>
+<script id="vibe-groups-v10-fix-script">
+(function(){
+  "use strict";
+  const RX=["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩","🥳","😇","🤝","🚀","💥","⭐","✅","❌","❤️‍🔥","🤣","😴","😡","😅","😆","😉","😊","🙂","🙃","😌","😏","😒","🙄","😬","😳","🥹","😎","🤗","🤭","🤫","🫡","🫶","💖","💙","💚","💛","🧡","🖤","🤍","💔","✨","🎯","👏🏻","👍🏻"];
+  const esc=v=>typeof escapeHTML==='function'?escapeHTML(String(v??'')):String(v??'');
+  const txt=m=>String(m?.text||m?.attachmentName||(m?.type==='voice'?'Голосовое сообщение':m?.type==='poll'?'Опрос':'Сообщение')).replace(/\s+/g,' ').trim()||'Сообщение';
+  const isAdmin=()=>!!(currentGroup&&currentUser&&Array.isArray(currentGroup.admins)&&currentGroup.admins.includes(currentUser.login));
+
+  async function fetchGroupMessage(id,bubble){
+    try{
+      const r=await fetch('/message?messageId='+encodeURIComponent(id)+'&login='+encodeURIComponent(currentUser.login),{cache:'no-store'});
+      if(r.ok){const d=await r.json(); if(d?.success&&d.message)return d.message;}
+    }catch{}
+    return {
+      id:String(id),
+      from:bubble?.dataset.messageFrom||'',
+      groupId:currentGroup?.id||'',
+      text:bubble?.querySelector('.attachment-caption')?.textContent||bubble?.querySelector(':scope > div:not(.group-sender):not(.message-time):not(.message-reactions):not(.message-reaction-tools)')?.textContent||''
+    };
+  }
+
+  function close(){document.querySelectorAll('.vibe-v10-group-menu,.vibe-group-action-menu').forEach(x=>x.remove());}
+
+  function openGroupActions(bubble,x,y){
+    if(!currentGroup||!currentUser||!bubble)return;
+    const id=String(bubble.dataset.messageId||''); if(!id)return;
+    close();
+    fetchGroupMessage(id,bubble).then(info=>{
+      if(!currentGroup||String(info.groupId||currentGroup.id)!==String(currentGroup.id))return;
+      selectedMessageForAction={id:info.id,from:info.from,bubble,text:info.text||'',groupId:currentGroup.id};
+      const own=String(info.from)===String(currentUser.login);
+      const m=document.createElement('div');
+      m.className='message-actions vibe-reference-message-actions vibe-group-action-menu vibe-v10-group-menu';
+      m.innerHTML=`
+        <div class="message-actions-reactions" style="max-width:100%;overflow:hidden;display:grid;grid-template-columns:repeat(8,1fr);gap:2px;">
+          ${RX.slice(0,8).map(e=>`<button type="button" data-v10-rx="${esc(e)}" title="${esc(e)}">${e}</button>`).join('')}
+          <button type="button" title="Все реакции" data-v10-more>›</button>
+        </div>
+        <div class="v10-all-reactions hidden" style="display:none;grid-template-columns:repeat(8,1fr);gap:2px;padding:4px 2px 6px;border-bottom:1px solid var(--border);max-height:180px;overflow:auto;">
+          ${RX.map(e=>`<button type="button" data-v10-rx="${esc(e)}" title="${esc(e)}">${e}</button>`).join('')}
+        </div>
+        <button type="button" data-v10="reply">${vibeIcon('reply')}<span>Ответить</span></button>
+        ${own ? `<button type="button" data-v10="edit">${vibeIcon('edit')}<span>Изменить</span></button>` : ''}
+        ${isAdmin() ? `<button type="button" data-v10="pin">${vibeIcon('pin')}<span>${info.pinned?'Открепить':'Закрепить'}</span></button>` : ''}
+        <button type="button" data-v10="copy">${vibeIcon('copy')}<span>Копировать текст</span></button>
+        <button type="button" data-v10="forward">${vibeIcon('forward')}<span>Переслать</span></button>
+        ${own ? `<button type="button" class="message-actions-danger" data-v10="delete">${vibeIcon('trash')}<span>Удалить</span></button>` : ''}
+      `;
+      document.body.appendChild(m);
+      const place=()=>{const r=m.getBoundingClientRect();const nx=Math.max(8,Math.min(Number(x)||8,innerWidth-r.width-8));const ny=Math.max(8,Math.min(Number(y)||8,innerHeight-r.height-8));m.style.left=Math.round(nx)+'px';m.style.top=Math.round(ny)+'px';};
+      place(); requestAnimationFrame(place);
+      m.addEventListener('click',async ev=>{
+        const more=ev.target.closest('[data-v10-more]');
+        if(more){const panel=m.querySelector('.v10-all-reactions');if(panel){panel.style.display=panel.style.display==='grid'?'none':'grid';}return;}
+        const rb=ev.target.closest('[data-v10-rx]');
+        if(rb){
+          try{
+            const r=await fetch('/message-reaction',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,messageId:info.id,emoji:rb.dataset.v10Rx})});
+            const d=await r.json(); if(!d.success) showVibeNotice?.('Реакция',d.message||'Не удалось поставить реакцию');
+          }catch{showVibeNotice?.('Реакция','Ошибка соединения');}
+          m.remove(); await loadGroupMessages(false); return;
+        }
+        const a=ev.target.closest('[data-v10]'); if(!a)return;
+        const k=a.dataset.v10;
+        if(k==='reply'){m.remove(); selectedMessageForAction={id:info.id,from:info.from,bubble,text:info.text||'',groupId:currentGroup.id}; await replySelectedMessage(); return;}
+        if(k==='edit'){m.remove(); selectedMessageForAction={id:info.id,from:info.from,bubble,text:info.text||'',groupId:currentGroup.id}; await window.vibeEditGroupMessage(info); return;}
+        if(k==='copy'){try{await navigator.clipboard.writeText(String(info.text||''));}catch{}m.remove();return;}
+        if(k==='forward'){m.remove();await window.vibeForwardGroupMessage(info);return;}
+        if(k==='delete'){m.remove();selectedMessageForAction={id:info.id,from:info.from,bubble,text:info.text||'',groupId:currentGroup.id};deleteSelectedMessage('all');return;}
+        if(k==='pin'){
+          m.remove();
+          const r=await fetch('/group-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,groupId:currentGroup.id,messageId:info.pinned?'':info.id})}).catch(()=>null);
+          const d=r?.ok?await r.json().catch(()=>({})):{};
+          if(!d.success){showVibeNotice?.('Закрепление',d.message||'Не удалось изменить закрепление');return;}
+          currentGroup.pinnedMessageId=d.pinnedMessageId||''; await loadGroupMessages(false); return;
+        }
+      });
+    });
+  }
+
+  window.vibeEditGroupMessage=async function(info){
+    if(!info||!currentUser||String(info.from)!==String(currentUser.login))return;
+    const existing=document.getElementById('vibeEditMessageModal');
+    if(existing)existing.remove();
+    const modal=document.createElement('div');modal.id='vibeEditMessageModal';modal.className='modal';
+    modal.innerHTML=`<div class="modal-card" style="max-width:560px"><div class="modal-header"><div><div class="modal-title">Редактирование</div><div class="modal-subtitle">Изменение сообщения</div></div><button class="modal-close" type="button" data-cancel>✕</button></div><textarea id="vibeEditMessageInput" class="community-field community-textarea" style="min-height:130px;resize:vertical"></textarea><div class="modal-actions"><button type="button" class="primary" data-save>Сохранить</button><button type="button" data-cancel>Отмена</button></div></div>`;
+    document.body.appendChild(modal);modal.classList.remove('hidden');
+    const input=modal.querySelector('#vibeEditMessageInput');input.value=String(info.text||'');input.focus();input.setSelectionRange(input.value.length,input.value.length);
+    modal.querySelectorAll('[data-cancel]').forEach(b=>b.onclick=()=>modal.remove());
+    modal.querySelector('[data-save]').onclick=async()=>{
+      const next=input.value.trim();if(!next){showVibeNotice?.('Изменение','Сообщение не может быть пустым');return;}
+      const r=await fetch('/edit-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,messageId:info.id,text:next})}).catch(()=>null);
+      const d=r?.ok?await r.json().catch(()=>({})):{};
+      if(!d.success){showVibeNotice?.('Изменение',d.message||'Не удалось изменить сообщение');return;}
+      modal.remove();await loadGroupMessages(false);
+    };
+  };
+
+  window.vibeForwardGroupMessage=async function(info){
+    if(!info||!currentUser||!currentGroup)return;
+    const target=prompt('Введите @логин пользователя, которому переслать сообщение:');
+    if(!target)return;
+    const to=String(target).trim().replace(/^@+/,'');if(!to)return;
+    const r=await fetch('/send-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:currentUser.login,to,text:'',forwardedFrom:{type:'group',id:currentGroup.id,groupId:currentGroup.id,messageId:info.id,name:currentGroup.name,username:currentGroup.username||'',photo:currentGroup.photo||'',text:txt(info)}})}).catch(()=>null);
+    const d=r?.ok?await r.json().catch(()=>({})):{};
+    if(!d.success){showVibeNotice?.('Пересылка',d.message||'Не удалось переслать сообщение');return;}
+    showVibeNotice?.('Пересылка','Сообщение отправлено');
+  };
+
+  /* Right-button mouse handling is more reliable than relying only on contextmenu. */
+  document.addEventListener('mousedown',function(e){
+    if(e.button!==2||!currentGroup)return;
+    const b=e.target.closest?.('.message[data-group-id]');
+    if(!b||String(b.dataset.groupId)!==String(currentGroup.id))return;
+    e.preventDefault();e.stopPropagation();
+    openGroupActions(b,e.clientX,e.clientY);
+  },true);
+
+  /* Also support a normal tap on group messages without interfering with buttons/links. */
+  document.addEventListener('click',function(e){
+    if(!currentGroup||e.target.closest?.('.message-actions')||e.target.closest?.('button,a,input,textarea,video,audio'))return;
+    const b=e.target.closest?.('.message[data-group-id]');
+    if(!b||String(b.dataset.groupId)!==String(currentGroup.id))return;
+    const recentRight=window.__vibeRightGroupClick;
+    if(recentRight&&Date.now()-recentRight<650)return;
+    e.preventDefault();openGroupActions(b,e.clientX,e.clientY);
+  },false);
+
+  document.addEventListener('mousedown',e=>{if(e.button===2&&currentGroup){const b=e.target.closest?.('.message[data-group-id]');if(b){window.__vibeRightGroupClick=Date.now();}}},false);
+})();
+</script>
+
 </body>
 
 
