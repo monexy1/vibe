@@ -3280,6 +3280,22 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
     border-color:var(--accent);
     color:var(--accent);
 }
+
+/* V13: polished top navigation icons */
+.side-top .icon-btn{
+    width:44px;
+    height:44px;
+    border-radius:13px;
+    display:grid;
+    place-items:center;
+    background:linear-gradient(145deg,rgba(139,92,246,.17),rgba(37,99,235,.10));
+    border:1px solid rgba(255,255,255,.07);
+    box-shadow:0 6px 16px rgba(0,0,0,.16), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.side-top .icon-btn:hover{transform:translateY(-1px);border-color:rgba(139,92,246,.55);}
+.side-top .icon-btn .vibe-icon{width:21px;height:21px;color:#e9e7ff;}
+.side-top .icon-btn .vibe-icon svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;}
+
 </style>
 
 </head>
@@ -3390,7 +3406,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     title="Группы и каналы"
                     aria-label="Группы и каналы"
                 >
-                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 7.2A2.7 2.7 0 0 1 7.5 4.5h6l5.7 5.7v6.3a2.8 2.8 0 0 1-2.8 2.8H7.6a2.8 2.8 0 0 1-2.8-2.8Z"/><path d="M13.4 4.8v4.1a1.7 1.7 0 0 0 1.7 1.7h4.1M8.2 15.6h7.6M12 11.8v7.6"/></svg></span>
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19.5c.6-3.4 2.5-5.2 5.5-5.2s4.9 1.8 5.5 5.2M14.5 15c2.5-.5 5 1.1 5.8 3.8"/></svg></span>
                 </button>
 
                 <button
@@ -3400,7 +3416,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     title="Настройки"
                     aria-label="Настройки"
                 >
-                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8l1 .2.6 2a6.4 6.4 0 0 1 1.7 1l2-.6 1.1 1.9-1.4 1.6c.2.6.3 1.2.3 1.9s-.1 1.3-.3 1.9l1.4 1.6-1.1 1.9-2-.6a6.4 6.4 0 0 1-1.7 1l-.6 2-2 .2-.6-2a6.4 6.4 0 0 1-1.7-1l-2 .6-1.1-1.9 1.4-1.6a6.4 6.4 0 0 1-.3-1.9c0-.7.1-1.3.3-1.9L4 8.3l1.1-1.9 2 .6a6.4 6.4 0 0 1 1.7-1l.6-2 2-.2Z"/><circle cx="12" cy="11.8" r="2.4"/></svg></span></button>
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M4 17h16M14 7h6M4 12h16"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="15" cy="17" r="2"/></svg></span></button>
 
                 <button
                     class="icon-btn mobile-help-button"
@@ -3695,7 +3711,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
         </div>
 
-        <select id="registerLanguage"><option value="ru">Русский</option><option value="en">English</option>
+        <select id="registerLanguage" onchange="changeRegisterLanguage()"><option value="ru">Русский</option><option value="en">English</option>
 
         </select>
 
@@ -5210,6 +5226,223 @@ let siteLanguage =
     localStorage.getItem("vibeLanguage") ||
     "ru";
 
+/* =========================================================
+   FULL UI TRANSLATION LAYER
+   Keeps the Russian source text as the canonical key and
+   translates static + dynamically inserted UI text/labels.
+========================================================= */
+const uiTranslations = {
+    "Твой новый мессенджер":"Your new messenger",
+    "Русский":"Russian",
+    "Войти":"Log in",
+    "Создать аккаунт":"Create account",
+    "Введите логин":"Enter username",
+    "Введите пароль":"Enter password",
+    "Поиск людей...":"Search people...",
+    "Написать сообщение...":"Write a message...",
+    "Настройки":"Settings",
+    "Каналы":"Channels",
+    "Выйти":"Log out",
+    "Профиль":"Profile",
+    "Группы и каналы":"Groups and channels",
+    "Как пользоваться Vibe":"How to use Vibe",
+    "Показать пароль":"Show password",
+    "Скрыть пароль":"Hide password",
+    "Фото":"Photo","Файл":"File","Отправить":"Send","Отменить":"Cancel",
+    "Публикация переслана":"Post forwarded","Переслано из":"Forwarded from",
+    "ОСТАВЛЯЕМ ТОЛЬКО ВЕРХНЮЮ КНОПКУ НАСТРОЕК":"KEEP ONLY THE TOP SETTINGS BUTTON",
+    "Выберите чат":"Select a chat",
+    "Подключение...":"Connecting...",
+    "Добро пожаловать в Vibe":"Welcome to Vibe",
+    "Здесь можно общаться, отправлять фото, GIF, файлы и голосовые сообщения.":"Chat here, send photos, GIFs, files and voice messages.",
+    "Найти человека":"Find a person",
+    "Начать новый чат":"Start a new chat",
+    "Создать":"Create",
+    "Группу или канал":"A group or channel",
+    "Как пользоваться":"How to use",
+    "Короткая инструкция Vibe":"Quick Vibe guide",
+    "Ответ на сообщение":"Reply to a message",
+    "Фото или видео":"Photo or video",
+    "Документ":"Document",
+    "Опрос":"Poll",
+    "Привет! 👋":"Hi! 👋",
+    "Как дела?":"How are you?",
+    "Спасибо! 🙌":"Thanks! 🙌",
+    "Окей 👍":"Okay 👍",
+    "Сейчас напишу":"I’ll write now",
+    "До связи! 👋":"Talk to you later! 👋",
+    "Заявки в друзья":"Friend requests",
+    "Входящие":"Incoming",
+    "Исходящие":"Outgoing",
+    "Создание аккаунта":"Create account",
+    "Юзернейм":"Username",
+    "3–32 символа · латиница, цифры и _":"3–32 characters · Latin letters, numbers and _",
+    "Дата рождения":"Date of birth",
+    "Необязательно. Можно указать дату позже в профиле.":"Optional. You can add it later in your profile.",
+    "Пн":"Mon","Вт":"Tue","Ср":"Wed","Чт":"Thu","Пт":"Fri","Сб":"Sat","Вс":"Sun",
+    "Очистить":"Clear","Сегодня":"Today","Отмена":"Cancel",
+    "X для выхода из чужого профиля":"X to close another user’s profile",
+    "✨ Основная информация":"✨ Basic information",
+    "Уникальный юзернейм. Латиница, цифры и символ _.":"Unique username. Latin letters, numbers and _.",
+    "🖼️ Фотография":"🖼️ Photo",
+    "Выбрать фото с устройства":"Choose a photo from device",
+    "Дополнительные данные":"Additional data",
+    "Дата рождения — необязательно":"Date of birth — optional",
+    "Фон профиля":"Profile background",
+    "🔒 Приватность":"🔒 Privacy",
+    "Кто видит дату рождения":"Who can see your date of birth",
+    "Все":"Everyone","Друзья":"Friends","Никто":"Nobody",
+    "Кто видит аватар":"Who can see your avatar",
+    "Кто видит «О себе»":"Who can see your About",
+    "Сохранить":"Save","Закрыть":"Close","Данные":"Data",
+    "Твой профиль":"Your profile","Открыть":"Open","Язык":"Language",
+    "Кто может отправлять мне заявки":"Who can send me requests",
+    "🌎 Все":"🌎 Everyone","🚫 Никто":"🚫 Nobody",
+    "Показывать мой онлайн-статус":"Show my online status",
+    "Сохранить приватность":"Save privacy",
+    "Тема приложения":"App theme",
+    "🛡️ Настройки данных и безопасности":"🛡️ Data & security settings",
+    "Пароль":"Password","Изменить пароль":"Change password",
+    "Установи новый пароль для входа в Vibe.":"Set a new password for Vibe.",
+    "🚪 Аккаунт":"🚪 Account","Выйти из аккаунта":"Log out of account",
+    "Завершить текущий сеанс Vibe.":"End your current Vibe session.",
+    "💾 Локальные данные":"💾 Local data",
+    "Счётчики непрочитанных":"Unread counters",
+    "Сбросить локальные счётчики непрочитанных сообщений и каналов.":"Reset local unread counters for messages and channels.",
+    "Сбросить счётчики":"Reset counters",
+    "Новый пароль":"New password","Текущий пароль":"Current password",
+    "✨ Новый пароль":"✨ New password","🔁 Повтор нового пароля":"🔁 Repeat new password",
+    "Сохранить пароль":"Save password",
+    "Сообщества":"Communities","Группы и каналы в одном месте":"Groups and channels in one place",
+    "Создать группу":"Create group","Общение с участниками":"Chat with members",
+    "Публикации и подписки":"Posts and subscriptions","Мои группы":"My groups",
+    "Управление группой":"Group management","Настройки группы":"Group settings",
+    "Аватар группы":"Group avatar","Показывается в списке, в чате и рядом с сообщениями.":"Shown in the list, chat and next to messages.",
+    "Выбрать фото":"Choose photo","Название":"Name",
+    "По нему группу будут находить в поиске.":"People will find the group by this username.",
+    "Описание":"Description","Показывать группу в поиске":"Show group in search",
+    "Другие пользователи смогут находить группу по юзернейму.":"Other users can find the group by username.",
+    "Писать могут только администраторы":"Only administrators can post",
+    "Участники смогут читать и голосовать.":"Members can read and vote.",
+    "Сохранить настройки":"Save settings","🗑 Удалить группу":"🗑 Delete group",
+    "Участники":"Members","Добавить":"Add",
+    "Создай своё сообщество за пару шагов":"Create your community in a few steps",
+    "Добавить фото":"Add photo","Необязательно":"Optional",
+    "Уникальный адрес: 3–32 символа, латиница, цифры и _.":"Unique address: 3–32 characters, Latin letters, numbers and _.",
+    "Другие пользователи смогут найти её по названию.":"Other users can find it by name.",
+    "Создать канал":"Create channel","Публикуй новости, контент и обновления":"Publish news, content and updates",
+    "Уникальный адрес канала. 3–32 символа: латиница, цифры и _.":"Unique channel address. 3–32 characters: Latin letters, numbers and _.",
+    "Публичный канал":"Public channel","Канал можно найти через обычный поиск.":"The channel can be found through regular search.",
+    "Настройки канала":"Channel settings","Управляй названием, оформлением и комментариями":"Manage the name, look and comments",
+    "Основная информация":"Basic information","Аватар канала":"Channel avatar",
+    "Показывается в списке каналов и возле публикаций.":"Shown in the channel list and next to posts.",
+    "▣ Выбрать фото":"▣ Choose photo",
+    "Уникальный адрес канала. Только латинские буквы, цифры и _.":"Unique channel address. Latin letters, numbers and _ only.",
+    "Уведомления о публикациях":"Post notifications","Получать уведомления о новых постах.":"Receive notifications for new posts.",
+    "Комментарии к публикациям":"Post comments","Разрешить подписчикам обсуждать посты.":"Allow subscribers to discuss posts.",
+    "Обсуждение публикаций":"Post discussion",
+    "Подключи группу — её участники смогут обсуждать публикации канала. У каждого поста будет своё обсуждение.":"Connect a group — its members can discuss channel posts. Each post will have its own discussion.",
+    "Группа для комментариев":"Comment group","Не подключена":"Not connected",
+    "ⓘ Группа не подключена":"ⓘ No group connected",
+    "ⓘ Только владелец канала может изменять эти настройки.":"ⓘ Only the channel owner can change these settings.",
+    "Сохранить изменения":"Save changes","Обсуждение":"Discussion","Комментарии":"Comments",
+    "Входящий звонок":"Incoming call","Вам звонят":"Someone is calling you",
+    "Принять":"Accept","Отклонить":"Decline","Звонок":"Call","Соединение...":"Connecting...",
+    "Как пользоваться Vibe":"How to use Vibe","Короткая инструкция без лишних сложностей":"A quick guide without unnecessary complexity",
+    "Чаты":"Chats","Выбери человека слева и отправляй сообщения, фото, GIF, файлы или голосовые.":"Choose a person on the left and send messages, photos, GIFs, files or voice messages.",
+    "Контакты и группы":"Contacts and groups","Ищи пользователей через поиск. Группы позволяют общаться сразу нескольким участникам.":"Find users with search. Groups let multiple members chat together.",
+    "Канал предназначен для публикаций. Подписчики видят новые посты и могут открывать комментарии.":"A channel is for publishing. Subscribers see new posts and can open comments.",
+    "Там можно менять профиль, приватность, язык и оформление Vibe.":"You can change your profile, privacy, language and Vibe appearance there.",
+    "Понятно":"Got it","Предпросмотр":"Preview","Отправить":"Send",
+    "Удалить сообщение?":"Delete message?","Сообщение будет удалено.":"The message will be deleted.",
+    "Удалить":"Delete",
+    "Пока нет переписок":"No conversations yet",
+    "Канал":"Channel","Группа":"Group","онлайн":"online","офлайн":"offline",
+    "подписчиков":"subscribers","участников":"members",
+    "Редактирование":"Editing","Новое сообщение...":"New message...",
+    "Изменить сообщение...":"Edit message...","Изменить публикацию...":"Edit post...",
+    "Ответить":"Reply","Изменить":"Edit","Закрепить":"Pin","Открепить":"Unpin",
+    "Копировать текст":"Copy text","Переслать":"Forward","Удалить у себя":"Delete for me","Удалить у всех":"Delete for everyone",
+    "Скопировано":"Copied","Все реакции":"All reactions",
+    "Подписаться":"Subscribe","Отписаться":"Unsubscribe",
+    "Публикация":"Post","Сообщение":"Message",
+    "Нет сообщений":"No messages","Загрузить":"Load","Назад":"Back",
+};
+
+function tUI(value){
+    const s=String(value ?? "");
+    return siteLanguage === "en" ? (uiTranslations[s] || s) : s;
+}
+
+function translateTextValue(value){
+    const s=String(value ?? "");
+    if(siteLanguage === "en"){
+        if(uiTranslations[s]) return uiTranslations[s];
+        let out=s;
+        out=out.replace(/^Группа\s*·\s*/,'Group · ')
+               .replace(/^Канал\s*·\s*/,'Channel · ')
+               .replace(/^Канал$/,'Channel')
+               .replace(/^Группа$/,'Group')
+               .replace(/\bучастников\b/g,'members')
+               .replace(/\bподписчиков\b/g,'subscribers')
+               .replace(/\bонлайн\b/g,'online')
+               .replace(/\bофлайн\b/g,'offline')
+               .replace(/^Переслано из$/,'Forwarded from')
+               .replace(/^Можно добавить ещё ([0-9]+) вариантов ответа\.?$/,'You can add $1 more answer options.')
+               .replace(/^Просмотры$/,'Views');
+        return out;
+    }
+    return s;
+}
+
+function applyFullUITranslation(){
+    const root=document.body;
+    if(!root) return;
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    const nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    for(const node of nodes){
+        const parent=node.parentElement;
+        if(!parent || parent.closest('script,style,noscript,template')) continue;
+        const raw=node.textContent;
+        if(!node.__vibeSourceText) node.__vibeSourceText=raw;
+        const source=node.__vibeSourceText;
+        node.textContent=translateTextValue(source);
+    }
+    root.querySelectorAll('input,textarea,select,button,[title],[aria-label]').forEach(el=>{
+        ['placeholder','title','aria-label'].forEach(attr=>{
+            if(!el.hasAttribute(attr)) return;
+            const cur=el.getAttribute(attr);
+            if(!el.dataset.vibeSourceAttr) el.dataset.vibeSourceAttr=cur;
+            el.setAttribute(attr, translateTextValue(el.dataset.vibeSourceAttr));
+        });
+    });
+}
+
+let __vibeTranslationObserverStarted=false;
+function startTranslationObserver(){
+    if(__vibeTranslationObserverStarted || !document.body) return;
+    __vibeTranslationObserverStarted=true;
+    let translating=false;
+    const observer=new MutationObserver(()=>{
+        if(siteLanguage!=='en' || translating) return;
+        translating=true;
+        try{ applyFullUITranslation(); } finally { translating=false; }
+    });
+    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['title','aria-label','placeholder']});
+    applyFullUITranslation();
+}
+
+function changeRegisterLanguage(){
+    const select=$("registerLanguage");
+    if(!select) return;
+    siteLanguage=select.value;
+    localStorage.setItem("vibeLanguage",siteLanguage);
+    applyLanguage();
+    applyFullUITranslation();
+}
+
+
 
 function updateLanguageFlag(select) {
     if (!select) return;
@@ -5265,6 +5498,9 @@ function applyLanguage() {
     updateLanguageFlag($("siteLanguage"));
     updateLanguageFlag($("authLanguage"));
     updateLanguageFlag($("registerLanguage"));
+
+    startTranslationObserver();
+    applyFullUITranslation();
 }
 
 
