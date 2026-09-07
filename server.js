@@ -3564,9 +3564,14 @@ const server =
                     message.edited = true;
                     await updatePersistentMessage(message);
 
-                    sendToUser(message.from, {type:"message-edited", message});
-                    if (message.to) {
-                        sendToUser(message.to, {type:"message-edited", message});
+                    if (message.groupId) {
+                        const group = getGroups().find(g => String(g.id) === String(message.groupId));
+                        if (group && Array.isArray(group.members)) {
+                            group.members.forEach(member => sendToUser(member, {type:"message-edited", message}));
+                        }
+                    } else {
+                        sendToUser(message.from, {type:"message-edited", message});
+                        if (message.to) sendToUser(message.to, {type:"message-edited", message});
                     }
 
                     sendJSON(res, {success:true, message});
@@ -4651,6 +4656,31 @@ const server =
                     if(login&&!post.hiddenFor.includes(login))post.hiddenFor.push(login);
                     saveJSON(CHANNEL_POSTS_FILE,posts);
                     sendJSON(res,{success:true,post}); return;
+                }
+
+                /* =====================================================
+                   CHANNEL POST EDIT
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/channel-post-edit") {
+                    const body = await getBody(req);
+                    const channelId = String(body.channelId || "").trim();
+                    const postId = String(body.postId || "").trim();
+                    const owner = String(body.owner || "").trim();
+                    const text = String(body.text || "").trim().slice(0, 5000);
+                    const channels = getNormalizedChannels();
+                    const channel = channels.find(c => String(c.id) === channelId);
+                    if (!channel) { sendJSON(res,{success:false,message:"Канал не найден"},404); return; }
+                    if (String(channel.owner) !== owner) { sendJSON(res,{success:false,message:"Только владелец может изменять публикации"},403); return; }
+                    const posts = readJSON(CHANNEL_POSTS_FILE);
+                    const post = posts.find(p => String(p.id) === postId && String(p.channelId) === channelId);
+                    if (!post) { sendJSON(res,{success:false,message:"Публикация не найдена"},404); return; }
+                    if (!text && !post.media && !post.poll) { sendJSON(res,{success:false,message:"Публикация не может быть пустой"},400); return; }
+                    post.text = text;
+                    post.edited = true;
+                    saveJSON(CHANNEL_POSTS_FILE, posts);
+                    (channel.subscribers || []).forEach(subscriber => sendToUser(subscriber,{type:"channel-post-edited",channelId,post}));
+                    sendJSON(res,{success:true,post});
+                    return;
                 }
 
                 /* =====================================================
