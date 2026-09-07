@@ -95,6 +95,50 @@ async function sendVerificationEmail(email, code) {
     }
     return data;
 }
+function maskEmail(email) {
+    const value = normalizeEmail(email);
+    const at = value.indexOf("@");
+    if (at <= 0) return "";
+    const local = value.slice(0, at);
+    const domain = value.slice(at + 1);
+    if (local.length <= 2) return `${local[0] || "*"}*@${domain}`;
+    return `${local[0]}${"*".repeat(Math.min(5, Math.max(1, local.length - 2)))}${local.slice(-1)}@${domain}`;
+}
+
+async function getEmailVerificationMap() {
+    const value = await getVibeState(VIBE_STATE_KEYS.emailVerifications);
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+async function isEmailVerifiedForLogin(login, email, localUser = null) {
+    const normalizedLogin = String(login || "").trim();
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedLogin || !normalizedEmail) return false;
+    if (localUser?.profile?.emailVerified === true && normalizeEmail(localUser?.profile?.email) === normalizedEmail) return true;
+    const map = await getEmailVerificationMap();
+    const record = map[normalizedLogin];
+    return !!record && normalizeEmail(record.email) === normalizedEmail && !!record.verifiedAt;
+}
+
+async function markEmailVerified(login, email) {
+    const map = await getEmailVerificationMap();
+    map[String(login || "").trim()] = { email: normalizeEmail(email), verifiedAt: new Date().toISOString() };
+    await putVibeState(VIBE_STATE_KEYS.emailVerifications, map);
+}
+
+async function isEmailTaken(email, ignoreLogin = "") {
+    const normalized = normalizeEmail(email);
+    if (!normalized) return false;
+    const { data, error } = await supabase.from("users").select("login,email").eq("email", normalized).limit(50);
+    if (error && !String(error.message || "").toLowerCase().includes("column")) throw new Error("Не удалось проверить email в Supabase");
+    if ((data || []).some(row => normalizeEmail(row?.email) === normalized && String(row?.login || "") !== String(ignoreLogin || ""))) return true;
+    const users = getUsers();
+    if (users.some(user => String(user?.login || "") !== String(ignoreLogin || "") && normalizeEmail(user?.profile?.email) === normalized)) return true;
+    const map = await getEmailVerificationMap();
+    if (Object.entries(map).some(([login, record]) => String(login) !== String(ignoreLogin || "") && normalizeEmail(record?.email) === normalized)) return true;
+    return false;
+}
+
 
 
 /* =========================================================
@@ -106,7 +150,8 @@ const VIBE_STATE_KEYS = {
     channels: "channels",
     channelPosts: "channel-posts",
     groups: "groups",
-    directPins: "direct-pins"
+    directPins: "direct-pins",
+    emailVerifications: "email-verifications"
 };
 
 let vibeStateHydrated = false;
@@ -627,6 +672,10 @@ function normalizeUser(user) {
 
     if (typeof user.profile.email !== "string") {
         user.profile.email = "";
+    }
+
+    if (typeof user.profile.emailVerified !== "boolean") {
+        user.profile.emailVerified = false;
     }
 
     if (typeof user.profile.username !== "string") {
@@ -1279,6 +1328,9 @@ function publicUser(
 
         result.privacy =
             privacy;
+
+        result.emailVerified =
+            user.profile.emailVerified === true;
     }
 
     return result;
@@ -1497,6 +1549,13 @@ const server =
                         sendJSON(res, {success:false, message:"Введите корректный email"}, 400);
                         return;
                     }
+                    try {
+                        if (await isEmailTaken(email)) {
+                            sendJSON(res,{success:false,message:"Этот email уже используется"},409); return;
+                        }
+                    } catch (error) {
+                        sendJSON(res,{success:false,message:error.message || "Не удалось проверить email"},500); return;
+                    }
                     if (login.length > 40) {
                         sendJSON(res, {success:false, message:"Логин слишком длинный"}, 400);
                         return;
@@ -1613,6 +1672,9 @@ const server =
                     try { await createSupabaseUser(user); }
                     catch (error) { sendJSON(res,{success:false,message:error.message},400); return; }
                     const users = getUsers(); users.push(user); saveJSON(USERS_FILE,users);
+                    try { await markEmailVerified(item.login, email); } catch (error) {
+                        console.error("Email verification state save failed:", error.message);
+                    }
                     delete pending[email]; saveJSON(PENDING_VERIFICATIONS_FILE,pending);
                     sendJSON(res,{success:true,user:publicUser(user,item.login)});
                     return;
@@ -1727,19 +1789,116 @@ const server =
                     }
 
                     applySupabaseUserToLocalUser(user, row);
+
+                    const currentEmail = normalizeEmail(user.profile.email || row.email || "");
+                    const emailVerified = await isEmailVerifiedForLogin(login, currentEmail, user);
+                    user.profile.emailVerified = emailVerified;
                     saveJSON(USERS_FILE, users);
 
-                    sendJSON(
-                        res,
-                        {
-                            success: true,
-                            user: publicUser(user, login)
-                        }
-                    );
+                    if (!emailVerified) {
+                        sendJSON(res, {
+                            success: false,
+                            verificationRequired: true,
+                            login,
+                            emailFull: currentEmail,
+                            email: currentEmail ? maskEmail(currentEmail) : "",
+                            emailRequired: !currentEmail,
+                            message: currentEmail ? "Подтвердите email, чтобы войти в Vibe" : "Привяжите email, чтобы войти в Vibe"
+                        }, 403);
+                        return;
+                    }
 
+                    sendJSON(res, {success:true,user:publicUser(user, login)});
                     return;
                 }
 
+
+                /* =====================================================
+                   EXISTING ACCOUNT EMAIL LINKING
+                ===================================================== */
+
+                if (req.method === "POST" && pathname === "/account/email/request") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const password = String(body.password || "");
+                    const email = normalizeEmail(body.email);
+                    if (!login || !password || !email) { sendJSON(res,{success:false,message:"Введите логин, пароль и email"},400); return; }
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { sendJSON(res,{success:false,message:"Введите корректный email"},400); return; }
+                    let row;
+                    try { row = await getSupabaseUser(login); } catch (error) { sendJSON(res,{success:false,message:error.message},500); return; }
+                    if (!row || row.password !== password) { sendJSON(res,{success:false,message:"Неверный логин или пароль"},401); return; }
+                    try { if (await isEmailTaken(email, login)) { sendJSON(res,{success:false,message:"Этот email уже используется другим аккаунтом"},409); return; } }
+                    catch (error) { sendJSON(res,{success:false,message:error.message || "Не удалось проверить email"},500); return; }
+                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
+                    const key = `link:${login}`;
+                    const now = Date.now();
+                    const existing = pending[key];
+                    if (existing && now < Number(existing.resendAfter || 0)) {
+                        const seconds = Math.max(1, Math.ceil((Number(existing.resendAfter)-now)/1000));
+                        sendJSON(res,{success:false,message:`Код уже отправлен. Повторно можно через ${seconds} сек.`,retryAfter:seconds},429); return;
+                    }
+                    const code = String(crypto.randomInt(100000,1000000));
+                    pending[key] = {mode:"link",login,email,codeHash:hashVerificationCode(code),createdAt:now,expiresAt:now+10*60*1000,resendAfter:now+60*1000,attempts:0};
+                    try { await sendVerificationEmail(email,code); saveJSON(PENDING_VERIFICATIONS_FILE,pending); }
+                    catch (error) { delete pending[key]; saveJSON(PENDING_VERIFICATIONS_FILE,pending); sendJSON(res,{success:false,message:error.message||"Не удалось отправить код"},502); return; }
+                    sendJSON(res,{success:true,verificationRequired:true,email});
+                    return;
+                }
+
+                if (req.method === "POST" && pathname === "/account/email/verify") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const password = String(body.password || "");
+                    const email = normalizeEmail(body.email);
+                    const code = String(body.code || "").trim();
+                    if (!login || !password || !email || !/^\d{6}$/.test(code)) { sendJSON(res,{success:false,message:"Введите email и 6-значный код"},400); return; }
+                    let row;
+                    try { row = await getSupabaseUser(login); } catch (error) { sendJSON(res,{success:false,message:error.message},500); return; }
+                    if (!row || row.password !== password) { sendJSON(res,{success:false,message:"Неверный логин или пароль"},401); return; }
+                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
+                    const key = `link:${login}`;
+                    const item = pending[key];
+                    if (!item || normalizeEmail(item.email) !== email) { sendJSON(res,{success:false,message:"Код не найден. Запросите новый код."},400); return; }
+                    const now = Date.now();
+                    if (now > Number(item.expiresAt || 0)) { delete pending[key]; saveJSON(PENDING_VERIFICATIONS_FILE,pending); sendJSON(res,{success:false,message:"Срок действия кода истёк"},400); return; }
+                    item.attempts = Number(item.attempts || 0) + 1;
+                    if (item.attempts > 5) { delete pending[key]; saveJSON(PENDING_VERIFICATIONS_FILE,pending); sendJSON(res,{success:false,message:"Слишком много попыток. Запросите новый код."},429); return; }
+                    if (hashVerificationCode(code) !== item.codeHash) { saveJSON(PENDING_VERIFICATIONS_FILE,pending); sendJSON(res,{success:false,message:"Неверный код"},400); return; }
+                    try {
+                        if (await isEmailTaken(email, login)) { delete pending[key]; saveJSON(PENDING_VERIFICATIONS_FILE,pending); sendJSON(res,{success:false,message:"Этот email уже используется другим аккаунтом"},409); return; }
+                        await updateSupabaseUser(login,{email});
+                    } catch (error) { sendJSON(res,{success:false,message:error.message || "Не удалось сохранить email"},500); return; }
+                    const users = getUsers();
+                    const user = users.find(item => item.login === login);
+                    if (user) { normalizeUser(user); user.profile.email=email; user.profile.emailVerified=true; saveJSON(USERS_FILE,users); }
+                    try { await markEmailVerified(login,email); } catch (error) { console.error("Email link state save failed:", error.message); }
+                    delete pending[key]; saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                    const fresh = getUsers().find(item => item.login === login) || user || {login,password,profile:{email,emailVerified:true}};
+                    sendJSON(res,{success:true,user:publicUser(fresh,login)});
+                    return;
+                }
+
+                if (req.method === "POST" && pathname === "/account/email/resend") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const password = String(body.password || "");
+                    const email = normalizeEmail(body.email);
+                    if (!login || !password || !email) { sendJSON(res,{success:false,message:"Недостаточно данных"},400); return; }
+                    let row;
+                    try { row = await getSupabaseUser(login); } catch (error) { sendJSON(res,{success:false,message:error.message},500); return; }
+                    if (!row || row.password !== password) { sendJSON(res,{success:false,message:"Неверный логин или пароль"},401); return; }
+                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
+                    const key = `link:${login}`;
+                    const item = pending[key];
+                    if (!item || normalizeEmail(item.email) !== email) { sendJSON(res,{success:false,message:"Сначала запросите код"},400); return; }
+                    const now = Date.now();
+                    if (now < Number(item.resendAfter || 0)) { const seconds=Math.max(1,Math.ceil((Number(item.resendAfter)-now)/1000)); sendJSON(res,{success:false,message:`Повторная отправка доступна через ${seconds} сек.`,retryAfter:seconds},429); return; }
+                    const code=String(crypto.randomInt(100000,1000000));
+                    item.codeHash=hashVerificationCode(code); item.createdAt=now; item.expiresAt=now+10*60*1000; item.resendAfter=now+60*1000; item.attempts=0;
+                    try { await sendVerificationEmail(email,code); saveJSON(PENDING_VERIFICATIONS_FILE,pending); } catch(error){ sendJSON(res,{success:false,message:error.message||"Не удалось отправить код"},502); return; }
+                    sendJSON(res,{success:true,message:"Новый код отправлен"});
+                    return;
+                }
 
                 /* =====================================================
                    CHANGE PASSWORD

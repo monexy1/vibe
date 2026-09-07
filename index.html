@@ -3298,6 +3298,17 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
 </style>
 
+
+<style>
+.email-link-card{max-width:460px;}
+.email-link-subtitle{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.4;}
+.email-link-card input{margin-top:10px;}
+.email-link-code{letter-spacing:8px;text-align:center;font-size:22px;font-weight:900;}
+.email-link-hint{margin-top:10px;color:var(--muted);font-size:12px;line-height:1.45;}
+.email-link-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.email-link-actions button{min-width:0;}
+@media (max-width:560px){.email-link-actions{grid-template-columns:1fr;}}
+</style>
 </head>
 
 <body class="booting">
@@ -3381,6 +3392,26 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
 </div>
 
+<div id="emailLinkModal" class="modal hidden">
+  <div class="modal-card email-link-card">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="emailLinkTitle">Подтверждение email</div>
+        <div class="email-link-subtitle" id="emailLinkSubtitle">Чтобы войти в Vibe, привяжите почту.</div>
+      </div>
+      <button class="modal-close" type="button" onclick="closeEmailLinkModal()" title="Закрыть">✕</button>
+    </div>
+    <input id="emailLinkEmail" type="email" placeholder="Email" autocomplete="email">
+    <input id="emailLinkCode" class="email-link-code hidden" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Код из письма">
+    <div id="emailLinkHint" class="email-link-hint"></div>
+    <div id="emailLinkMessage" class="auth-message"></div>
+    <div class="modal-actions email-link-actions">
+      <button type="button" class="primary" id="emailLinkSendButton" onclick="requestAccountEmailCode()">Получить код</button>
+      <button type="button" class="primary hidden" id="emailLinkVerifyButton" onclick="verifyAccountEmailCode()">Подтвердить</button>
+      <button type="button" class="hidden" id="emailLinkResendButton" onclick="resendAccountEmailCode()">Отправить код повторно</button>
+    </div>
+  </div>
+</div>
 
 <div id="vibeNotificationToasts" class="vibe-notification-toasts"></div>
 
@@ -6103,101 +6134,67 @@ function openRegister() {
 
 
 async function login() {
-
-    const loginValue =
-        $("loginInput")
-            .value
-            .trim();
-
-    const password =
-        $("passwordInput")
-            .value
-            .trim();
-
+    const loginValue = $("loginInput").value.trim();
+    const password = $("passwordInput").value;
     if (!loginValue || !password) {
-
-        $("authMessage").textContent =
-            siteLanguage === "ru"
-                ? "Заполни логин и пароль"
-                : "Fill in username and password";
-
+        $("authMessage").textContent = siteLanguage === "ru" ? "Заполни логин и пароль" : "Fill in username and password";
         return;
     }
-
     try {
-
-        const response =
-            await fetch(
-                "/login",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            login:loginValue,
-                            username:usernameValue,
-                            password,
-                            name,
-                            language,
-                            birthDate,
-                            email
-                        })
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (!data.success) {
-
-            $("authMessage").textContent =
-                data.message;
-
+        const response = await fetch("/login", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:loginValue,password})});
+        const data = await response.json();
+        if (data.verificationRequired) {
+            openEmailLinkModal({login:loginValue,password,email:data.emailFull||"",maskedEmail:data.email||""});
             return;
         }
-
-        currentUser =
-            data.user;
-
-        saveLoginState(currentUser);
-
-        const extra =
-            getExtraProfile(
-                currentUser.login
-            );
-
-        if (extra.language) {
-
-            siteLanguage =
-                extra.language;
-
-            localStorage.setItem(
-                "vibeLanguage",
-                siteLanguage
-            );
-        }
-
-        if (extra.theme) {
-            applyTheme(extra.theme);
-        }
-
-        $("passwordInput").value = "";
-
-        showApp();
-
+        if (!data.success) { $("authMessage").textContent=data.message||"Ошибка"; return; }
+        finishAuthenticatedLogin(data.user);
     } catch {
-
-        $("authMessage").textContent =
-            siteLanguage === "ru"
-                ? "Сервер не отвечает"
-                : "Server is not responding";
+        $("authMessage").textContent = siteLanguage === "ru" ? "Сервер не отвечает" : "Server is not responding";
     }
 }
+
+function finishAuthenticatedLogin(user) {
+    currentUser=user; saveLoginState(currentUser);
+    const extra=getExtraProfile(currentUser.login);
+    if(extra.language){siteLanguage=extra.language;localStorage.setItem("vibeLanguage",siteLanguage);}
+    if(extra.theme) applyTheme(extra.theme);
+    $("passwordInput").value=""; closeEmailLinkModal(); showApp();
+}
+
+let emailLinkState={login:"",password:"",email:"",maskedEmail:""};
+let emailLinkResendTimer=null;
+
+function openEmailLinkModal(data={}) {
+    emailLinkState={login:String(data.login||""),password:String(data.password||""),email:String(data.email||""),maskedEmail:String(data.maskedEmail||"")};
+    const emailInput=$("emailLinkEmail"), codeInput=$("emailLinkCode"), hint=$("emailLinkHint"), message=$("emailLinkMessage"), sendButton=$("emailLinkSendButton"), verifyButton=$("emailLinkVerifyButton"), resendButton=$("emailLinkResendButton");
+    const ru=siteLanguage==="ru";
+    emailInput.value=emailLinkState.email; codeInput.value=""; codeInput.classList.add("hidden"); sendButton.classList.remove("hidden"); verifyButton.classList.add("hidden"); resendButton.classList.add("hidden"); message.textContent="";
+    $("emailLinkTitle").textContent=ru?"Подтверждение email":"Verify your email";
+    $("emailLinkSubtitle").textContent=ru?"Чтобы войти в Vibe, привяжите и подтвердите почту.":"To enter Vibe, link and verify your email.";
+    hint.textContent=emailLinkState.maskedEmail?(ru?`Текущая почта: ${emailLinkState.maskedEmail}`:`Current email: ${emailLinkState.maskedEmail}`):(ru?"У аккаунта пока нет подтвержденной почты.":"This account does not have a verified email yet.");
+    sendButton.textContent=ru?"Получить код":"Get code"; verifyButton.textContent=ru?"Подтвердить":"Verify"; resendButton.textContent=ru?"Отправить код повторно":"Resend code";
+    $("emailLinkModal").classList.remove("hidden"); emailInput.focus();
+}
+function closeEmailLinkModal(){ $("emailLinkModal")?.classList.add("hidden"); if(emailLinkResendTimer){clearInterval(emailLinkResendTimer);emailLinkResendTimer=null;} }
+async function requestAccountEmailCode(){
+    const email=$("emailLinkEmail").value.trim().toLowerCase(), ru=siteLanguage==="ru";
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ $("emailLinkMessage").textContent=ru?"Введите корректный email":"Enter a valid email"; return; }
+    try{const response=await fetch("/account/email/request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:emailLinkState.login,password:emailLinkState.password,email})});const data=await response.json();if(!data.success){$("emailLinkMessage").textContent=data.message||"Ошибка";return;}emailLinkState.email=email;$("emailLinkCode").classList.remove("hidden");$("emailLinkSendButton").classList.add("hidden");$("emailLinkVerifyButton").classList.remove("hidden");$("emailLinkResendButton").classList.remove("hidden");$("emailLinkHint").textContent=ru?`Мы отправили 6-значный код на ${email}. Код действует 10 минут.`:`A 6-digit code was sent to ${email}. The code is valid for 10 minutes.`;$("emailLinkMessage").textContent=ru?"Проверьте почту.":"Check your email.";$("emailLinkCode").focus();startEmailLinkResendTimer();}catch{$("emailLinkMessage").textContent=ru?"Ошибка соединения":"Connection error";}
+}
+async function verifyAccountEmailCode(){
+    const code=$("emailLinkCode").value.trim(), ru=siteLanguage==="ru";
+    if(!/^\d{6}$/.test(code)){ $("emailLinkMessage").textContent=ru?"Введите 6-значный код":"Enter the 6-digit code"; return; }
+    try{const response=await fetch("/account/email/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:emailLinkState.login,password:emailLinkState.password,email:emailLinkState.email,code})});const data=await response.json();if(!data.success){$("emailLinkMessage").textContent=data.message||"Ошибка";return;}finishAuthenticatedLogin(data.user);}catch{$("emailLinkMessage").textContent=ru?"Ошибка соединения":"Connection error";}
+}
+async function resendAccountEmailCode(){
+    const ru=siteLanguage==="ru"; if(!emailLinkState.email)return;
+    try{const response=await fetch("/account/email/resend",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:emailLinkState.login,password:emailLinkState.password,email:emailLinkState.email})});const data=await response.json();if(!data.success){$("emailLinkMessage").textContent=data.message||"Ошибка";return;}$("emailLinkMessage").textContent=ru?"Новый код отправлен.":"A new code was sent.";startEmailLinkResendTimer();}catch{$("emailLinkMessage").textContent=ru?"Ошибка соединения":"Connection error";}
+}
+function startEmailLinkResendTimer(){
+    const button=$("emailLinkResendButton");if(!button)return;let left=60;button.disabled=true;const ru=siteLanguage==="ru";button.textContent=ru?`Повторно через ${left}с`:`Resend in ${left}s`;clearInterval(emailLinkResendTimer);emailLinkResendTimer=setInterval(()=>{left--;if(left<=0){clearInterval(emailLinkResendTimer);emailLinkResendTimer=null;button.disabled=false;button.textContent=ru?"Отправить код повторно":"Resend code";}else button.textContent=ru?`Повторно через ${left}с`:`Resend in ${left}s`;},1000);
+}
+
 
 
 /* =========================================================
