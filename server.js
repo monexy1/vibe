@@ -3868,6 +3868,26 @@ const server =
                     return;
                 }
 
+                if (req.method === "POST" && pathname === "/group-delete") {
+                    const body = await getBody(req);
+                    const groupId = String(body.groupId || "").trim();
+                    const owner = String(body.owner || "").trim();
+                    const groups = getGroups();
+                    const group = groups.find(g => String(g.id) === groupId);
+                    if (!group) { sendJSON(res,{success:false,message:"Группа не найдена"},404); return; }
+                    if (String(group.owner) !== owner) { sendJSON(res,{success:false,message:"Только создатель может удалить группу"},403); return; }
+                    const nextGroups = groups.filter(g => String(g.id) !== groupId);
+                    saveJSON(GROUPS_FILE, nextGroups);
+                    const messages = await getPersistentMessages();
+                    const keptMessages = messages.filter(m => String(m.groupId || "") !== groupId);
+                    if (keptMessages.length !== messages.length) {
+                        saveJSON(MESSAGES_FILE, keptMessages);
+                    }
+                    (group.members || []).forEach(member => sendToUser(member,{type:"group-deleted",groupId}));
+                    sendJSON(res,{success:true,groupId});
+                    return;
+                }
+
                 if (req.method === "POST" && pathname === "/group-members") {
                     const body = await getBody(req);
                     const login = String(body.login || "").trim();

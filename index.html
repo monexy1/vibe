@@ -17462,3 +17462,190 @@ body.vibe-channel-mode .message-actions [data-action="delete-all"]{display:none!
 body.vibe-group-admin #attachmentPollButton,
 body.vibe-group-admin #attachmentPollButtonDesktop{display:flex!important;}
 </style>
+
+<style id="vibe-v12-final-style">
+/* =========================================================
+   VIBE V12 — final composer + group menu + channel editor
+========================================================= */
+/* Never hide the group menu just because legacy cleanup expects a final-menu class. */
+.message-actions.vibe-v11-group-menu,
+.message-actions.vibe-v10-group-menu,
+.message-actions.vibe-group-action-menu{
+  display:block!important;
+  position:fixed!important;
+  z-index:2147483001!important;
+  pointer-events:auto!important;
+  visibility:visible!important;
+  opacity:1!important;
+}
+
+/* Editing: keep the edit header above the SAME composer row used for normal messages. */
+#mainComposer.vibe-is-editing{
+  display:grid!important;
+  grid-template-columns:48px minmax(0,1fr) 48px 48px 48px!important;
+  grid-template-rows:minmax(54px,auto) minmax(50px,auto)!important;
+  align-items:center!important;
+  column-gap:7px!important;
+  row-gap:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:0 10px 8px!important;
+  overflow:visible!important;
+}
+#mainComposer.vibe-is-editing > #vibeEditComposer{
+  grid-column:1 / -1!important;
+  grid-row:1!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:54px!important;
+  margin:0!important;
+  box-sizing:border-box!important;
+}
+#mainComposer.vibe-is-editing > #mobileAttachmentButton{
+  grid-column:1!important;grid-row:2!important;
+}
+#mainComposer.vibe-is-editing > #messageInput{
+  grid-column:2!important;grid-row:2!important;
+  width:100%!important;min-width:0!important;flex:none!important;
+  min-height:42px!important;max-height:120px!important;
+  box-sizing:border-box!important;
+  border-radius:13px!important;
+}
+#mainComposer.vibe-is-editing > .emoji-btn{grid-column:3!important;grid-row:2!important}
+#mainComposer.vibe-is-editing > #voiceRecordButton{grid-column:4!important;grid-row:2!important}
+#mainComposer.vibe-is-editing > .send-button{grid-column:5!important;grid-row:2!important}
+#mainComposer.vibe-is-editing > .composer-tools,
+#mainComposer.vibe-is-editing > #mobileAttachmentMenu,
+#mainComposer.vibe-is-editing > .quick-messages-wrap,
+#mainComposer.vibe-is-editing > #emojiPicker,
+#mainComposer.vibe-is-editing > #replyPreview{display:none!important}
+#vibeEditComposer{
+  display:flex!important;
+  align-items:center!important;
+  gap:11px!important;
+  padding:7px 12px!important;
+  background:var(--panel2)!important;
+  border-bottom:1px solid var(--border)!important;
+}
+#vibeEditComposer .vibe-edit-copy{min-width:0!important;flex:1 1 auto!important}
+#vibeEditComposer .vibe-edit-text{max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+
+@media(max-width:700px){
+  #mainComposer.vibe-is-editing{
+    grid-template-columns:42px minmax(0,1fr) 42px 42px 42px!important;
+    column-gap:4px!important;
+    padding:0 7px 7px!important;
+  }
+  #mainComposer.vibe-is-editing > #messageInput{min-height:42px!important}
+}
+</style>
+
+<script id="vibe-v12-final-script">
+(function(){
+  'use strict';
+
+  /* The legacy group handler uses window.setReplyTarget. Export the real function. */
+  if(typeof window.setReplyTarget!=='function' && typeof setReplyTarget==='function'){
+    window.setReplyTarget=setReplyTarget;
+  }
+
+  /* The old V11 group menu is created with .message-actions, then a later
+     cleanup rule hides every such menu unless it also has .vibe-final-action-menu.
+     Add that class immediately after insertion so the already-working menu is
+     actually visible and remains clickable. */
+  function normalizeGroupMenus(){
+    document.querySelectorAll('.message-actions.vibe-v11-group-menu, .message-actions.vibe-v10-group-menu, .message-actions.vibe-group-action-menu').forEach(m=>{
+      m.classList.add('vibe-final-action-menu');
+      m.style.display='block';
+      m.style.visibility='visible';
+      m.style.opacity='1';
+      m.style.pointerEvents='auto';
+      m.style.zIndex='2147483001';
+    });
+  }
+  const menuObserver=new MutationObserver(()=>normalizeGroupMenus());
+  menuObserver.observe(document.body,{childList:true,subtree:true});
+  normalizeGroupMenus();
+
+  /* If the browser suppresses contextmenu, a button-2 press still makes the
+     group menu appear via the original V11 handler on the following event. */
+  document.addEventListener('mousedown',e=>{
+    if(e.button!==2||!currentGroup)return;
+    const b=e.target?.closest?.('#messages .message');
+    if(!b)return;
+    e.preventDefault();
+    e.stopPropagation();
+    const fire=()=>{
+      const evt=new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX:e.clientX,clientY:e.clientY,button:2,buttons:2});
+      b.dispatchEvent(evt);
+    };
+    setTimeout(fire,0);
+  },false);
+
+  /* -------------------------------------------------------
+     Channel edit: use the exact same bottom composer as group edit,
+     never a browser prompt.
+  ------------------------------------------------------- */
+  let channelEditState=null;
+
+  function closeChannelEdit(){
+    channelEditState=null;
+    document.getElementById('vibeEditComposer')?.remove();
+    document.getElementById('mainComposer')?.classList.remove('vibe-is-editing');
+    const input=document.getElementById('messageInput');
+    if(input){input.disabled=false;input.placeholder='Написать сообщение...';}
+  }
+
+  function startChannelEdit(post){
+    const composer=document.getElementById('mainComposer');
+    const input=document.getElementById('messageInput');
+    if(!composer||!input||!post||!currentChannel||!currentUser)return;
+    if(String(currentChannel.owner)!==String(currentUser.login))return;
+    channelEditState={id:String(post.id),text:String(post.text||'')};
+    document.getElementById('vibeEditComposer')?.remove();
+    const bar=document.createElement('div');
+    bar.id='vibeEditComposer';
+    bar.innerHTML='<div class="vibe-edit-icon">✎</div><div class="vibe-edit-copy"><div class="vibe-edit-title">Редактирование</div><div class="vibe-edit-text"></div></div><button type="button" class="vibe-edit-close" aria-label="Отменить">✕</button>';
+    bar.querySelector('.vibe-edit-text').textContent=String(post.text||'').replace(/\s+/g,' ').trim().slice(0,180);
+    bar.querySelector('.vibe-edit-close').onclick=closeChannelEdit;
+    composer.classList.add('vibe-is-editing');
+    composer.insertBefore(bar,composer.firstElementChild);
+    input.value=String(post.text||'');
+    input.placeholder='Изменить публикацию...';
+    input.disabled=false;
+    input.focus();
+    input.setSelectionRange(input.value.length,input.value.length);
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+
+  window.vibeEditChannelPost=function(post){
+    startChannelEdit(post);
+  };
+
+  const prevSend=window.sendMessage;
+  window.sendMessage=async function(){
+    if(!channelEditState)return prevSend?.apply(this,arguments);
+    const input=document.getElementById('messageInput');
+    const text=String(input?.value||'');
+    if(!text.trim())return;
+    input.disabled=true;
+    try{
+      const r=await fetch('/channel-post-edit',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({channelId:currentChannel.id,postId:channelEditState.id,owner:currentUser.login,text:text.trim()})
+      }).catch(()=>null);
+      const d=await r?.json().catch(()=>({}));
+      if(!d?.success){window.showVibeNotice?.('Изменение',d?.message||'Не удалось изменить публикацию');return;}
+      window.__vibeChannelPosts=(window.__vibeChannelPosts||[]).map(p=>String(p.id)===String(channelEditState.id)?(d.post||{...p,text:text.trim(),edited:true}):p);
+      await window.loadChannelPosts?.(false);
+      closeChannelEdit();
+    }catch{window.showVibeNotice?.('Ошибка','Не удалось изменить публикацию.');}
+    finally{input.disabled=false;}
+  };
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&channelEditState){e.preventDefault();closeChannelEdit();}
+  },true);
+})();
+</script>
