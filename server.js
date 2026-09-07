@@ -456,7 +456,9 @@ async function createSupabaseUser(user) {
     if (error) {
         console.error("Supabase create user error:", error.message);
         throw new Error(error.code === "23505"
-            ? "Такой логин уже существует"
+            ? (String(error.message || "").toLowerCase().includes("username")
+                ? "Этот юзернейм уже занят"
+                : "Такой логин уже существует")
             : "Не удалось сохранить аккаунт в Supabase");
     }
 
@@ -1419,6 +1421,15 @@ const server =
                     const password =
                         String(body.password || "");
 
+                    const rawUsername =
+                        String(body.username || "")
+                            .trim()
+                            .replace(/^@+/g, "")
+                            .toLowerCase();
+
+                    const username =
+                        rawUsername;
+
                     const name =
                         String(body.name || "").trim();
 
@@ -1433,12 +1444,24 @@ const server =
                             ? "en"
                             : "ru";
 
-                    if (!login || !password) {
+                    if (!login || !username || !password) {
                         sendJSON(
                             res,
                             {
                                 success: false,
-                                message: "Введите логин и пароль"
+                                message: "Введите логин, юзернейм и пароль"
+                            },
+                            400
+                        );
+                        return;
+                    }
+
+                    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Юзернейм: 3–32 символа, только латинские буквы, цифры и _"
                             },
                             400
                         );
@@ -1496,6 +1519,50 @@ const server =
                         return;
                     }
 
+                    try {
+                        const { data: usernameRows, error: usernameError } =
+                            await supabase
+                                .from("users")
+                                .select("login,username")
+                                .eq("username", username)
+                                .limit(2);
+
+                        if (usernameError) throw usernameError;
+
+                        if ((usernameRows || []).length) {
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message: "Этот юзернейм уже занят"
+                                },
+                                409
+                            );
+                            return;
+                        }
+                    } catch (error) {
+                        if (String(error?.message || "").toLowerCase().includes("username")) {
+                            sendJSON(
+                                res,
+                                {
+                                    success: false,
+                                    message: "Сначала добавьте поле username в Supabase"
+                                },
+                                500
+                            );
+                            return;
+                        }
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Не удалось проверить юзернейм"
+                            },
+                            500
+                        );
+                        return;
+                    }
+
                     const user = {
                         login,
                         password,
@@ -1506,6 +1573,7 @@ const server =
                         blockedUsers: [],
                         profile: {
                             name: name.slice(0, 60) || login,
+                            username,
                             about: "",
                             photo: "",
                             background: "",

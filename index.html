@@ -1292,6 +1292,18 @@ body.booting #app {
 
 
 /* =========================================================
+   REGISTER USERNAME
+========================================================= */
+.register-username-field{margin:10px 0 2px;}
+.register-username-label{margin:0 0 6px;color:var(--muted);font-size:12px;font-weight:800;}
+.register-username-label span{color:#fda4af;}
+.register-username-input-wrap{display:flex;align-items:center;width:100%;min-height:46px;border:1px solid var(--border);border-radius:13px;background:var(--panel2);overflow:hidden;transition:border-color .18s,box-shadow .18s;}
+.register-username-input-wrap:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,92,246,.12);}
+.register-username-input-wrap>span{padding-left:13px;color:var(--accent);font-size:16px;font-weight:900;}
+.register-username-input-wrap input{flex:1;min-width:0;margin:0!important;padding:12px 13px 12px 6px!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;}
+.register-username-hint{margin:5px 2px 0;color:var(--muted);font-size:11px;line-height:1.35;}
+
+/* =========================================================
    CHANNEL SETTINGS — VIBE
 ========================================================= */
 .channel-settings-card{
@@ -1358,6 +1370,11 @@ body.booting #app {
     outline:none!important;
 }
 .channel-settings-textarea{min-height:82px!important;resize:vertical!important}
+.channel-profile-username{display:flex;align-items:center;width:100%;min-height:46px;margin:0;border:1px solid var(--border);border-radius:12px;background:var(--panel2);overflow:hidden;transition:border-color .18s,box-shadow .18s;}
+.channel-profile-username:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(139,92,246,.12);}
+.channel-profile-username>span{padding-left:13px;color:var(--accent);font-weight:900;font-size:16px;}
+.channel-profile-username-input{flex:1;min-width:0!important;width:100%;margin:0!important;padding:11px 12px 11px 7px!important;border:0!important;border-radius:0!important;background:transparent!important;color:var(--text)!important;outline:none!important;box-shadow:none!important;}
+.channel-profile-username-hint{margin:6px 2px 0;color:var(--muted);font-size:11px;line-height:1.35;}
 .channel-setting-switch{
     display:flex;align-items:center;gap:11px;
     padding:11px 0;border-top:1px solid rgba(255,255,255,.045);
@@ -2925,6 +2942,9 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 .communities-title .vibe-icon{color:var(--accent)}
 .communities-subtitle,.modal-subtitle{color:var(--muted);font-size:13px;margin-top:4px}
 .communities-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.create-channel-open-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+.create-channel-open-button .vibe-icon{width:18px;height:18px;display:inline-flex;}
+.create-channel-open-button .vibe-icon svg{width:100%;height:100%;}
 .community-action{
     border:1px solid var(--border);
     border-radius:16px;
@@ -3362,8 +3382,9 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     id="topCommunitiesButton"
                     onclick="openCommunities()"
                     title="Группы и каналы"
+                    aria-label="Группы и каналы"
                 >
-                    <span class="vibe-icon"><svg viewBox="0 0 24 24"><path d="M5 5.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-5 3v-3.2a2 2 0 0 1-3-1.8v-8a2 2 0 0 1 2-2Z"/></svg></span>
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 7.2A2.7 2.7 0 0 1 7.5 4.5h6l5.7 5.7v6.3a2.8 2.8 0 0 1-2.8 2.8H7.6a2.8 2.8 0 0 1-2.8-2.8Z"/><path d="M13.4 4.8v4.1a1.7 1.7 0 0 0 1.7 1.7h4.1M8.2 15.6h7.6M12 11.8v7.6"/></svg></span>
                 </button>
 
                 <button
@@ -3371,9 +3392,9 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     id="topSettingsButton"
                     onclick="openSettings()"
                     title="Настройки"
+                    aria-label="Настройки"
                 >
-                    <span class="vibe-icon"><svg viewBox="0 0 24 24"><path d="M12 3.7 13.4 5l1.9-.4.9 1.7 1.8.8-.2 2 1.3 1.5-1.3 1.5.2 2-1.8.8-.9 1.7-1.9-.4-1.4 1.3-1.4-1.3-1.9.4-.9-1.7-1.8-.8.2-2L5 10.6l1.2-1.5-.2-2 1.8-.8.9-1.7 1.9.4L12 3.7Z"/><circle cx="12" cy="10.6" r="2.7"/></svg></span>
-                </button>
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8l1 .2.6 2a6.4 6.4 0 0 1 1.7 1l2-.6 1.1 1.9-1.4 1.6c.2.6.3 1.2.3 1.9s-.1 1.3-.3 1.9l1.4 1.6-1.1 1.9-2-.6a6.4 6.4 0 0 1-1.7 1l-.6 2-2 .2-.6-2a6.4 6.4 0 0 1-1.7-1l-2 .6-1.1-1.9 1.4-1.6a6.4 6.4 0 0 1-.3-1.9c0-.7.1-1.3.3-1.9L4 8.3l1.1-1.9 2 .6a6.4 6.4 0 0 1 1.7-1l.6-2 2-.2Z"/><circle cx="12" cy="11.8" r="2.4"/></svg></span></button>
 
                 <button
                     class="icon-btn mobile-help-button"
@@ -3677,6 +3698,21 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             placeholder="Логин"
             autocomplete="username"
         >
+
+        <div class="register-username-field">
+            <div class="register-username-label">Юзернейм <span>*</span></div>
+            <div class="register-username-input-wrap">
+                <span>@</span>
+                <input
+                    id="registerUsername"
+                    placeholder="username"
+                    maxlength="32"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+            </div>
+            <div class="register-username-hint">3–32 символа · латиница, цифры и _</div>
+        </div>
 
         <div class="password-field">
 
@@ -4581,7 +4617,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 <span><b>Создать группу</b><small>Общение с участниками</small></span>
             </button>
             <button class="community-action" onclick="openChannels()">
-                <span class="community-action-icon">◈</span>
+                <span class="community-action-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 10v4h2.7l4.8 3V7l-4.8 3H4.8Z"/><path d="M15.8 9.2a4.1 4.1 0 0 1 0 5.6M18.2 7.2a7 7 0 0 1 0 9.6"/><path d="M18 3.8v5.4M15.3 6.5h5.4"/></svg></span>
                 <span><b>Каналы</b><small>Публикации и подписки</small></span>
             </button>
         </div>
@@ -4711,10 +4747,11 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         </div>
 
         <button
-            class="primary"
+            class="primary create-channel-open-button"
             onclick="openCreateChannel()"
         >
-            + Создать канал
+            <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 10v4h2.7l4.8 3V7l-4.8 3H4.8Z"/><path d="M15.8 9.2a4.1 4.1 0 0 1 0 5.6M18.2 7.2a7 7 0 0 1 0 9.6"/><path d="M18 3.8v5.4M15.3 6.5h5.4"/></svg></span>
+            Создать канал
         </button>
 
         <div
@@ -4751,7 +4788,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         </div>
 
         <div class="community-create-avatar-row">
-            <div id="channelCreatePreview" class="community-create-avatar">◈</div>
+            <div id="channelCreatePreview" class="community-create-avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 10v4h2.7l4.8 3V7l-4.8 3H4.8Z"/><path d="M15.8 9.2a4.1 4.1 0 0 1 0 5.6M18.2 7.2a7 7 0 0 1 0 9.6"/><path d="M18 3.8v5.4M15.3 6.5h5.4"/></svg></div>
             <label class="community-photo-button" for="channelPhotoFile">
                 <span>▣</span>
                 <span><b>Добавить фото</b><small>Необязательно</small></span>
@@ -4822,9 +4859,9 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <label class="channel-settings-label">Юзернейм</label>
             <div class="channel-profile-username">
                 <span>@</span>
-                <input id="channelProfileUsername" class="channel-settings-input" placeholder="my_channel" maxlength="32" autocomplete="off" spellcheck="false">
+                <input id="channelProfileUsername" class="channel-profile-username-input" placeholder="my_channel" maxlength="32" autocomplete="off" spellcheck="false">
             </div>
-            <div class="channel-profile-username-hint">Уникальный адрес канала. Латинские буквы, цифры и _.</div>
+            <div class="channel-profile-username-hint">Уникальный адрес канала. Только латинские буквы, цифры и _.</div>
 
             <label class="channel-settings-label">Описание</label>
             <textarea id="channelProfileDescription" class="channel-settings-input channel-settings-textarea" placeholder="Короткое описание канала"></textarea>
@@ -5752,6 +5789,7 @@ function openRegister() {
 
     $("registerMessage").textContent = "";
     $("registerLogin").value = $("loginInput").value.trim();
+    $("registerUsername").value = "";
     $("registerPassword").value = $("passwordInput").value;
     $("registerName").value = "";
     $("registerBirthDate").value = "";
@@ -5800,7 +5838,12 @@ async function login() {
                     body:
                         JSON.stringify({
                             login:loginValue,
-                            password
+                            username:usernameValue,
+                            password,
+                            name,
+                            language,
+                            birthDate,
+                            email
                         })
                 }
             );
@@ -6029,6 +6072,13 @@ async function register() {
             .value
             .trim();
 
+    const usernameValue =
+        $("registerUsername")
+            .value
+            .trim()
+            .replace(/^@+/g, "")
+            .toLowerCase();
+
     const password =
         $("registerPassword")
             .value
@@ -6060,15 +6110,24 @@ async function register() {
 
     if (
         !loginValue ||
+        !usernameValue ||
         !password ||
         !name
     ) {
 
         $("registerMessage").textContent =
             language === "ru"
-                ? "Заполни логин, пароль и имя"
-                : "Fill in username, password and name";
+                ? "Заполни логин, юзернейм, пароль и имя"
+                : "Fill in login, username, password and name";
 
+        return;
+    }
+
+    if (!/^[a-z0-9_]{3,32}$/.test(usernameValue)) {
+        $("registerMessage").textContent =
+            language === "ru"
+                ? "Юзернейм: 3–32 символа, только латинские буквы, цифры и _"
+                : "Username: 3–32 characters, only Latin letters, numbers and _";
         return;
     }
 
@@ -6098,7 +6157,12 @@ async function register() {
                     body:
                         JSON.stringify({
                             login:loginValue,
-                            password
+                            username:usernameValue,
+                            password,
+                            name,
+                            language,
+                            birthDate,
+                            email
                         })
                 }
             );
@@ -6290,7 +6354,7 @@ function closeVibeHelp() {
 function vibeIcon(name, extraClass="") {
     const icons = {
         community: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/><path d="M2.5 20.5c.5-3.1 2.5-5 6-5s5.5 1.9 6 5"/><path d="M16 4.5a3.2 3.2 0 0 1 0 6.2"/><path d="M16.5 15.5c2.8.3 4.5 1.9 5 4.5"/></svg>',
-        settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.7 13.4 5l1.9-.4.9 1.7 1.8.8-.2 2 1.3 1.5-1.3 1.5.2 2-1.8.8-.9 1.7-1.9-.4-1.4 1.3-1.4-1.3-1.9.4-.9-1.7-1.8-.8.2-2L5 10.6l1.2-1.5-.2-2 1.8-.8.9-1.7 1.9.4L12 3.7Z"/><circle cx="12" cy="10.6" r="2.7"/></svg>',
+        settings: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.8l1 .2.6 2a6.4 6.4 0 0 1 1.7 1l2-.6 1.1 1.9-1.4 1.6c.2.6.3 1.2.3 1.9s-.1 1.3-.3 1.9l1.4 1.6-1.1 1.9-2-.6a6.4 6.4 0 0 1-1.7 1l-.6 2-2 .2-.6-2a6.4 6.4 0 0 1-1.7-1l-2 .6-1.1-1.9 1.4-1.6a6.4 6.4 0 0 1-.3-1.9c0-.7.1-1.3.3-1.9L4 8.3l1.1-1.9 2 .6a6.4 6.4 0 0 1 1.7-1l.6-2 2-.2Z"/><circle cx="12" cy="11.8" r="2.4"/></svg>',
         user: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"/></svg>',
         lock: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><circle cx="12" cy="15" r="1"/></svg>',
         language: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.8 9h16.4M3.8 15h16.4M12 3.5c2.2 2.3 3.3 5.1 3.3 8.5s-1.1 6.2-3.3 8.5c-2.2-2.3-3.3-5.1-3.3-8.5S9.8 5.8 12 3.5Z"/></svg>',
@@ -6301,6 +6365,7 @@ function vibeIcon(name, extraClass="") {
         key: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.5" cy="15.5" r="4"/><path d="m11.5 12.5 8-8M16 7l2 2M18.5 4.5l1 1"/></svg>',
         logout: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6.5A1.5 1.5 0 0 0 5 5.5v13A1.5 1.5 0 0 0 6.5 20H10"/><path d="M13 8l4 4-4 4M17 12H9"/></svg>',
         channel: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.5v5h3.2l5 3V6.5l-5 3H5Z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>',
+        channelCreate: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 10v4h2.7l4.8 3V7l-4.8 3H4.8Z"/><path d="M15.8 9.2a4.1 4.1 0 0 1 0 5.6M18.2 7.2a7 7 0 0 1 0 9.6"/><path d="M18 3.8v5.4M15.3 6.5h5.4"/></svg>',
         file: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3.5h8l4 4v13H6z"/><path d="M14 3.5v4h4M9 12h6M9 15.5h6"/></svg>',
         phone: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 4.5 9.5 7 8 9.5c1.1 2.2 2.3 3.4 4.5 4.5l2.5-1.5 2.5 2.3c.7.7.6 1.9-.2 2.5l-1.2.9c-.8.6-1.8.7-2.7.3-5.4-2.4-8.5-5.5-10.9-10.9-.4-.9-.3-1.9.3-2.7l.9-1.2c.6-.8 1.8-.9 2.5-.2Z"/></svg>',
         video: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="6" width="13" height="12" rx="2"/><path d="m16.5 10 4-2v8l-4-2z"/></svg>',
