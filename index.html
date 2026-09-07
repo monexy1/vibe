@@ -5395,41 +5395,51 @@ function translateTextValue(value){
     return s;
 }
 
+let __vibeTranslationObserver=null;
+let __vibeTranslationObserverStarted=false;
+let __vibeApplyingTranslation=false;
+
 function applyFullUITranslation(){
     const root=document.body;
-    if(!root) return;
-    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-    const nodes=[];
-    while(walker.nextNode()) nodes.push(walker.currentNode);
-    for(const node of nodes){
-        const parent=node.parentElement;
-        if(!parent || parent.closest('script,style,noscript,template')) continue;
-        const raw=node.textContent;
-        if(!node.__vibeSourceText) node.__vibeSourceText=raw;
-        const source=node.__vibeSourceText;
-        node.textContent=translateTextValue(source);
-    }
-    root.querySelectorAll('input,textarea,select,button,[title],[aria-label]').forEach(el=>{
-        ['placeholder','title','aria-label'].forEach(attr=>{
-            if(!el.hasAttribute(attr)) return;
-            const cur=el.getAttribute(attr);
-            if(!el.dataset.vibeSourceAttr) el.dataset.vibeSourceAttr=cur;
-            el.setAttribute(attr, translateTextValue(el.dataset.vibeSourceAttr));
+    if(!root || __vibeApplyingTranslation) return;
+    __vibeApplyingTranslation=true;
+    try {
+        const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+        const nodes=[];
+        while(walker.nextNode()) nodes.push(walker.currentNode);
+        for(const node of nodes){
+            const parent=node.parentElement;
+            if(!parent || parent.closest('script,style,noscript,template')) continue;
+            const raw=node.textContent ?? '';
+            if(!node.__vibeSourceText) node.__vibeSourceText=raw;
+            const source=node.__vibeSourceText;
+            const translated=translateTextValue(source);
+            if(node.textContent !== translated) node.textContent=translated;
+        }
+        root.querySelectorAll('input,textarea,select,button,[title],[aria-label]').forEach(el=>{
+            ['placeholder','title','aria-label'].forEach(attr=>{
+                if(!el.hasAttribute(attr)) return;
+                const cur=el.getAttribute(attr);
+                if(!el.dataset.vibeSourceAttr) el.dataset.vibeSourceAttr=cur;
+                const translated=translateTextValue(el.dataset.vibeSourceAttr);
+                if(el.getAttribute(attr) !== translated) el.setAttribute(attr, translated);
+            });
         });
-    });
+    } finally {
+        __vibeApplyingTranslation=false;
+    }
 }
 
-let __vibeTranslationObserverStarted=false;
 function startTranslationObserver(){
     if(__vibeTranslationObserverStarted || !document.body) return;
     __vibeTranslationObserverStarted=true;
-    let translating=false;
-    const observer=new MutationObserver(()=>{
-        if(siteLanguage!=='en' || translating) return;
-        translating=true;
-        try{ applyFullUITranslation(); } finally { translating=false; }
+    __vibeTranslationObserver=new MutationObserver(()=>{
+        if(siteLanguage!=='en' || __vibeApplyingTranslation) return;
+        applyFullUITranslation();
     });
-    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['title','aria-label','placeholder']});
+    // Watch DOM insertions/changes, but not attributes. Language translation itself
+    // changes text/attributes, so observing attributes created an endless loop.
+    __vibeTranslationObserver.observe(document.body,{subtree:true,childList:true});
     applyFullUITranslation();
 }
 
