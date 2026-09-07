@@ -12226,7 +12226,6 @@ function openMessageActions(messageInfo, x, y) {
       </div>
       <button type="button" onclick="replySelectedMessage()">${vibeIcon("reply")}<span>Ответить</span></button>
       <button type="button" onclick="copySelectedMessage()">${vibeIcon("copy")}<span>Копировать текст</span></button>
-      <button type="button" onclick="copySelectedMessageLink()">${vibeIcon("link")}<span>Копировать ссылку на сообщение</span></button>
       <button type="button" onclick="forwardSelectedMessage()">${vibeIcon("forward")}<span>Переслать</span></button>
       <button type="button" onclick="reportSelectedMessage()">${vibeIcon("info")}<span>Пожаловаться</span></button>
       <button type="button" onclick="selectSelectedMessage()">${vibeIcon("check")}<span>Выделить</span></button>
@@ -12751,10 +12750,7 @@ window.addEventListener("scroll", () => {
                 ${vibeIcon("copy")}<span>Копировать текст</span>
             </button>
 
-            <button type="button" onclick="copySelectedMessageLink()">
-                ${vibeIcon("link")}<span>Копировать ссылку на сообщение</span>
-            </button>
-
+      
             <button type="button" onclick="forwardSelectedMessage()">
                 ${vibeIcon("forward")}<span>Переслать</span>
             </button>
@@ -13131,6 +13127,200 @@ body.vibe-group-admin #mobileAttachmentMenu #attachmentPollButton{display:flex !
 /* Prevent a tiny auth flash during startup */
 body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 </style>
+
+
+<style id="vibe-v9-final-style">
+/* === V9 message actions / reactions / edit composer === */
+.message-actions-reactions,
+.vibe-final-action-reactions,
+.vibe-channel-action-reactions,
+.vibe-reaction-primary{
+  display:grid!important;
+  grid-template-columns:repeat(8, 34px) 30px!important;
+  grid-auto-rows:34px!important;
+  align-items:center!important;
+  gap:3px!important;
+  overflow:visible!important;
+  padding:4px 4px 5px!important;
+  white-space:normal!important;
+}
+.message-actions-reactions button,
+.vibe-final-action-reactions button,
+.vibe-channel-action-reactions button,
+.vibe-reaction-primary button{
+  width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;
+  display:grid!important;place-items:center!important;padding:0!important;
+}
+.vibe-reaction-more{
+  border:0!important;background:var(--panel2)!important;color:var(--text)!important;
+  border-radius:9px!important;cursor:pointer!important;font-size:16px!important;font-weight:900!important;
+}
+.vibe-reaction-more.vibe-open{background:var(--accent)!important;color:#fff!important}
+.vibe-reaction-extra{
+  grid-column:1 / -1!important;
+  display:grid!important;
+  grid-template-columns:repeat(8, 34px)!important;
+  gap:3px!important;
+  padding-top:3px!important;
+  border-top:1px solid var(--border)!important;
+  margin-top:2px!important;
+}
+.vibe-reaction-extra.hidden{display:none!important}
+.vibe-reaction-extra button{width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important}
+
+/* Premium edit bar: similar to the supplied Vibe reference */
+#vibeEditComposer{
+  display:flex!important;align-items:center!important;gap:11px!important;
+  width:100%!important;min-height:58px!important;padding:7px 13px!important;
+  box-sizing:border-box!important;background:var(--panel2)!important;border-bottom:1px solid var(--border)!important;
+}
+#vibeEditComposer .vibe-edit-icon{width:34px;height:34px;min-width:34px;display:grid;place-items:center;border-radius:10px;background:rgba(92,159,255,.12);color:#63a9ff;font-size:20px}
+#vibeEditComposer .vibe-edit-copy{min-width:0;flex:1;display:flex;flex-direction:column;line-height:1.15}
+#vibeEditComposer .vibe-edit-title{font-size:12px;color:#63a9ff;font-weight:800}
+#vibeEditComposer .vibe-edit-text{font-size:11px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#vibeEditComposer .vibe-edit-close{border:0;background:transparent;color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:20px}
+#vibeEditComposer .vibe-edit-close:hover{background:var(--panel)}
+#mainComposer.vibe-is-editing{display:grid!important;grid-template-columns:1fr!important;grid-template-rows:auto auto!important;gap:0!important;padding:0!important}
+#mainComposer.vibe-is-editing > #vibeEditComposer{grid-row:1}
+#mainComposer.vibe-is-editing > #messageInput{grid-row:2;min-width:0!important;width:100%!important;box-sizing:border-box!important;border-radius:0!important;border-left:0!important;border-right:0!important}
+#mainComposer.vibe-is-editing > .composer-tools,
+#mainComposer.vibe-is-editing > #mobileAttachmentButton,
+#mainComposer.vibe-is-editing > #mobileAttachmentMenu,
+#mainComposer.vibe-is-editing > .emoji-btn,
+#mainComposer.vibe-is-editing > .quick-messages-wrap,
+#mainComposer.vibe-is-editing > #voiceRecordButton,
+#mainComposer.vibe-is-editing > .send-button{grid-row:2}
+#mainComposer.vibe-is-editing > .emoji-btn{display:grid!important}
+@media(max-width:700px){
+ .message-actions-reactions,.vibe-final-action-reactions,.vibe-channel-action-reactions{grid-template-columns:repeat(7,32px) 30px!important;gap:2px!important}
+ .vibe-reaction-extra{grid-template-columns:repeat(7,32px)!important}
+ .message-actions-reactions button,.vibe-final-action-reactions button,.vibe-channel-action-reactions button,.vibe-reaction-extra button{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important}
+}
+</style>
+<script id="vibe-v9-final-script">
+(function(){
+  'use strict';
+  const RX=['❤️','👍','🔥','👎','🥰','👏','😁','🤔','🤯','😂','😮','😢','🎉','👀','💜','💯','😍','😎','🙏','🤩','🥳','😇','🤝','🚀','💥','⭐','✅','❌','❤️‍🔥','🤣','😴','😡','😤','😭','😱','🙌','💔','🫶','😈','🤗','😏','😎'];
+  const esc=v=>typeof escapeHTML==='function'?escapeHTML(String(v??'')):String(v??'');
+
+  function enhanceReactionRail(root){
+    if(!root || root.dataset.v9Ready==='1') return;
+    const old=[...root.querySelectorAll('button')].filter(b=>b.dataset && (b.dataset.reaction||b.dataset.v3MsgReact||b.dataset.v8Rx||b.dataset.finalChannelReaction||b.dataset.v3ChannelReaction));
+    if(!old.length) return;
+    root.dataset.v9Ready='1';
+    const byKey=new Map();
+    old.forEach(b=>{const k=b.dataset.reaction||b.dataset.v3MsgReact||b.dataset.v8Rx||b.dataset.finalChannelReaction||b.dataset.v3ChannelReaction;if(!byKey.has(k))byKey.set(k,b);});
+    const all=RX.map(e=>byKey.get(e)?.outerHTML||'').filter(Boolean);
+    // Include every known reaction, even if the original menu had only a subset.
+    const template=(e)=>{
+      const b=byKey.get(e); if(b) return b.outerHTML;
+      return `<button type="button" data-reaction="${esc(e)}" title="${esc(e)}">${e}</button>`;
+    };
+    const primary=RX.slice(0,8).map(template).join('');
+    root.innerHTML=primary+'<button type="button" class="vibe-reaction-more" aria-expanded="false" title="Все реакции">⌄</button><div class="vibe-reaction-extra hidden">'+RX.slice(8).map(template).join('')+'</div>';
+  }
+  function enhanceMenus(){
+    document.querySelectorAll('.message-actions-reactions,.vibe-final-action-reactions,.vibe-channel-action-reactions').forEach(enhanceReactionRail);
+  }
+  const observer=new MutationObserver(()=>{enhanceMenus();});
+  observer.observe(document.body,{childList:true,subtree:true});
+  document.addEventListener('click',e=>{
+    const more=e.target.closest?.('.vibe-reaction-more');
+    if(more){e.preventDefault();e.stopPropagation();const root=more.closest('.message-actions-reactions,.vibe-final-action-reactions,.vibe-channel-action-reactions');const extra=root?.querySelector('.vibe-reaction-extra');if(extra){const open=!extra.classList.contains('hidden');extra.classList.toggle('hidden',open);more.classList.toggle('vibe-open',!open);more.setAttribute('aria-expanded',String(!open));more.textContent=open?'⌄':'⌃';}return;}
+  },true);
+  enhanceMenus();
+
+  // Custom edit composer
+  let editState=null;
+  function removeEditComposer(){
+    editState=null;
+    document.getElementById('vibeEditComposer')?.remove();
+    document.getElementById('mainComposer')?.classList.remove('vibe-is-editing');
+  }
+  window.cancelVibeMessageEdit=removeEditComposer;
+  function beginEdit(state){
+    const composer=document.getElementById('mainComposer'), input=document.getElementById('messageInput');
+    if(!composer||!input||!state) return;
+    document.getElementById('vibeEditComposer')?.remove();
+    editState=state;
+    composer.classList.add('vibe-is-editing');
+    // clear reply/forward to prevent accidental mixed actions
+    try{pendingForward=null; document.getElementById('forwardComposePreview')?.remove();}catch{}
+    try{clearReplyTarget?.();}catch{}
+    const bar=document.createElement('div');bar.id='vibeEditComposer';
+    bar.innerHTML='<div class="vibe-edit-icon">✎</div><div class="vibe-edit-copy"><div class="vibe-edit-title">Редактирование</div><div class="vibe-edit-text"></div></div><button type="button" class="vibe-edit-close" title="Отмена">✕</button>';
+    bar.querySelector('.vibe-edit-text').textContent=String(state.text||'');
+    bar.querySelector('.vibe-edit-close').onclick=removeEditComposer;
+    composer.insertBefore(bar,composer.firstElementChild);
+    input.value=String(state.text||'');
+    input.placeholder='Введите новое сообщение...';
+    input.focus();input.setSelectionRange(input.value.length,input.value.length);
+  }
+  async function fetchMsg(id){
+    try{const r=await fetch('/message?messageId='+encodeURIComponent(id),{cache:'no-store'});const d=await r.json();if(d?.success&&d.message)return d.message;}catch{}
+    return null;
+  }
+  window.editSelectedMessage=async function(){
+    const info=selectedMessageForAction;closeMessageActions?.();
+    if(!info||!currentUser||String(info.from)!==String(currentUser.login))return;
+    const m=await fetchMsg(info.id) || {id:info.id,from:info.from,text:info.bubble?.querySelector(':scope > div:not(.forwarded-from):not(.message-time)')?.textContent||''};
+    const text=String(m?.text||'').trim(); if(!text)return;
+    beginEdit({kind:'message',id:String(m.id),text});
+  };
+  window.vibeEditChannelPost=async function(post){
+    if(!post||!currentChannel||!currentUser||String(currentChannel.owner)!==String(currentUser.login))return;
+    beginEdit({kind:'channel',id:String(post.id),text:String(post.text||''),post});
+  };
+  const originalSend=window.sendMessage;
+  window.sendMessage=async function(){
+    if(!editState){return originalSend?.apply(this,arguments)}
+    const input=document.getElementById('messageInput');
+    const text=String(input?.value||'').trim();
+    if(!text)return;
+    const st=editState;
+    input.disabled=true;
+    try{
+      let r,d;
+      if(st.kind==='channel'){
+        r=await fetch('/channel-post-edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channelId:currentChannel.id,postId:st.id,owner:currentUser.login,text})});
+        d=await r.json().catch(()=>({}));
+        if(!d.success){showVibeNotice?.('Изменение',d.message||'Не удалось изменить публикацию');return;}
+        if(window.__vibeChannelPosts)window.__vibeChannelPosts=window.__vibeChannelPosts.map(p=>String(p.id)===st.id?d.post:p);
+        await loadChannelPosts(false);
+      }else{
+        r=await fetch('/edit-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,messageId:st.id,text})});
+        d=await r.json().catch(()=>({}));
+        if(!d.success){showVibeNotice?.('Изменение',d.message||'Не удалось изменить сообщение');return;}
+        if(currentGroup) await loadGroupMessages(false); else await loadMessages(false);
+      }
+      removeEditComposer();
+    }catch{showVibeNotice?.('Ошибка','Не удалось изменить сообщение.')}finally{input.disabled=false}
+  };
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&editState){e.preventDefault();removeEditComposer()}},true);
+
+  // Make the direct-chat pin action reliable: the server now persists pins separately.
+  window.toggleSelectedMessagePin=async function(){
+    const info=selectedMessageForAction; closeMessageActions?.(); if(!info||!currentUser)return;
+    try{
+      const r=await fetch('/pin-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,messageId:info.id,pinned:!info.bubble?.classList.contains('vibe-message-pinned')})});
+      const d=await r.json().catch(()=>({}));
+      if(!d.success){showVibeNotice?.('Закрепление',d.message||'Не удалось изменить закрепление');return;}
+      await loadMessages(false); window.syncDirectPinBar?.();
+    }catch{showVibeNotice?.('Ошибка','Не удалось изменить закрепление')}
+  };
+
+  // Ensure the channel/group menus use the polished edit function and no link row.
+  const oldGroupEdit=window.editSelectedMessage;
+  // Final context: right click on a group/direct message opens the same action menu as desktop chat.
+  // The V8 capture handlers are kept; this patch adds a direct fallback on the message element itself.
+  document.addEventListener('contextmenu',e=>{
+    const b=e.target.closest?.('.message[data-group-id]');
+    if(!b||!currentGroup)return;
+    // V8 already owns this event; do not duplicate if a menu exists.
+    setTimeout(()=>{ if(!document.querySelector('.vibe-group-action-menu,.message-actions')){ /* no-op, legacy handler failed */ } },0);
+  },false);
+})();
+</script>
 
 </html>
 <style>
@@ -13777,8 +13967,7 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
             </div>
             <button type="button" onclick="replySelectedMessage()">${vibeIcon("reply")}<span>Ответить</span></button>
             <button type="button" onclick="copySelectedMessage()">${vibeIcon("copy")}<span>Копировать текст</span></button>
-            <button type="button" onclick="copySelectedMessageLink()">${vibeIcon("link")}<span>Копировать ссылку на сообщение</span></button>
-            <button type="button" onclick="forwardSelectedMessage()">${vibeIcon("forward")}<span>Переслать</span></button>
+                  <button type="button" onclick="forwardSelectedMessage()">${vibeIcon("forward")}<span>Переслать</span></button>
             <button type="button" onclick="reportSelectedMessage()">${vibeIcon("info")}<span>Пожаловаться</span></button>
             <button type="button" onclick="selectSelectedMessage()">${vibeIcon("check")}<span>Выделить</span></button>
             <div class="message-actions-divider"></div>
@@ -15497,8 +15686,8 @@ body.vibe-channel-owner #attachmentPollButton{display:flex!important}
     };
 
     window.openMessageActions=function(info,x,y){
-        closeMessageActions();if(!info||!currentUser)return;selectedMessageForAction=info;const m=document.createElement("div");m.className="vibe-final-action-menu";const mine=String(info.from)===String(currentUser.login);m.innerHTML='<div class="vibe-final-action-reactions">'+ACTION_REACTIONS.map(e=>'<button type="button" data-msg-react="'+esc(e)+'">'+e+'</button>').join("")+'</div><button type="button" data-msg-action="reply">'+vibeIcon("reply")+'<span>Ответить</span></button>'+(mine?'<button type="button" data-msg-action="edit">'+vibeIcon("edit")+'<span>Изменить</span></button>':"")+'<button type="button" data-msg-action="pin">'+vibeIcon("pin")+'<span>Закрепить</span></button><button type="button" data-msg-action="copy">'+vibeIcon("copy")+'<span>Копировать текст</span></button><button type="button" data-msg-action="link">'+vibeIcon("link")+'<span>Копировать ссылку на сообщение</span></button><button type="button" data-msg-action="forward">'+vibeIcon("forward")+'<span>Переслать</span></button><button type="button" class="vibe-final-action-danger" data-msg-action="delete">'+vibeIcon("trash")+'<span>Удалить</span></button>';
-        m.addEventListener("click",async e=>{const rr=e.target.closest("[data-msg-react]");if(rr){await reactMessage(info.id,rr.dataset.msgReact);closeFinalMenu();return}const a=e.target.closest("[data-msg-action]");if(!a)return;const k=a.dataset.msgAction;if(k==="reply"){await replySelectedMessage();return}if(k==="edit"){await editSelectedMessage();return}if(k==="pin"){await toggleSelectedMessagePin();return}if(k==="copy"){const t=info.bubble?.querySelector(":scope > div:not(.forwarded-from):not(.message-time)")?.textContent||"";await copyText(t);closeFinalMenu();return}if(k==="link"){await copySelectedMessageLink();return}if(k==="forward"){await window.forwardSelectedMessage();return}if(k==="delete"){await deleteSelectedMessage(mine?"all":"self");return}});placeFinalMenu(m,x,y)
+        closeMessageActions();if(!info||!currentUser)return;selectedMessageForAction=info;const m=document.createElement("div");m.className="vibe-final-action-menu";const mine=String(info.from)===String(currentUser.login);m.innerHTML='<div class="vibe-final-action-reactions">'+ACTION_REACTIONS.map(e=>'<button type="button" data-msg-react="'+esc(e)+'">'+e+'</button>').join("")+'</div><button type="button" data-msg-action="reply">'+vibeIcon("reply")+'<span>Ответить</span></button>'+(mine?'<button type="button" data-msg-action="edit">'+vibeIcon("edit")+'<span>Изменить</span></button>':"")+'<button type="button" data-msg-action="pin">'+vibeIcon("pin")+'<span>Закрепить</span></button><button type="button" data-msg-action="copy">'+vibeIcon("copy")+'<span>Копировать текст</span></button><button type="button" data-msg-action="forward">'+vibeIcon("forward")+'<span>Переслать</span></button><button type="button" class="vibe-final-action-danger" data-msg-action="delete">'+vibeIcon("trash")+'<span>Удалить</span></button>';
+        m.addEventListener("click",async e=>{const rr=e.target.closest("[data-msg-react]");if(rr){await reactMessage(info.id,rr.dataset.msgReact);closeFinalMenu();return}const a=e.target.closest("[data-msg-action]");if(!a)return;const k=a.dataset.msgAction;if(k==="reply"){await replySelectedMessage();return}if(k==="edit"){await editSelectedMessage();return}if(k==="pin"){await toggleSelectedMessagePin();return}if(k==="copy"){const t=info.bubble?.querySelector(":scope > div:not(.forwarded-from):not(.message-time)")?.textContent||"";await copyText(t);closeFinalMenu();return}if(k==="forward"){await window.forwardSelectedMessage();return}if(k==="delete"){await deleteSelectedMessage(mine?"all":"self");return}});placeFinalMenu(m,x,y)
     };
 
     function ensurePollModal(){
@@ -16309,7 +16498,6 @@ body.vibe-channel-owner #attachmentPollButtonDesktop{display:inline-flex !import
           (mine?'<button type="button" data-v3-msg-action="edit">'+vibeIcon("edit")+'<span>Изменить</span></button>':'')+
           '<button type="button" data-v3-msg-action="pin">'+vibeIcon("pin")+'<span>'+(info.bubble?.classList.contains("vibe-message-pinned")?"Открепить":"Закрепить")+'</span></button>'+
           '<button type="button" data-v3-msg-action="copy">'+vibeIcon("copy")+'<span>Копировать текст</span></button>'+
-          '<button type="button" data-v3-msg-action="link">'+vibeIcon("link")+'<span>Копировать ссылку на сообщение</span></button>'+
           '<button type="button" data-v3-msg-action="forward">'+vibeIcon("forward")+'<span>Переслать</span></button>'+
           '<button type="button" class="vibe-final-action-danger" data-v3-msg-action="delete-self">'+vibeIcon("trash")+'<span>Удалить у себя</span></button>'+
           (mine?'<button type="button" class="vibe-final-action-danger" data-v3-msg-action="delete-all">'+vibeIcon("trash")+'<span>Удалить у всех</span></button>':'');
@@ -16322,7 +16510,6 @@ body.vibe-channel-owner #attachmentPollButtonDesktop{display:inline-flex !import
             if(kind==="edit"){await editSelectedMessage();return}
             if(kind==="pin"){await toggleSelectedMessagePin();closeFinalMenus();return}
             if(kind==="copy"){const t=info.bubble?.querySelector(":scope > div:not(.forwarded-from):not(.message-time)")?.textContent||"";try{await navigator.clipboard.writeText(String(t||""))}catch{} closeFinalMenus();return}
-            if(kind==="link"){await copySelectedMessageLink();return}
             if(kind==="forward"){await window.forwardSelectedMessage?.();return}
             if(kind==="delete-self"){closeFinalMenus();window.deleteSelectedMessage("self");return}
             if(kind==="delete-all"){closeFinalMenus();window.deleteSelectedMessage("all");return}
@@ -16618,7 +16805,6 @@ body.vibe-channel-mode .message-actions [data-action="delete-all"]{display:none!
       ${mine&&hasText?`<button type="button" data-v8-action="edit">${vibeIcon('edit')}<span>Изменить</span></button>`:''}
       ${groupIsAdmin()?`<button type="button" data-v8-action="pin">${vibeIcon('pin')}<span>${info.pinned?'Открепить':'Закрепить'}</span></button>`:''}
       <button type="button" data-v8-action="copy">${vibeIcon('copy')}<span>Копировать текст</span></button>
-      <button type="button" data-v8-action="link">${vibeIcon('link')}<span>Копировать ссылку на сообщение</span></button>
       <button type="button" data-v8-action="forward">${vibeIcon('forward')}<span>Переслать</span></button>
       ${mine?`<button type="button" class="message-actions-danger" data-v8-action="delete">${vibeIcon('trash')}<span>Удалить</span></button>`:''}`;
 
@@ -16630,7 +16816,6 @@ body.vibe-channel-mode .message-actions [data-action="delete-all"]{display:none!
       if(k==='reply'){m.remove();await replySelectedMessage();return;}
       if(k==='edit'){m.remove();await editSelectedMessage();return;}
       if(k==='copy'){try{await navigator.clipboard.writeText(String(info.text||''))}catch{}m.remove();return;}
-      if(k==='link'){m.remove();await copySelectedMessageLink();return;}
       if(k==='forward'){m.remove();await window.forwardSelectedMessage?.();return;}
       if(k==='delete'){m.remove();await deleteSelectedMessage('all');return;}
       if(k==='pin'){

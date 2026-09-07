@@ -69,7 +69,8 @@ const VIBE_STATE_KEYS = {
     users: "users",
     channels: "channels",
     channelPosts: "channel-posts",
-    groups: "groups"
+    groups: "groups",
+    directPins: "direct-pins"
 };
 
 let vibeStateHydrated = false;
@@ -95,6 +96,18 @@ async function getVibeState(key) {
         console.error("Supabase vibe_state read error:", error.message);
         return null;
     }
+}
+
+async function getDirectPinnedIds() {
+    const value = await getVibeState(VIBE_STATE_KEYS.directPins);
+    if (Array.isArray(value)) return value.map(String);
+    return [];
+}
+
+async function setDirectPinnedIds(ids) {
+    const normalized = [...new Set((Array.isArray(ids) ? ids : []).map(String).filter(Boolean))];
+    await putVibeState(VIBE_STATE_KEYS.directPins, normalized);
+    return normalized;
 }
 
 async function putVibeState(key, value) {
@@ -3220,6 +3233,32 @@ const server =
 
 
                 /* =====================================================
+                   SINGLE MESSAGE
+                ===================================================== */
+                if (req.method === "GET" && pathname === "/message") {
+                    const messageId = String(url.searchParams.get("messageId") || "").trim();
+                    const login = String(url.searchParams.get("login") || "").trim();
+                    const messages = await getPersistentMessages();
+                    const message = messages.find(m => String(m.id) === messageId);
+                    if (!message) {
+                        sendJSON(res, {success:false, message:"Сообщение не найдено"}, 404);
+                        return;
+                    }
+                    if (login && message.groupId) {
+                        const group = getGroups().find(g => String(g.id) === String(message.groupId));
+                        if (!group || !Array.isArray(group.members) || !group.members.includes(login)) {
+                            sendJSON(res,{success:false,message:"Нет доступа"},403); return;
+                        }
+                    } else if (login && !message.groupId && message.from !== login && message.to !== login) {
+                        sendJSON(res,{success:false,message:"Нет доступа"},403); return;
+                    }
+                    const pins = message.groupId ? [] : await getDirectPinnedIds();
+                    message.pinned = !message.groupId && pins.includes(String(message.id));
+                    sendJSON(res,{success:true,message});
+                    return;
+                }
+
+                /* =====================================================
                    MESSAGES
                 ===================================================== */
 
@@ -3260,12 +3299,10 @@ const server =
                                     message.to === user1
                                 )
                         );
+                    const pins = await getDirectPinnedIds();
+                    result.forEach(message => { message.pinned = pins.includes(String(message.id)); });
 
-
-                    sendJSON(
-                        res,
-                        result
-                    );
+                    sendJSON(res, result);
 
                     return;
                 }
@@ -3586,7 +3623,6 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const pinned = body.pinned !== false;
-
                     const messages = await getPersistentMessages();
                     const message = messages.find(m => String(m.id) === messageId);
 
@@ -3594,20 +3630,23 @@ const server =
                         sendJSON(res, {success:false, message:"Сообщение не найдено"}, 404);
                         return;
                     }
-
+                    if (message.groupId) {
+                        sendJSON(res,{success:false,message:"Для группы используется групповое закрепление"},400);
+                        return;
+                    }
                     if (String(message.from) !== login && String(message.to) !== login) {
                         sendJSON(res, {success:false, message:"Нет доступа"}, 403);
                         return;
                     }
 
+                    let ids = await getDirectPinnedIds();
+                    ids = ids.filter(id => id !== messageId);
+                    if (pinned) ids.push(messageId);
+                    await setDirectPinnedIds(ids);
                     message.pinned = pinned;
-                    await updatePersistentMessage(message);
 
                     sendToUser(message.from, {type:"message-pinned", message});
-                    if (message.to) {
-                        sendToUser(message.to, {type:"message-pinned", message});
-                    }
-
+                    if (message.to) sendToUser(message.to, {type:"message-pinned", message});
                     sendJSON(res, {success:true, message});
                     return;
                 }
@@ -3620,7 +3659,7 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const emoji = String(body.emoji || "").trim();
-                    const allowed = ["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩"];
+                    const allowed = ["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩","🥳","😇","🤝","🚀","💥","⭐","✅","❌","❤️‍🔥","🤣","😴","😡","😤","😭","😱","🙌","💔","🫶","😈","🤗","😏"];
                     if (!login || !messageId || !allowed.includes(emoji)) {
                         sendJSON(res,{success:false,message:"Некорректная реакция"},400);
                         return;
@@ -4715,7 +4754,7 @@ const server =
                     const postId=String(body.postId||"");
                     const login=String(body.login||"");
                     const emoji=String(body.emoji||"");
-                    if(!["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
+                    if(!["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩","🥳","😇","🤝","🚀","💥","⭐","✅","❌","❤️‍🔥","🤣","😴","😡","😤","😭","😱","🙌","💔","🫶","😈","🤗","😏"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
                     const channels=getNormalizedChannels();
                     const channel=channels.find(c=>String(c.id)===channelId);
                     if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
