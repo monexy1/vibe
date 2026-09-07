@@ -1,112 +1,17 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Vibe — Регистрация</title>
-
-    <style>
-        body {
-            margin: 0;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #111;
-            font-family: Arial, sans-serif;
-            color: white;
-        }
-
-        .box {
-            width: 350px;
-            padding: 30px;
-            background: #1e1e1e;
-            border-radius: 20px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-
-        p {
-            color: #aaa;
-        }
-
-        input {
-            width: 90%;
-            padding: 14px;
-            margin: 8px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-        }
-
-        button {
-            width: 95%;
-            padding: 14px;
-            margin-top: 10px;
-            border: none;
-            border-radius: 10px;
-            background: #7c3aed;
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #6d28d9;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="box">
-
-        <h1>Vibe</h1>
-
-        <p>Создай свой аккаунт</p>
-
-        <input id="login" type="text" placeholder="Придумай логин">
-
-        <input id="password" type="password" placeholder="Придумай пароль">
-
-        <button onclick="register()">Создать аккаунт</button>
-
-    </div>
-
-    <script>
-        async function register() {
-
-            const login = document.getElementById("login").value;
-            const password = document.getElementById("password").value;
-
-            if (!login || !password) {
-                alert("Заполни оба поля!");
-                return;
-            }
-
-            const response = await fetch("/register", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    login: login,
-                    password: password
-                })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                alert("Аккаунт создан!");
-            } else {
-                alert(result.message);
-            }
-        }
-    </script>
-
-</body>
-</html>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vibe — Регистрация</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;background:#111;color:#fff;font-family:Arial,sans-serif;padding:20px;box-sizing:border-box}.box{width:100%;max-width:390px;padding:28px;background:#1e1e1e;border-radius:20px;box-sizing:border-box}.logo{text-align:center;font-size:40px;font-weight:900;margin-bottom:6px}.sub{text-align:center;color:#aaa;margin-bottom:20px}input{width:100%;box-sizing:border-box;padding:13px 14px;margin:7px 0;border:1px solid #333;background:#2a2a2a;color:#fff;border-radius:10px;font-size:16px}button{width:100%;padding:13px;margin-top:10px;border:0;border-radius:10px;background:#7c3aed;color:#fff;font-size:16px;font-weight:800;cursor:pointer}button.secondary{background:#333}.hidden{display:none}.msg{min-height:20px;color:#fda4af;margin-top:12px;text-align:center;font-size:13px}.hint{font-size:12px;color:#999;line-height:1.4}.code{text-align:center;letter-spacing:8px;font-size:24px;font-weight:900}
+</style></head>
+<body><div class="box"><div class="logo">Vibe</div><div class="sub">Создай свой аккаунт</div>
+<div id="formStep"><input id="login" placeholder="Логин" autocomplete="username"><input id="username" placeholder="Юзернейм (обязательно)" autocomplete="off"><input id="name" placeholder="Имя"><input id="password" type="password" placeholder="Пароль" autocomplete="new-password"><input id="email" type="email" placeholder="Email (обязательно)" autocomplete="email"><button id="sendBtn" onclick="startRegistration()">Получить код</button></div>
+<div id="verifyStep" class="hidden"><div class="hint" id="hint">Мы отправили 6-значный код на вашу почту.</div><input id="code" class="code" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"><button onclick="verifyRegistration()">Подтвердить</button><button id="resendBtn" class="secondary" onclick="resendCode()">Отправить код повторно</button></div><div id="msg" class="msg"></div></div>
+<script>
+let verificationEmail="";let resendTimer=null;
+async function startRegistration(){const body={login:login.value.trim(),username:username.value.trim().replace(/^@+/,'').toLowerCase(),name:name.value.trim(),password:password.value,email:email.value.trim().toLowerCase(),language:'ru'};if(!body.login||!body.username||!body.name||!body.password||!body.email){msg.textContent='Заполни все поля';return;}if(!/^[a-z0-9_]{3,32}$/.test(body.username)){msg.textContent='Юзернейм: 3–32 символа, латиница, цифры и _';return;}try{const r=await fetch('/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const d=await r.json();if(!d.success){msg.textContent=d.message||'Ошибка';return;}verificationEmail=body.email;formStep.classList.add('hidden');verifyStep.classList.remove('hidden');hint.textContent=`Мы отправили 6-значный код на ${body.email}. Код действует 10 минут.`;msg.textContent='Проверь почту и введи код.';code.focus();}catch{msg.textContent='Ошибка соединения';}}
+async function verifyRegistration(){const value=code.value.trim();if(!/^\d{6}$/.test(value)){msg.textContent='Введите 6-значный код';return;}try{const r=await fetch('/register/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:verificationEmail,code:value})});const d=await r.json();if(!d.success){msg.textContent=d.message||'Неверный код';return;}localStorage.setItem('vibeLogin',d.user.login);localStorage.setItem('vibeUser',JSON.stringify(d.user));location.href='/';}catch{msg.textContent='Ошибка соединения';}}
+async function resendCode(){if(!verificationEmail)return;try{const r=await fetch('/register/resend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:verificationEmail})});const d=await r.json();if(!d.success){msg.textContent=d.message||'Ошибка';return;}let left=60;resendBtn.disabled=true;resendBtn.textContent=`Повторно через ${left}с`;clearInterval(resendTimer);resendTimer=setInterval(()=>{left--;if(left<=0){clearInterval(resendTimer);resendTimer=null;resendBtn.disabled=false;resendBtn.textContent='Отправить код повторно';}else resendBtn.textContent=`Повторно через ${left}с`;},1000);msg.textContent='Новый код отправлен.';}catch{msg.textContent='Ошибка соединения';}}
+</script></body></html>

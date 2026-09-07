@@ -3382,6 +3382,8 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 </div>
 
 
+<div id="vibeNotificationToasts" class="vibe-notification-toasts"></div>
+
 <!-- =========================================================
      APP
 ========================================================= -->
@@ -3417,6 +3419,17 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     aria-label="Настройки"
                 >
                     <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M4 17h16M14 7h6M4 12h16"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="15" cy="17" r="2"/></svg></span></button>
+
+                <button
+                    class="icon-btn"
+                    id="notificationsButton"
+                    onclick="enableVibeNotifications()"
+                    title="Уведомления"
+                    aria-label="Уведомления"
+                >
+                    <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 10.3a5.5 5.5 0 0 1 11 0v4.2l1.6 2.1H4.9l1.6-2.1z"/><path d="M10 19a2.3 2.3 0 0 0 4 0"/></svg></span>
+                    <span id="notificationBadge" class="notification-badge hidden">0</span>
+                </button>
 
                 <button
                     class="icon-btn mobile-help-button"
@@ -3818,8 +3831,18 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <input
             id="registerEmail"
             type="email"
-            placeholder="Email — необязательно"
+            placeholder="Email"
+            autocomplete="email"
+            required
         >
+
+        <div id="registerVerificationSection" class="register-verification-section hidden">
+            <div class="register-verification-title">Подтверждение email</div>
+            <div id="registerVerificationHint" class="register-verification-hint">Мы отправили 6-значный код на вашу почту.</div>
+            <input id="registerVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Введите код">
+            <button type="button" id="registerVerifyButton" class="primary" onclick="verifyRegistrationCode()">Подтвердить email</button>
+            <button type="button" id="registerResendButton" onclick="resendRegistrationCode()">Отправить код повторно</button>
+        </div>
 
         <div class="modal-actions">
 
@@ -5226,6 +5249,11 @@ let siteLanguage =
     localStorage.getItem("vibeLanguage") ||
     "ru";
 
+let vibeNotificationUnread = Number(localStorage.getItem("vibeNotificationUnread") || 0);
+let registrationVerificationEmail = "";
+let registrationVerificationPending = false;
+let registrationResendTimer = null;
+
 /* =========================================================
    FULL UI TRANSLATION LAYER
    Keeps the Russian source text as the canonical key and
@@ -5240,7 +5268,7 @@ const uiTranslations = {
     "Введите пароль":"Enter password",
     "Поиск людей...":"Search people...",
     "Написать сообщение...":"Write a message...",
-    "Настройки":"Settings",
+    "Настройки":"Settings","Уведомления":"Notifications","Уведомления включены.":"Notifications enabled.","Разреши уведомления в настройках браузера.":"Allow notifications in your browser settings",
     "Каналы":"Channels",
     "Выйти":"Log out",
     "Профиль":"Profile",
@@ -5274,7 +5302,7 @@ const uiTranslations = {
     "Заявки в друзья":"Friend requests",
     "Входящие":"Incoming",
     "Исходящие":"Outgoing",
-    "Создание аккаунта":"Create account",
+    "Создание аккаунта":"Create account","Email":"Email","Подтверждение email":"Email verification","Введите код":"Enter code","Подтвердить email":"Verify email","Отправить код повторно":"Resend code",
     "Юзернейм":"Username",
     "3–32 символа · латиница, цифры и _":"3–32 characters · Latin letters, numbers and _",
     "Дата рождения":"Date of birth",
@@ -6057,6 +6085,7 @@ window.addEventListener(
 ========================================================= */
 
 function openRegister() {
+    resetRegistrationVerification();
     const modal = $("registerModal");
     if (!modal) return;
 
@@ -6339,252 +6368,71 @@ window.addEventListener("resize", positionVibeBirthdayPicker);
 window.addEventListener("scroll", positionVibeBirthdayPicker, true);
 
 async function register() {
+    const loginValue = $("registerLogin").value.trim();
+    const usernameValue = $("registerUsername").value.trim().replace(/^@+/g, "").toLowerCase();
+    const password = $("registerPassword").value.trim();
+    const name = $("registerName").value.trim();
+    const birthDate = $("registerBirthDate").value;
+    const email = $("registerEmail").value.trim().toLowerCase();
+    const language = $("registerLanguage").value;
 
-    const loginValue =
-        $("registerLogin")
-            .value
-            .trim();
-
-    const usernameValue =
-        $("registerUsername")
-            .value
-            .trim()
-            .replace(/^@+/g, "")
-            .toLowerCase();
-
-    const password =
-        $("registerPassword")
-            .value
-            .trim();
-
-    const name =
-        $("registerName")
-            .value
-            .trim();
-
-    const birthDate =
-        $("registerBirthDate")
-            .value;
-
-    const email =
-        $("registerEmail")
-            .value
-            .trim();
-
-    const language =
-        $("registerLanguage")
-            .value;
-
-    /*
-        Дата рождения теперь НЕ обязательна.
-        Имя тоже оставляем обязательным,
-        чтобы профиль не был пустым.
-    */
-
-    if (
-        !loginValue ||
-        !usernameValue ||
-        !password ||
-        !name
-    ) {
-
-        $("registerMessage").textContent =
-            language === "ru"
-                ? "Заполни логин, юзернейм, пароль и имя"
-                : "Fill in login, username, password and name";
-
+    if (registrationVerificationPending) { await verifyRegistrationCode(); return; }
+    if (!loginValue || !usernameValue || !password || !name || !email) {
+        $("registerMessage").textContent = language === "ru" ? "Заполни логин, юзернейм, пароль, имя и email" : "Fill in login, username, password, name and email";
         return;
     }
-
     if (!/^[a-z0-9_]{3,32}$/.test(usernameValue)) {
-        $("registerMessage").textContent =
-            language === "ru"
-                ? "Юзернейм: 3–32 символа, только латинские буквы, цифры и _"
-                : "Username: 3–32 characters, only Latin letters, numbers and _";
-        return;
+        $("registerMessage").textContent = language === "ru" ? "Юзернейм: 3–32 символа, только латинские буквы, цифры и _" : "Username: 3–32 characters, only Latin letters, numbers and _"; return;
     }
-
-    if (password.length < 4) {
-
-        $("registerMessage").textContent =
-            language === "ru"
-                ? "Пароль должен содержать минимум 4 символа"
-                : "Password must contain at least 4 characters";
-
-        return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        $("registerMessage").textContent = language === "ru" ? "Введите корректный email" : "Enter a valid email"; return;
     }
-
+    if (password.length < 4) { $("registerMessage").textContent = language === "ru" ? "Пароль должен содержать минимум 4 символа" : "Password must contain at least 4 characters"; return; }
     try {
-
-        const response =
-            await fetch(
-                "/register",
-                {
-                    method:"POST",
-
-                    headers:{
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            login:loginValue,
-                            username:usernameValue,
-                            password,
-                            name,
-                            language,
-                            birthDate,
-                            email
-                        })
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (!data.success) {
-
-            $("registerMessage").textContent =
-                data.message;
-
-            return;
-        }
-
-        currentUser =
-            data.user;
-
-        const extra = {
-
-            language,
-
-            birthDate,
-
-            email,
-
-            background:"default",
-
-            privacyBirthDate:"everyone",
-
-            privacyPhoto:"everyone",
-
-            privacyAbout:"everyone",
-
-            theme:
-                localStorage.getItem(
-                    "vibeTheme"
-                ) || "dark"
-        };
-
-        saveExtraProfile(
-            currentUser.login,
-            extra
-        );
-
-        siteLanguage =
-            language;
-
-        localStorage.setItem(
-            "vibeLanguage",
-            siteLanguage
-        );
-
-        saveLoginState(currentUser);
-
-
-        /*
-            Теперь отправляем дополнительные данные
-            на новый server.js.
-        */
-
-        try {
-
-            const profileResponse =
-                await fetch(
-                    "/profile",
-                    {
-                        method:"POST",
-
-                        headers:{
-                            "Content-Type":
-                                "application/json"
-                        },
-
-                        body:
-                            JSON.stringify({
-
-                                login:
-                                    currentUser.login,
-
-                                name,
-
-                                about:"",
-
-                                photo:"",
-
-                                messageStyle:
-                                    "classic",
-
-                                language,
-
-                                email,
-
-                                birthDate,
-
-                                background:
-                                    "default",
-
-                                privacy:{
-                                    birthDate:
-                                        "everyone",
-
-                                    photo:
-                                        "everyone",
-
-                                    about:
-                                        "everyone"
-                                }
-                            })
-                        }
-                    );
-
-            const profileData =
-                await profileResponse.json();
-
-            if (profileData.success) {
-
-                currentUser =
-                    profileData.user;
-
-                localStorage.setItem(
-                    "vibeUser",
-                    JSON.stringify(
-                        currentUser
-                    )
-                );
-            }
-
-        } catch {}
-
-
-        closeModal(
-            "registerModal"
-        );
-
-        applyLanguage();
-
-        showApp();
-
-    } catch {
-
-        $("registerMessage").textContent =
-            language === "ru"
-                ? "Ошибка сервера"
-                : "Server error";
-    }
+        const response = await fetch("/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:loginValue,username:usernameValue,password,name,language,birthDate,email})});
+        const data = await response.json();
+        if (!data.success) { $("registerMessage").textContent = data.message || "Ошибка"; return; }
+        registrationVerificationEmail=email; registrationVerificationPending=true;
+        $("registerVerificationSection")?.classList.remove("hidden");
+        $("registerVerificationHint").textContent = language === "ru" ? `Мы отправили 6-значный код на ${email}. Код действует 10 минут.` : `A 6-digit code was sent to ${email}. The code is valid for 10 minutes.`;
+        $("registerVerificationCode").value=""; $("registerVerificationCode").focus();
+        $("registerMessage").textContent = language === "ru" ? "Проверь почту и введи код." : "Check your email and enter the code.";
+        document.querySelectorAll("#registerModal input, #registerModal select").forEach(el=>{if(!["registerVerificationCode","registerLanguage"].includes(el.id))el.disabled=true;});
+    } catch { $("registerMessage").textContent = language === "ru" ? "Ошибка соединения с сервером" : "Server connection error"; }
 }
 
+async function verifyRegistrationCode() {
+    if(!registrationVerificationPending || !registrationVerificationEmail) return;
+    const code=$("registerVerificationCode").value.trim(), language=$("registerLanguage").value;
+    if(!/^\d{6}$/.test(code)){ $("registerMessage").textContent=language==="ru"?"Введите 6-значный код":"Enter the 6-digit code"; return; }
+    try{
+        const response=await fetch("/register/verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:registrationVerificationEmail,code})});
+        const data=await response.json();
+        if(!data.success){$("registerMessage").textContent=data.message||"Ошибка";return;}
+        currentUser=data.user;
+        const extra={language,birthDate:$("registerBirthDate").value,email:registrationVerificationEmail,background:"default",privacyBirthDate:"everyone",privacyPhoto:"everyone",privacyAbout:"everyone",theme:localStorage.getItem("vibeTheme")||"dark"};
+        saveExtraProfile(currentUser.login,extra); siteLanguage=language; localStorage.setItem("vibeLanguage",siteLanguage); saveLoginState(currentUser);
+        resetRegistrationVerification(); closeModal("registerModal"); showApp();
+    }catch{$("registerMessage").textContent=language==="ru"?"Ошибка соединения с сервером":"Server connection error";}
+}
 
+async function resendRegistrationCode(){
+    if(!registrationVerificationEmail)return;
+    const language=$("registerLanguage").value, button=$("registerResendButton");
+    try{
+        const response=await fetch("/register/resend",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:registrationVerificationEmail})});
+        const data=await response.json(); if(!data.success){$("registerMessage").textContent=data.message||"Ошибка";return;}
+        $("registerMessage").textContent=language==="ru"?"Новый код отправлен.":"A new code was sent.";
+        let left=60;button.disabled=true;button.textContent=language==="ru"?`Повторно через ${left}с`:`Resend in ${left}s`;
+        clearInterval(registrationResendTimer);registrationResendTimer=setInterval(()=>{left--;if(left<=0){clearInterval(registrationResendTimer);registrationResendTimer=null;button.disabled=false;button.textContent=language==="ru"?"Отправить код повторно":"Resend code";}else button.textContent=language==="ru"?`Повторно через ${left}с`:`Resend in ${left}s`;},1000);
+    }catch{$("registerMessage").textContent=language==="ru"?"Ошибка соединения":"Connection error";}
+}
+
+function resetRegistrationVerification(){
+    registrationVerificationPending=false;registrationVerificationEmail="";if(registrationResendTimer){clearInterval(registrationResendTimer);registrationResendTimer=null;}
+    $("registerVerificationSection")?.classList.add("hidden");
+    document.querySelectorAll("#registerModal input, #registerModal select").forEach(el=>el.disabled=false);
+}
 
 function focusMainSearch() {
     const input = $("searchInput");
@@ -6834,6 +6682,8 @@ async function autoLogin() {
 
 
 function showApp() {
+
+    updateNotificationBadge();
 
     $("authScreen")
         .classList
@@ -7288,7 +7138,13 @@ function sendSocket(data) {
 }
 
 
+function updateNotificationBadge(){const badge=$("notificationBadge");if(!badge)return;badge.textContent=String(Math.min(vibeNotificationUnread,99));badge.classList.toggle("hidden",vibeNotificationUnread<=0);}
+function showVibeNotification(title,text,options={}){vibeNotificationUnread++;localStorage.setItem("vibeNotificationUnread",String(vibeNotificationUnread));updateNotificationBadge();const host=$("vibeNotificationToasts");if(host){const toast=document.createElement("div");toast.className="vibe-notification-toast";toast.innerHTML=`<div class="vibe-notification-toast-title">${escapeHTML(title)}</div><div class="vibe-notification-toast-text">${escapeHTML(text)}</div>`;host.appendChild(toast);setTimeout(()=>toast.remove(),5000);}if(document.visibilityState==="hidden"&&typeof Notification!=="undefined"&&Notification.permission==="granted"){try{new Notification(title,{body:text,tag:options.tag||"vibe"});}catch{}}}
+async function enableVibeNotifications(){if(typeof Notification==="undefined"){showVibeNotification("Vibe",siteLanguage==="ru"?"Браузер не поддерживает уведомления.":"Browser notifications are not supported.", {browser:false});return;}try{const permission=await Notification.requestPermission();if(permission==="granted"){localStorage.setItem("vibeNotificationsEnabled","1");vibeNotificationUnread=0;localStorage.setItem("vibeNotificationUnread","0");updateNotificationBadge();showVibeNotification("Vibe",siteLanguage==="ru"?"Уведомления включены.":"Notifications enabled.",{tag:"settings"});}else showVibeNotification("Vibe",siteLanguage==="ru"?"Разреши уведомления в настройках браузера.":"Allow notifications in your browser settings.",{tag:"settings"});}catch{}}
 function handleSocketMessage(data) {
+
+    if (data.type === "in-app-notification") { showVibeNotification(data.title||"Vibe",data.text||"",{tag:data.tag||"vibe"}); return; }
+    if (data.type === "friend-request") { const fromName=data.from?.profile?.name||data.from?.username||data.from?.login||"Vibe"; showVibeNotification(siteLanguage==="ru"?"Новая заявка в друзья":"New friend request",fromName,{tag:"friend-request"}); loadFriendRequests(); return; }
 
     if (data.type === "friend-state-changed") {
         loadFriends(); loadChats(); loadFriendRequests();
@@ -13757,6 +13613,7 @@ body.vibe-group-admin #mobileAttachmentMenu #attachmentPollButton{display:flex !
 
 })();
 </script>
+<style id="vibe-email-notifications">.register-verification-section{margin-top:12px;padding:14px;border:1px solid var(--border);background:var(--panel2);border-radius:16px;display:flex;flex-direction:column;gap:9px}.register-verification-title{font-size:15px;font-weight:900}.register-verification-hint{font-size:12px;color:var(--muted);line-height:1.4}.register-verification-section input{text-align:center;letter-spacing:7px;font-size:22px;font-weight:800}.notification-badge{position:absolute;top:5px;right:5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}.icon-btn{position:relative}.vibe-notification-toasts{position:fixed;right:20px;bottom:20px;z-index:5000;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 40px));pointer-events:none}.vibe-notification-toast{pointer-events:auto;background:var(--panel);border:1px solid var(--border);box-shadow:0 15px 40px rgba(0,0,0,.35);border-radius:16px;padding:12px 14px;animation:vibeToastIn .18s ease-out}.vibe-notification-toast-title{font-weight:900;font-size:13px;margin-bottom:4px}.vibe-notification-toast-text{font-size:12px;color:var(--muted);line-height:1.35}@keyframes vibeToastIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}</style>
 </body>
 
 

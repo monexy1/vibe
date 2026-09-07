@@ -3,6 +3,7 @@ require("dotenv").config();
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const WebSocket = require("ws");
 const { createClient } = require("@supabase/supabase-js");
 
@@ -18,6 +19,7 @@ const MESSAGES_FILE = path.join(__dirname, "messages.json");
 const CHANNELS_FILE = path.join(__dirname, "channels.json");
 const CHANNEL_POSTS_FILE = path.join(__dirname, "channel-posts.json");
 const GROUPS_FILE = path.join(__dirname, "groups.json");
+const PENDING_VERIFICATIONS_FILE = path.join(__dirname, "pending-verifications.json");
 
 const MAX_BODY_SIZE = 20 * 1024 * 1024;
 
@@ -40,6 +42,7 @@ ensureFile(MESSAGES_FILE, []);
 ensureFile(CHANNELS_FILE, []);
 ensureFile(CHANNEL_POSTS_FILE, []);
 ensureFile(GROUPS_FILE, []);
+ensureFile(PENDING_VERIFICATIONS_FILE, {});
 
 
 function readJSON(file) {
@@ -58,6 +61,39 @@ function saveJSON(file, data) {
         file,
         JSON.stringify(data, null, 2)
     );
+}
+
+
+function normalizeEmail(email) {
+    return String(email || "").trim().toLowerCase();
+}
+
+function hashVerificationCode(code) {
+    return crypto.createHash("sha256").update(String(code)).digest("hex");
+}
+
+async function sendVerificationEmail(email, code) {
+    const apiKey = String(process.env.RESEND_API_KEY || "").trim();
+    if (!apiKey) throw new Error("Не настроен RESEND_API_KEY на сервере");
+
+    const from = String(process.env.RESEND_FROM || "onboarding@resend.dev").trim();
+    const subject = "Код подтверждения Vibe";
+    const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;background:#111827;padding:32px;color:#111827"><div style="max-width:520px;margin:auto;background:#fff;border-radius:20px;padding:28px"><h1 style="margin-top:0">Vibe</h1><p>Ваш код подтверждения:</p><div style="font-size:34px;font-weight:800;letter-spacing:8px;padding:18px 14px;background:#f3f4f6;border-radius:14px;text-align:center">${code}</div><p style="color:#6b7280">Код действует 10 минут. Никому не сообщайте этот код.</p></div></body></html>`;
+    const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ from, to: [email], subject, html })
+    });
+    const raw = await response.text();
+    let data = {};
+    try { data = JSON.parse(raw); } catch {}
+    if (!response.ok) {
+        throw new Error(data?.message || "Не удалось отправить письмо с кодом");
+    }
+    return data;
 }
 
 
@@ -1436,192 +1472,178 @@ const server =
 
 
                 /* =====================================================
-                   REGISTER
+                   REGISTER / EMAIL VERIFICATION
                 ===================================================== */
 
-                if (
-                    req.method === "POST" &&
-                    pathname === "/register"
-                ) {
+                if (req.method === "POST" && pathname === "/register") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const password = String(body.password || "");
+                    const username = String(body.username || "").trim().replace(/^@+/g, "").toLowerCase();
+                    const name = String(body.name || "").trim();
+                    const email = normalizeEmail(body.email);
+                    const birthDate = String(body.birthDate || "").trim();
+                    const language = body.language === "en" ? "en" : "ru";
 
-                    const body =
-                        await getBody(req);
-
-                    const login =
-                        String(body.login || "").trim();
-
-                    const password =
-                        String(body.password || "");
-
-                    const rawUsername =
-                        String(body.username || "")
-                            .trim()
-                            .replace(/^@+/g, "")
-                            .toLowerCase();
-
-                    const username =
-                        rawUsername;
-
-                    const name =
-                        String(body.name || "").trim();
-
-                    const email =
-                        String(body.email || "").trim();
-
-                    const birthDate =
-                        String(body.birthDate || "").trim();
-
-                    const language =
-                        body.language === "en"
-                            ? "en"
-                            : "ru";
-
-                    if (!login || !username || !password) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Введите логин, юзернейм и пароль"
-                            },
-                            400
-                        );
+                    if (!login || !username || !password || !name || !email) {
+                        sendJSON(res, {success:false, message:"Введите логин, юзернейм, пароль, имя и email"}, 400);
                         return;
                     }
-
                     if (!/^[a-z0-9_]{3,32}$/.test(username)) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Юзернейм: 3–32 символа, только латинские буквы, цифры и _"
-                            },
-                            400
-                        );
+                        sendJSON(res, {success:false, message:"Юзернейм: 3–32 символа, только латинские буквы, цифры и _"}, 400);
                         return;
                     }
-
+                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                        sendJSON(res, {success:false, message:"Введите корректный email"}, 400);
+                        return;
+                    }
                     if (login.length > 40) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Логин слишком длинный"
-                            },
-                            400
-                        );
+                        sendJSON(res, {success:false, message:"Логин слишком длинный"}, 400);
                         return;
                     }
-
                     if (password.length < 4) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Пароль должен содержать минимум 4 символа"
-                            },
-                            400
-                        );
+                        sendJSON(res, {success:false, message:"Пароль должен содержать минимум 4 символа"}, 400);
                         return;
                     }
 
                     let exists;
-                    try {
-                        exists = await getSupabaseUser(login);
-                    } catch (error) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: error.message
-                            },
-                            500
-                        );
-                        return;
-                    }
-
-                    if (exists) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Такой логин уже существует"
-                            },
-                            400
-                        );
-                        return;
-                    }
+                    try { exists = await getSupabaseUser(login); }
+                    catch (error) { sendJSON(res,{success:false,message:error.message},500); return; }
+                    if (exists) { sendJSON(res,{success:false,message:"Такой логин уже существует"},400); return; }
 
                     try {
                         if (await isGlobalUsernameTaken(username, {login})) {
-                            sendJSON(res, {success:false, message:"Этот юзернейм уже занят"}, 409);
-                            return;
+                            sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409); return;
                         }
                     } catch (error) {
-                        sendJSON(res, {success:false, message:error.message || "Не удалось проверить юзернейм"}, 500);
+                        sendJSON(res,{success:false,message:error.message || "Не удалось проверить юзернейм"},500); return;
+                    }
+
+                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
+                    const emailKey = email;
+                    const now = Date.now();
+                    const existingPending = pending[emailKey];
+                    if (existingPending && now < Number(existingPending.resendAfter || 0)) {
+                        const seconds = Math.max(1, Math.ceil((Number(existingPending.resendAfter)-now)/1000));
+                        sendJSON(res,{success:false,message:`Код уже отправлен. Повторно можно через ${seconds} сек.`,retryAfter:seconds},429);
                         return;
                     }
 
-                    const user = {
+                    const code = String(crypto.randomInt(100000, 1000000));
+                    pending[emailKey] = {
                         login,
+                        username,
                         password,
-                        friends: [],
-                        friendRequestsIncoming: [],
-                        friendRequestsOutgoing: [],
-                        contacts: [],
-                        blockedUsers: [],
-                        profile: {
-                            name: name.slice(0, 60) || login,
-                            username,
-                            about: "",
-                            photo: "",
-                            background: "",
-                            messageStyle: "classic",
-                            language,
-                            birthDate,
-                            email: email.slice(0, 150),
-                            privacy: {
-                                profile: "everyone",
-                                birthDate: "friends",
-                                age: "friends",
-                                photo: "everyone",
-                                about: "everyone",
-                                allowFriendRequests: "everyone",
-                                showOnline: true
-                            }
-                        }
+                        name: name.slice(0,60),
+                        birthDate,
+                        language,
+                        codeHash: hashVerificationCode(code),
+                        createdAt: now,
+                        expiresAt: now + 10 * 60 * 1000,
+                        resendAfter: now + 60 * 1000,
+                        attempts: 0
                     };
 
                     try {
-                        await createSupabaseUser(user);
+                        await sendVerificationEmail(email, code);
+                        saveJSON(PENDING_VERIFICATIONS_FILE, pending);
                     } catch (error) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: error.message
-                            },
-                            400
-                        );
+                        delete pending[emailKey];
+                        saveJSON(PENDING_VERIFICATIONS_FILE, pending);
+                        sendJSON(res,{success:false,message:error.message || "Не удалось отправить код"},502);
                         return;
                     }
 
-                    // Keep the JSON mirror for the existing Vibe features
-                    // (friends, groups, channels, messages, etc.).
-                    const users = getUsers();
-                    users.push(user);
-                    saveJSON(USERS_FILE, users);
-
-                    sendJSON(
-                        res,
-                        {
-                            success: true,
-                            user: publicUser(user, login)
-                        }
-                    );
-
+                    sendJSON(res,{success:true,verificationRequired:true,email});
                     return;
                 }
 
+                if (req.method === "POST" && pathname === "/register/verify") {
+                    const body = await getBody(req);
+                    const email = normalizeEmail(body.email);
+                    const code = String(body.code || "").trim();
+                    if (!email || !/^\d{6}$/.test(code)) {
+                        sendJSON(res,{success:false,message:"Введите 6-значный код"},400); return;
+                    }
+                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
+                    const item = pending[email];
+                    if (!item) { sendJSON(res,{success:false,message:"Код не найден. Начните регистрацию заново."},400); return; }
+                    const now = Date.now();
+                    if (now > Number(item.expiresAt || 0)) {
+                        delete pending[email]; saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                        sendJSON(res,{success:false,message:"Срок действия кода истёк"},400); return;
+                    }
+                    item.attempts = Number(item.attempts || 0) + 1;
+                    if (item.attempts > 5) {
+                        delete pending[email]; saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                        sendJSON(res,{success:false,message:"Слишком много попыток. Начните регистрацию заново."},429); return;
+                    }
+                    if (hashVerificationCode(code) !== item.codeHash) {
+                        saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                        sendJSON(res,{success:false,message:"Неверный код"},400); return;
+                    }
+
+                    let exists = null;
+                    try { exists = await getSupabaseUser(item.login); } catch {}
+                    if (exists) { delete pending[email]; saveJSON(PENDING_VERIFICATIONS_FILE,pending); sendJSON(res,{success:false,message:"Такой логин уже существует"},409); return; }
+                    try {
+                        if (await isGlobalUsernameTaken(item.username, {login:item.login})) {
+                            delete pending[email]; saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                            sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409); return;
+                        }
+                    } catch (error) {
+                        sendJSON(res,{success:false,message:error.message || "Не удалось проверить юзернейм"},500); return;
+                    }
+
+                    const user = {
+                        login:item.login,
+                        password:item.password,
+                        friends:[], friendRequestsIncoming:[], friendRequestsOutgoing:[], contacts:[], blockedUsers:[],
+                        profile:{
+                            name:item.name || item.login,
+                            username:item.username,
+                            about:"", photo:"", background:"", messageStyle:"classic",
+                            language:item.language === "en" ? "en" : "ru",
+                            birthDate:item.birthDate || "",
+                            email,
+                            emailVerified:true,
+                            privacy:{profile:"everyone",birthDate:"friends",age:"friends",photo:"everyone",about:"everyone",allowFriendRequests:"everyone",showOnline:true}
+                        }
+                    };
+                    try { await createSupabaseUser(user); }
+                    catch (error) { sendJSON(res,{success:false,message:error.message},400); return; }
+                    const users = getUsers(); users.push(user); saveJSON(USERS_FILE,users);
+                    delete pending[email]; saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                    sendJSON(res,{success:true,user:publicUser(user,item.login)});
+                    return;
+                }
+
+                if (req.method === "POST" && pathname === "/register/resend") {
+                    const body = await getBody(req);
+                    const email = normalizeEmail(body.email);
+                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
+                    const item = pending[email];
+                    if (!item) { sendJSON(res,{success:false,message:"Регистрация не найдена"},404); return; }
+                    const now = Date.now();
+                    if (now < Number(item.resendAfter || 0)) {
+                        const seconds = Math.max(1,Math.ceil((Number(item.resendAfter)-now)/1000));
+                        sendJSON(res,{success:false,message:`Повторная отправка доступна через ${seconds} сек.`,retryAfter:seconds},429); return;
+                    }
+                    const code = String(crypto.randomInt(100000,1000000));
+                    item.codeHash = hashVerificationCode(code);
+                    item.createdAt = now;
+                    item.expiresAt = now + 10 * 60 * 1000;
+                    item.resendAfter = now + 60 * 1000;
+                    item.attempts = 0;
+                    try {
+                        await sendVerificationEmail(email, code);
+                        saveJSON(PENDING_VERIFICATIONS_FILE,pending);
+                    } catch (error) {
+                        sendJSON(res,{success:false,message:error.message || "Не удалось отправить код"},502); return;
+                    }
+                    sendJSON(res,{success:true,message:"Новый код отправлен"});
+                    return;
+                }
 
                 /* =====================================================
                    LOGIN
@@ -2692,6 +2714,12 @@ const server =
                                     )
                             }
                         );
+                        sendToUser(target, {
+                            type:"in-app-notification",
+                            title:"Новая заявка в друзья",
+                            text:(user.profile?.name || user.profile?.username || user.login || "Vibe"),
+                            tag:"friend-request"
+                        });
 
 
                         broadcastFriendState([login, target], { type:"friend-state-changed" });
@@ -4091,6 +4119,7 @@ const server =
                     group.members.forEach(member => {
                         if (member !== from) {
                             sendToUser(member, {type:"new-group-message", message});
+                            sendToUser(member, {type:"in-app-notification", title:"Новое сообщение в группе", text:(group.name || "Группа") + ": " + (type === "poll" ? "Опрос" : (text || "Новое сообщение")), tag:"group:" + group.id});
                         }
                     });
                     sendJSON(res, {success:true, message});
@@ -5370,6 +5399,12 @@ const server =
                                     post
                                 }
                             );
+                            sendToUser(subscriber, {
+                                type:"in-app-notification",
+                                title:"Новая публикация",
+                                text:(channel.name || "Канал"),
+                                tag:"channel:" + channel.id
+                            });
                         }
                     );
 
