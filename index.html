@@ -4485,6 +4485,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                     </div>
                 </div>
                 <button class="danger-button" style="margin-top:12px;" onclick="logout()">Выйти</button>
+                <button class="danger-button" style="margin-top:10px;background:#7f1d1d;border-color:#991b1b;" onclick="deleteAccount()">Удалить аккаунт</button>
             </div>
 
             <div class="setting-section">
@@ -6708,6 +6709,37 @@ function showApp() {
     loadChannels();
 }
 
+
+async function deleteAccount() {
+    if (!currentUser || !currentUser.login) return;
+
+    const first = confirm("Удалить аккаунт полностью? Будут удалены аккаунт, сообщения, группы/каналы, которыми он владеет, и данные этого профиля. Это действие нельзя отменить.");
+    if (!first) return;
+
+    let password = String(currentUser.password || "");
+    if (!password) {
+        password = prompt("Введите пароль для подтверждения удаления аккаунта:", "") || "";
+    }
+    if (!password) return;
+
+    try {
+        const response = await fetch("/account/delete", {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({login:currentUser.login,password})
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.success) {
+            alert(data.message || "Не удалось удалить аккаунт");
+            return;
+        }
+
+        alert("Аккаунт удалён.");
+        logout();
+    } catch (error) {
+        alert("Ошибка соединения при удалении аккаунта");
+    }
+}
 
 function logout() {
 

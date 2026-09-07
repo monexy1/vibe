@@ -1901,6 +1901,106 @@ const server =
                 }
 
                 /* =====================================================
+                   DELETE ACCOUNT
+                ===================================================== */
+                if (req.method === "POST" && pathname === "/account/delete") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    const password = String(body.password || "");
+
+                    if (!login || !password) {
+                        sendJSON(res, {success:false, message:"Введите логин и пароль"}, 400);
+                        return;
+                    }
+
+                    let row = null;
+                    try {
+                        row = await getSupabaseUser(login);
+                    } catch (error) {
+                        sendJSON(res, {success:false, message:error.message || "Ошибка подключения к Supabase"}, 500);
+                        return;
+                    }
+
+                    if (!row || String(row.password || "") !== password) {
+                        sendJSON(res, {success:false, message:"Неверный логин или пароль"}, 401);
+                        return;
+                    }
+
+                    try {
+                        // 1) Remove the user's direct messages from Supabase.
+                        const fromDelete = await supabase.from("messages").delete().eq("from_login", login);
+                        if (fromDelete.error) throw new Error("Не удалось удалить сообщения аккаунта");
+                        const toDelete = await supabase.from("messages").delete().eq("to_login", login);
+                        if (toDelete.error) throw new Error("Не удалось удалить сообщения аккаунта");
+
+                        // 2) Remove the user from every persistent group membership.
+                        //    Groups created by this user are removed completely.
+                        const groups = getGroups();
+                        const deletedGroupIds = groups.filter(g => String(g.owner) === login).map(g => String(g.id));
+                        const nextGroups = groups
+                            .filter(g => String(g.owner) !== login)
+                            .map(g => {
+                                g.members = Array.isArray(g.members) ? g.members.filter(m => String(m) !== login) : [];
+                                g.admins = Array.isArray(g.admins) ? g.admins.filter(m => String(m) !== login) : [];
+                                if (!Array.isArray(g.admins) || g.admins.length === 0) {
+                                    const fallback = g.members[0];
+                                    if (fallback) g.admins = [fallback];
+                                }
+                                return g;
+                            });
+                        saveJSON(GROUPS_FILE, nextGroups);
+
+                        // 3) Remove channels owned by the user and their posts.
+                        const channels = getNormalizedChannels();
+                        const deletedChannelIds = channels.filter(c => String(c.owner) === login).map(c => String(c.id));
+                        const nextChannels = channels
+                            .filter(c => String(c.owner) !== login)
+                            .map(c => {
+                                c.subscribers = Array.isArray(c.subscribers) ? c.subscribers.filter(s => String(s) !== login) : [];
+                                return c;
+                            });
+                        const posts = readJSON(CHANNEL_POSTS_FILE);
+                        const nextPosts = posts.filter(p => !deletedChannelIds.includes(String(p.channelId)) && String(p.author || p.owner || "") !== login);
+                        saveJSON(CHANNEL_POSTS_FILE, nextPosts);
+                        saveJSON(CHANNELS_FILE, nextChannels);
+
+                        // 4) Remove the account from local cached user state and email-verification state.
+                        const users = getUsers();
+                        const nextUsers = users.filter(u => String(u.login) !== login);
+                        saveJSON(USERS_FILE, nextUsers);
+
+                        const emailMap = await getEmailVerificationMap();
+                        if (Object.prototype.hasOwnProperty.call(emailMap, login)) {
+                            delete emailMap[login];
+                            await putVibeState(VIBE_STATE_KEYS.emailVerifications, emailMap);
+                        }
+
+                        // 5) Clear direct pinned references for messages that belonged to the user.
+                        const pinnedIds = await getDirectPinnedIds();
+                        if (pinnedIds.length) {
+                            const affected = new Set(pinnedIds);
+                            const remainingMessages = await getPersistentMessages();
+                            const validIds = remainingMessages.map(m => String(m.id));
+                            const filteredPins = [...affected].filter(id => validIds.includes(id));
+                            await setDirectPinnedIds(filteredPins);
+                        }
+
+                        // 6) Finally remove the account itself from Supabase.
+                        const deleted = await supabase.from("users").delete().eq("login", login).select("login");
+                        if (deleted.error) throw new Error("Не удалось удалить аккаунт из Supabase");
+
+                        // Notify connected clients that this account is gone.
+                        sendToUser(login, {type:"account-deleted", login});
+
+                        sendJSON(res, {success:true, login});
+                    } catch (error) {
+                        console.error("Account deletion error:", error);
+                        sendJSON(res, {success:false, message:error.message || "Не удалось удалить аккаунт"}, 500);
+                    }
+                    return;
+                }
+
+                /* =====================================================
                    CHANGE PASSWORD
                 ===================================================== */
 
