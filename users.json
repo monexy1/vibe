@@ -1,18 +1,26 @@
-[
-  {
-    "login": "alex",
-    "password": "12345"
-  },
-  {
-    "login": "alexe",
-    "password": "12345"
-  },
-  {
-    "login": "alex32",
-    "password": "123"
-  },
-  {
-    "login": "hi",
-    "password": "123"
-  }
-]
+
+    "login": "monexy",
+    "password": "Loipqwer312",
+    "friends": [],
+    "friendRequestsIncoming": [],
+    "friendRequestsOutgoing": [],
+    "contacts": [],
+    "blockedUsers": [],
+    "profile": {
+      "name": "monexy",
+      "about": "",
+      "photo": "",
+      "background": "default",
+      "messageStyle": "classic",
+      "language": "ru",
+      "birthDate": "2007-10-30",
+      "email": "blackkille25@gmail.com",
+      "privacy": {
+        "profile": "everyone",
+        "birthDate": "everyone",
+        "age": "friends",
+        "photo": "everyone",
+        "about": "everyone",
+        "allowFriendRequests": "everyone",
+        "showOnline": true
+  
