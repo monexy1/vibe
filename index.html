@@ -12648,13 +12648,31 @@ window.addEventListener("scroll", () => {
     display:none!important;
 }
 
-/* Sent messages should be on the left, like the supplied reference. */
+/* Private chat alignment: own messages stay on the left, interlocutor messages on the right. */
+.message-row{
+    justify-content:flex-start!important;
+}
 .message-row.mine{
     justify-content:flex-start!important;
 }
 .message-row.mine .message{
     margin-left:0!important;
     margin-right:auto!important;
+}
+.message-row:not(.mine){
+    justify-content:flex-end!important;
+}
+.message-row:not(.mine) .message{
+    margin-left:auto!important;
+    margin-right:0!important;
+}
+.message-row.mine .message{
+    border-bottom-left-radius:5px!important;
+    border-bottom-right-radius:17px!important;
+}
+.message-row:not(.mine) .message{
+    border-bottom-right-radius:5px!important;
+    border-bottom-left-radius:17px!important;
 }
 
 /* Reference-style message action menu. */
