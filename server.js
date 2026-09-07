@@ -3587,7 +3587,7 @@ const server =
                     const login = String(body.login || "").trim();
                     const messageId = String(body.messageId || "").trim();
                     const emoji = String(body.emoji || "").trim();
-                    const allowed = ["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢"];
+                    const allowed = ["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩"];
                     if (!login || !messageId || !allowed.includes(emoji)) {
                         sendJSON(res,{success:false,message:"Некорректная реакция"},400);
                         return;
@@ -4613,7 +4613,7 @@ const server =
                     const postId=String(body.postId||"");
                     const login=String(body.login||"");
                     const emoji=String(body.emoji||"");
-                    if(!["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
+                    if(!["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
                     const channels=getNormalizedChannels();
                     const channel=channels.find(c=>String(c.id)===channelId);
                     if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
