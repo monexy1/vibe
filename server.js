@@ -740,6 +740,10 @@ function normalizeChannel(channel) {
         channel.discussionGroupId = "";
     }
 
+    if (typeof channel.pinnedPostId !== "string") {
+        channel.pinnedPostId = "";
+    }
+
     if (channel.discussionGroupId) {
         channel.settings.comments = true;
     }
@@ -4609,7 +4613,7 @@ const server =
                     const postId=String(body.postId||"");
                     const login=String(body.login||"");
                     const emoji=String(body.emoji||"");
-                    if(!["❤️","😂","👍","🔥","😮","😢","🎉","👀"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
+                    if(!["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀"].includes(emoji)){sendJSON(res,{success:false,message:"Некорректная реакция"},400);return;}
                     const channels=getNormalizedChannels();
                     const channel=channels.find(c=>String(c.id)===channelId);
                     if(!channel){sendJSON(res,{success:false,message:"Канал не найден"},404);return;}
@@ -4749,9 +4753,9 @@ const server =
                     pathname === "/channel-pin"
                 ) {
                     const body=await getBody(req);
-                    const channelId=String(body.channelId||"");
-                    const postId=String(body.postId||"");
-                    const login=String(body.login||"");
+                    const channelId=String(body.channelId||"").trim();
+                    const postId=String(body.postId||"").trim();
+                    const login=String(body.login||"").trim();
                     const scope=body.scope==="all" ? "all" : "self";
 
                     const channels=getNormalizedChannels();
@@ -4805,6 +4809,11 @@ const server =
                             pinnedPostId:channel.pinnedPostId||"",
                             post:channel.pinnedPostId ? post : null
                         });
+                        return;
+                    }
+
+                    if (!login || !findUser(login)) {
+                        sendJSON(res,{success:false,message:"Пользователь не найден"},404);
                         return;
                     }
 
