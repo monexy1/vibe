@@ -782,6 +782,21 @@ function getNormalizedChannels(){
 }
 
 /* =========================================================
+   GLOBAL USERNAME NAMESPACE
+========================================================= */
+async function isGlobalUsernameTaken(username, ignore = {}) {
+    const wanted = String(username || "").trim().replace(/^@+/, "").toLowerCase();
+    if (!wanted) return false;
+    const { data, error } = await supabase.from("users").select("login,username").eq("username", wanted).limit(10);
+    if (error && !String(error.message || "").toLowerCase().includes("column")) throw error;
+    if ((data || []).some(row => String(row.login || "") !== String(ignore.login || "") && String(row.username || "").toLowerCase() === wanted)) return true;
+    if (getUsers().some(user => String(user.login || "") !== String(ignore.login || "") && String(user.profile?.username || user.username || "").replace(/^@+/, "").toLowerCase() === wanted)) return true;
+    if (getNormalizedChannels().some(channel => String(channel.id) !== String(ignore.channelId || "") && String(channel.username || "").toLowerCase() === wanted)) return true;
+    if (getGroups().some(group => String(group.id) !== String(ignore.groupId || "") && String(group.username || "").toLowerCase() === wanted)) return true;
+    return false;
+}
+
+/* =========================================================
    GROUPS
 ========================================================= */
 
@@ -792,8 +807,12 @@ function normalizeGroup(group) {
     if (typeof group.name !== "string") group.name = "Группа";
     if (typeof group.description !== "string") group.description = "";
     if (typeof group.photo !== "string") group.photo = "";
+    if (typeof group.username !== "string") group.username = "";
+    group.username = group.username.trim().replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0,32);
     if (!group.settings || typeof group.settings !== "object") group.settings = {};
     if (typeof group.settings.public !== "boolean") group.settings.public = true;
+    if (typeof group.settings.onlyAdminsCanWrite !== "boolean") group.settings.onlyAdminsCanWrite = false;
+    if (typeof group.pinnedMessageId !== "string") group.pinnedMessageId = "";
     return group;
 }
 
@@ -1520,46 +1539,12 @@ const server =
                     }
 
                     try {
-                        const { data: usernameRows, error: usernameError } =
-                            await supabase
-                                .from("users")
-                                .select("login,username")
-                                .eq("username", username)
-                                .limit(2);
-
-                        if (usernameError) throw usernameError;
-
-                        if ((usernameRows || []).length) {
-                            sendJSON(
-                                res,
-                                {
-                                    success: false,
-                                    message: "Этот юзернейм уже занят"
-                                },
-                                409
-                            );
+                        if (await isGlobalUsernameTaken(username, {login})) {
+                            sendJSON(res, {success:false, message:"Этот юзернейм уже занят"}, 409);
                             return;
                         }
                     } catch (error) {
-                        if (String(error?.message || "").toLowerCase().includes("username")) {
-                            sendJSON(
-                                res,
-                                {
-                                    success: false,
-                                    message: "Сначала добавьте поле username в Supabase"
-                                },
-                                500
-                            );
-                            return;
-                        }
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Не удалось проверить юзернейм"
-                            },
-                            500
-                        );
+                        sendJSON(res, {success:false, message:error.message || "Не удалось проверить юзернейм"}, 500);
                         return;
                     }
 
@@ -2112,40 +2097,13 @@ const server =
                         }
 
                         try {
-                            const { data: usernameRows, error: usernameError } =
-                                await supabase
-                                    .from("users")
-                                    .select("login,username")
-                                    .eq("username",requestedUsername)
-                                    .limit(2);
-
-                            if (usernameError) {
-                                throw usernameError;
-                            }
-
-                            const taken = (usernameRows || []).some(
-                                row => String(row.login) !== login
-                            );
-
-                            if (taken) {
-                                sendJSON(res,{
-                                    success:false,
-                                    message:"Этот юзернейм уже занят"
-                                },409);
+                            if (await isGlobalUsernameTaken(requestedUsername, {login})) {
+                                sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409);
                                 return;
                             }
                         } catch (error) {
-                            /* If the username column has not been migrated yet,
-                               surface a clear server error instead of silently
-                               pretending it was saved. */
-                            if (String(error?.message || "").toLowerCase().includes("username")) {
-                                sendJSON(res,{
-                                    success:false,
-                                    message:"Сначала добавьте поле username в Supabase"
-                                },500);
-                                return;
-                            }
-                            throw error;
+                            sendJSON(res,{success:false,message:error.message || "Не удалось проверить юзернейм"},500);
+                            return;
                         }
 
                         user.profile.username = requestedUsername;
@@ -3399,6 +3357,8 @@ const server =
                             ? {
                                 type:String(body.forwardedFrom.type || ""),
                                 id:String(body.forwardedFrom.id || ""),
+                                groupId:String(body.forwardedFrom.groupId || ""),
+                                messageId:String(body.forwardedFrom.messageId || ""),
                                 postId:String(body.forwardedFrom.postId || ""),
                                 name:String(body.forwardedFrom.name || "").slice(0,120),
                                 username:String(body.forwardedFrom.username || "").slice(0,40),
@@ -3721,10 +3681,9 @@ const server =
                         return;
                     }
 
-                    if (message.from !== login && message.to !== login) {
-                        sendJSON(res, { success:false, message:"Нет доступа" }, 403);
-                        return;
-                    }
+                    let groupForMessage = null;
+                    if (message.groupId) { groupForMessage = getGroups().find(g=>String(g.id)===String(message.groupId)) || null; if (!groupForMessage || !groupForMessage.members.includes(login)) { sendJSON(res,{success:false,message:"Нет доступа"},403); return; } }
+                    else if (message.from !== login && message.to !== login) { sendJSON(res, { success:false, message:"Нет доступа" }, 403); return; }
 
                     if (mode === "all") {
                         if (message.from !== login) {
@@ -3732,6 +3691,7 @@ const server =
                             return;
                         }
                         message.deletedForAll = true;
+                        if(groupForMessage && String(groupForMessage.pinnedMessageId||"")===String(message.id)){const groups=getGroups();const stored=groups.find(g=>String(g.id)===String(groupForMessage.id));if(stored){stored.pinnedMessageId="";saveJSON(GROUPS_FILE,groups);}}
                     } else {
                         if (!Array.isArray(message.deletedFor)) message.deletedFor = [];
                         if (!message.deletedFor.includes(login)) message.deletedFor.push(login);
@@ -3755,37 +3715,10 @@ const server =
 
                 if (req.method === "GET" && pathname === "/group-search") {
                     const login = String(url.searchParams.get("login") || "");
-                    const query = String(url.searchParams.get("q") || "").trim().toLowerCase();
-
-                    if (!query) {
-                        sendJSON(res, []);
-                        return;
-                    }
-
-                    const result = getGroups()
-                        .map(normalizeGroup)
-                        .filter(group => group.settings.public !== false)
-                        .filter(group => {
-                            const haystack = [
-                                group.name,
-                                group.description,
-                                group.id
-                            ].join(" ").toLowerCase();
-                            return haystack.includes(query);
-                        })
-                        .slice(0, 30)
-                        .map(group => ({
-                            id: group.id,
-                            name: group.name,
-                            description: group.description,
-                            photo: group.photo,
-                            joined: group.members.includes(login),
-                            memberCount: group.members.length,
-                            owner: group.owner
-                        }));
-
-                    sendJSON(res, result);
-                    return;
+                    const query = String(url.searchParams.get("q") || "").trim().replace(/^@+/, "").toLowerCase();
+                    if (!query) { sendJSON(res, []); return; }
+                    const result = getGroups().map(normalizeGroup).filter(group => group.settings.public !== false).filter(group => String(group.username || "").toLowerCase().includes(query)).slice(0,30).map(group => ({id:group.id,name:group.name,username:group.username,description:group.description,photo:group.photo,joined:group.members.includes(login),memberCount:group.members.length,owner:group.owner}));
+                    sendJSON(res,result); return;
                 }
 
                 /* =====================================================
@@ -3847,6 +3780,7 @@ const server =
                     const body = await getBody(req);
                     const owner = String(body.owner || "").trim();
                     const name = String(body.name || "").trim();
+                    const username = String(body.username || "").trim().replace(/^@+/, "").toLowerCase();
                     const description = String(body.description || "").trim();
                     const photo = String(body.photo || "").trim().slice(0, 6000000);
                     const isPublic = body.public !== false;
@@ -3859,15 +3793,29 @@ const server =
                         sendJSON(res, {success:false, message:"Введите название группы"}, 400);
                         return;
                     }
+                    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+                        sendJSON(res,{success:false,message:"Юзернейм группы: 3–32 символа, только латинские буквы, цифры и _"},400);
+                        return;
+                    }
+                    try {
+                        if (await isGlobalUsernameTaken(username)) {
+                            sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409);
+                            return;
+                        }
+                    } catch (error) {
+                        sendJSON(res,{success:false,message:error.message || "Не удалось проверить юзернейм"},500);
+                        return;
+                    }
 
                     const groups = getGroups();
                     const group = normalizeGroup({
                         id: "g_" + Date.now() + "_" + Math.random().toString(36).slice(2,8),
-                        name, description, photo,
+                        name, username, description, photo,
                         owner,
                         members:[owner],
                         admins:[owner],
-                        settings:{public:isPublic},
+                        pinnedMessageId:"",
+                        settings:{public:isPublic, onlyAdminsCanWrite:false},
                         createdAt:new Date().toISOString()
                     });
                     groups.push(group);
@@ -3961,6 +3909,13 @@ const server =
                     if (typeof body.public === "boolean") {
                         group.settings.public = body.public;
                     }
+                    if (typeof body.username === "string") {
+                        const requestedUsername = body.username.trim().replace(/^@+/, "").toLowerCase();
+                        if (!/^[a-z0-9_]{3,32}$/.test(requestedUsername)) { sendJSON(res,{success:false,message:"Юзернейм группы: 3–32 символа, только латинские буквы, цифры и _"},400); return; }
+                        try { if (await isGlobalUsernameTaken(requestedUsername,{groupId:group.id})) { sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409); return; } } catch (error) { sendJSON(res,{success:false,message:error.message || "Не удалось проверить юзернейм"},500); return; }
+                        group.username=requestedUsername;
+                    }
+                    if (typeof body.onlyAdminsCanWrite === "boolean") group.settings.onlyAdminsCanWrite=body.onlyAdminsCanWrite;
 
                     saveJSON(GROUPS_FILE, groups);
                     sendJSON(res, {
@@ -3988,10 +3943,35 @@ const server =
                             ) &&
                             !m.deletedForAll
                         );
-                    sendJSON(res, messages);
+                    sendJSON(res, messages.map(message => ({...message,pinned:String(message.id)===String(group.pinnedMessageId||"")})));
                     return;
                 }
 
+
+                if (req.method === "POST" && pathname === "/group-pin") {
+                    const body=await getBody(req); const login=String(body.login||"").trim(); const groupId=String(body.groupId||"").trim(); const messageId=String(body.messageId||"").trim();
+                    const groups=getGroups(); const group=groups.find(g=>g.id===groupId);
+                    if(!group||!group.members.includes(login)){sendJSON(res,{success:false,message:"Нет доступа к группе"},403);return;}
+                    normalizeGroup(group); if(!group.admins.includes(login)){sendJSON(res,{success:false,message:"Только администратор может закреплять сообщения"},403);return;}
+                    if(messageId){const messages=await getPersistentMessages();if(!messages.some(m=>String(m.id)===messageId&&String(m.groupId)===groupId&&!m.deletedForAll)){sendJSON(res,{success:false,message:"Сообщение не найдено"},404);return;}group.pinnedMessageId=messageId;}else group.pinnedMessageId="";
+                    saveJSON(GROUPS_FILE,groups); group.members.forEach(member=>sendToUser(member,{type:"group-pin-updated",groupId,pinnedMessageId:group.pinnedMessageId})); sendJSON(res,{success:true,group,pinnedMessageId:group.pinnedMessageId}); return;
+                }
+                if (req.method === "GET" && pathname === "/group-jump") {
+                    const groupId=String(url.searchParams.get("groupId")||""); const login=String(url.searchParams.get("login")||""); const group=getGroups().find(g=>g.id===groupId);
+                    if(!group|| (group.settings?.public===false&&!group.members.includes(login))){sendJSON(res,{success:false,message:"Группа недоступна"},403);return;} sendJSON(res,{success:true,group:normalizeGroup(group)});return;
+                }
+                if (req.method === "GET" && pathname === "/group-pinned") {
+                    const groupId=String(url.searchParams.get("groupId")||""); const login=String(url.searchParams.get("login")||""); const group=getGroups().find(g=>g.id===groupId);
+                    if(!group||!group.members.includes(login)){sendJSON(res,{success:false,message:"Нет доступа"},403);return;} normalizeGroup(group); if(!group.pinnedMessageId){sendJSON(res,{success:true,message:null});return;} const messages=await getPersistentMessages(); const message=messages.find(m=>String(m.id)===String(group.pinnedMessageId)&&!m.deletedForAll); sendJSON(res,{success:true,message:message||null});return;
+                }
+                if (req.method === "POST" && pathname === "/group-poll-vote") {
+                    const body=await getBody(req); const login=String(body.login||"").trim(); const groupId=String(body.groupId||"").trim(); const messageId=String(body.messageId||"").trim(); const optionIndices=Array.isArray(body.optionIndices)?body.optionIndices.map(Number).filter(Number.isInteger):[];
+                    const group=getGroups().find(g=>g.id===groupId); if(!group||!group.members.includes(login)){sendJSON(res,{success:false,message:"Нет доступа"},403);return;}
+                    const messages=await getPersistentMessages(); const message=messages.find(m=>String(m.id)===messageId&&String(m.groupId)===groupId&&m.type==="poll"); if(!message){sendJSON(res,{success:false,message:"Опрос не найден"},404);return;}
+                    let poll;try{poll=JSON.parse(String(message.attachment||"{}"))}catch{sendJSON(res,{success:false,message:"Опрос повреждён"},500);return;} const opts=Array.isArray(poll.options)?poll.options:[]; const valid=[...new Set(optionIndices)].filter(i=>i>=0&&i<opts.length);
+                    if(!poll.multiple&&valid.length>1){sendJSON(res,{success:false,message:"Можно выбрать только один вариант"},400);return;} if(!valid.length){sendJSON(res,{success:false,message:"Выберите вариант"},400);return;}
+                    poll.voters=poll.voters&&typeof poll.voters==="object"?poll.voters:{}; if(poll.voters[login]&&!poll.allowChange){sendJSON(res,{success:false,message:"Ответ уже выбран"},409);return;} poll.voters[login]=valid; message.attachment=JSON.stringify(poll); await updatePersistentMessage(message); group.members.forEach(member=>sendToUser(member,{type:"group-poll-updated",message})); sendJSON(res,{success:true,message});return;
+                }
                 if (req.method === "POST" && pathname === "/group-message") {
                     const body = await getBody(req);
                     const from = String(body.from || "").trim();
@@ -4001,7 +3981,9 @@ const server =
                             ? "voice"
                             : body.type === "attachment"
                                 ? "attachment"
-                                : "text";
+                                : body.type === "poll"
+                                    ? "poll"
+                                    : "text";
                     const text = String(body.text || "").trim();
                     const audio = type === "voice" && typeof body.audio === "string" ? body.audio : "";
                     const duration = Number.isFinite(Number(body.duration)) ? Number(body.duration) : 0;
@@ -4009,6 +3991,7 @@ const server =
                     const attachmentType = type === "attachment" ? String(body.attachmentType || "").slice(0,120) : "";
                     const attachmentName = type === "attachment" ? String(body.attachmentName || "Файл").slice(0,180) : "";
                     const postId = String(body.postId || "").trim().slice(0,180);
+                    const pollInput = body.poll && typeof body.poll === "object" ? body.poll : null;
                     const replyTo = body.replyTo && body.replyTo.id ? {
                         id:String(body.replyTo.id),
                         from:String(body.replyTo.from || ""),
@@ -4020,10 +4003,10 @@ const server =
                         sendJSON(res, {success:false, message:"Нет доступа к группе"}, 403);
                         return;
                     }
-                    if ((type === "text" && !text) || (type === "voice" && !audio) || (type === "attachment" && !attachment)) {
-                        sendJSON(res, {success:false, message:"Пустое сообщение"}, 400);
-                        return;
-                    }
+                    if (group.settings.onlyAdminsCanWrite && !group.admins.includes(from) && type !== "poll") { sendJSON(res,{success:false,message:"Писать в группе могут только администраторы"},403);return; }
+                    if ((type === "text" && !text) || (type === "voice" && !audio) || (type === "attachment" && !attachment)) { sendJSON(res, {success:false, message:"Пустое сообщение"}, 400); return; }
+                    let poll=null;
+                    if(type==="poll"){const question=String(pollInput?.question||"").trim().slice(0,240);const options=Array.isArray(pollInput?.options)?pollInput.options.map(x=>String(x||"").trim().slice(0,140)).filter(Boolean).slice(0,12):[];if(!question||options.length<2){sendJSON(res,{success:false,message:"Для опроса нужны вопрос и минимум 2 варианта"},400);return;}poll={question,options,multiple:!!pollInput?.multiple,allowChange:!!pollInput?.allowChange,anonymous:pollInput?.anonymous!==false,voters:{}};}
 
                     const message = {
                         id:Date.now().toString() + Math.random().toString(36).slice(2),
@@ -4033,7 +4016,7 @@ const server =
                         text:type === "text" ? text : "",
                         audio:type === "voice" ? audio : "",
                         duration:type === "voice" ? duration : 0,
-                        attachment:type === "attachment" ? attachment : "",
+                        attachment:type === "poll" ? JSON.stringify(poll) : (type === "attachment" ? attachment : ""),
                         attachmentType:type === "attachment" ? attachmentType : "",
                         attachmentName:type === "attachment" ? attachmentName : "",
                         replyTo,
@@ -4224,19 +4207,7 @@ const server =
                         getNormalizedChannels();
 
 
-                    if (channels.some(channel =>
-                        String(channel.username || "").toLowerCase() === requestedUsername
-                    )) {
-                        sendJSON(
-                            res,
-                            {
-                                success: false,
-                                message: "Этот юзернейм канала уже занят"
-                            },
-                            409
-                        );
-                        return;
-                    }
+                    try { if (await isGlobalUsernameTaken(requestedUsername)) { sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409); return; } } catch(error) { sendJSON(res,{success:false,message:error.message||"Не удалось проверить юзернейм"},500); return; }
 
 
                     const channelId =
@@ -4382,14 +4353,7 @@ const server =
                             return;
                         }
 
-                        const taken = channels.some(item =>
-                            String(item.id) !== String(channel.id) &&
-                            String(item.username || "").toLowerCase() === requestedUsername
-                        );
-                        if (taken) {
-                            sendJSON(res,{success:false,message:"Этот юзернейм канала уже занят"},409);
-                            return;
-                        }
+                        try { if (await isGlobalUsernameTaken(requestedUsername,{channelId:channel.id})) { sendJSON(res,{success:false,message:"Этот юзернейм уже занят"},409); return; } } catch(error) { sendJSON(res,{success:false,message:error.message||"Не удалось проверить юзернейм"},500); return; }
 
                         channel.username = requestedUsername;
                     }

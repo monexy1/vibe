@@ -4665,13 +4665,22 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <label class="field-label">Название</label>
             <input id="groupManageName" class="community-field" maxlength="80" placeholder="Название группы">
 
+            <label class="field-label">Юзернейм</label>
+            <div class="vibe-group-username-wrap"><span>@</span><input id="groupManageUsername" class="community-field" maxlength="32" placeholder="vibe_group"></div>
+            <div class="vibe-group-username-hint">По нему группу будут находить в поиске.</div>
+
             <label class="field-label">Описание</label>
             <textarea id="groupManageDescription" class="community-field community-textarea" maxlength="500" placeholder="Описание группы"></textarea>
 
             <label class="community-check">
                 <input id="groupManagePublic" type="checkbox">
                 <span></span>
-                <span><b>Показывать группу в поиске</b><small>Другие пользователи смогут находить группу по названию.</small></span>
+                <span><b>Показывать группу в поиске</b><small>Другие пользователи смогут находить группу по юзернейму.</small></span>
+            </label>
+            <label class="community-check">
+                <input id="groupManageOnlyAdminsCanWrite" type="checkbox">
+                <span></span>
+                <span><b>Писать могут только администраторы</b><small>Участники смогут читать и голосовать.</small></span>
             </label>
 
             <div id="groupManageSaveMessage" class="group-settings-message"></div>
@@ -4714,6 +4723,10 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
         <label class="field-label">Название</label>
         <input id="groupNameInput" class="community-field" placeholder="Например, Vibe Community" maxlength="80">
+
+        <label class="field-label">Юзернейм</label>
+        <div class="vibe-group-username-wrap"><span>@</span><input id="groupUsernameInput" class="community-field" maxlength="32" placeholder="vibe_group"></div>
+        <div class="vibe-group-username-hint">Уникальный адрес: 3–32 символа, латиница, цифры и _.</div>
 
         <label class="field-label">Описание</label>
         <textarea id="groupDescriptionInput" class="community-field community-textarea" placeholder="О чём эта группа?" maxlength="500"></textarea>
@@ -7280,7 +7293,7 @@ async function searchUsers() {
                     <div class="search-community-avatar">${avatar}</div>
                     <div class="search-community-info">
                         <div class="search-community-name">${escapeHTML(group.name || "Группа")}</div>
-                        <div class="search-community-meta">Группа · ${Number(group.memberCount || 0)} участников</div>
+                        <div class="search-community-meta">@${escapeHTML(group.username || "")} · ${Number(group.memberCount || 0)} участников</div>
                     </div>
                     <button class="search-community-action ${group.joined ? "joined" : ""}" type="button">
                         ${group.joined ? "Открыть" : "Вступить"}
@@ -8027,18 +8040,21 @@ function renderMessageList(messages, forceScroll, wasNearBottom, isGroup) {
 
         const forwardedHtml = message.forwardedFrom
             ? `<button type="button" class="forwarded-from"
-                data-forward-channel-id="${escapeHTML(message.forwardedFrom.id || "")}"
+                data-forward-channel-id="${escapeHTML(message.forwardedFrom.type === "group" ? "" : (message.forwardedFrom.id || ""))}"
                 data-forward-post-id="${escapeHTML(message.forwardedFrom.postId || "")}"
-                title="Перейти к публикации">
+                data-forward-type="${escapeHTML(message.forwardedFrom.type || "channel")}"
+                data-forward-group-id="${escapeHTML(message.forwardedFrom.groupId || (message.forwardedFrom.type === "group" ? message.forwardedFrom.id : ""))}"
+                data-forward-message-id="${escapeHTML(message.forwardedFrom.messageId || "")}"
+                title="Перейти к источнику">
                 <span class="forwarded-from-arrow">↗</span>
                 <span class="forwarded-from-avatar">
                     ${message.forwardedFrom.photo
                         ? `<img src="${escapeHTML(message.forwardedFrom.photo)}" alt="">`
-                        : vibeIcon("channel")}
+                        : vibeIcon(message.forwardedFrom.type === "group" ? "community" : "channel")}
                 </span>
                 <span class="forwarded-from-copy">
                     <span class="forwarded-from-label">Переслано из</span>
-                    <span class="forwarded-from-name">${escapeHTML(message.forwardedFrom.name || "Канал")}</span>
+                    <span class="forwarded-from-name">${escapeHTML(message.forwardedFrom.name || (message.forwardedFrom.type === "group" ? "Группа" : "Канал"))}</span>
                 </span>
                 <span class="forwarded-from-open">›</span>
             </button>`
@@ -9547,6 +9563,7 @@ function renderGroupsList() {
 function openCreateGroup() {
     closeModal("communitiesModal");
     $("groupNameInput").value = "";
+    $("groupUsernameInput").value = "";
     $("groupDescriptionInput").value = "";
     $("groupPublicInput").checked = true;
     $("groupCreateError").textContent = "";
@@ -9590,12 +9607,17 @@ function setupGroupPhotoPicker() {
 
 async function createGroup() {
     const name = $("groupNameInput").value.trim();
+    const username = $("groupUsernameInput").value.trim().replace(/^@+/, "").toLowerCase();
     const description = $("groupDescriptionInput").value.trim();
     const photo = $("groupPhotoFile")?.dataset.photo || "";
     const isPublic = $("groupPublicInput")?.checked !== false;
 
     if (!name) {
         $("groupCreateError").textContent = "Введите название группы";
+        return;
+    }
+    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+        $("groupCreateError").textContent = "Введите юзернейм: 3–32 символа, латиница, цифры и _";
         return;
     }
 
@@ -9670,11 +9692,15 @@ async function openGroupManager(group) {
         " · " + (g.members?.length || 0) + " участников";
 
     $("groupManageName").value = g.name || "";
+    $("groupManageUsername").value = g.username || "";
     $("groupManageDescription").value = g.description || "";
     $("groupManagePublic").checked = g.settings?.public !== false;
+    $("groupManageOnlyAdminsCanWrite").checked = g.settings?.onlyAdminsCanWrite === true;
     $("groupManageName").disabled = !isOwner;
+    $("groupManageUsername").disabled = !isOwner;
     $("groupManageDescription").disabled = !isOwner;
     $("groupManagePublic").disabled = !isOwner;
+    $("groupManageOnlyAdminsCanWrite").disabled = !isOwner;
     $("groupManagePhotoFile").value = "";
     $("groupManagePhoto").value = g.photo || "";
     $("groupManagePreview").innerHTML = g.photo
@@ -9779,6 +9805,7 @@ async function saveGroupSettings() {
     }
 
     const name = $("groupManageName").value.trim();
+    const username = $("groupManageUsername").value.trim().replace(/^@+/, "").toLowerCase();
     const description = $("groupManageDescription").value.trim();
     const photo = $("groupManagePhoto").value.trim();
     const isPublic = $("groupManagePublic").checked;
@@ -9786,6 +9813,10 @@ async function saveGroupSettings() {
     if (!name) {
         $("groupManageSaveMessage").textContent =
             "Введите название группы.";
+        return;
+    }
+    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+        $("groupManageSaveMessage").textContent = "Введите корректный юзернейм группы.";
         return;
     }
 
@@ -9797,9 +9828,11 @@ async function saveGroupSettings() {
                 groupId: currentGroup.id,
                 owner: currentUser.login,
                 name,
+                username,
                 description,
                 photo,
-                public: isPublic
+                public: isPublic,
+                onlyAdminsCanWrite: $("groupManageOnlyAdminsCanWrite")?.checked === true
             })
         });
 
@@ -12906,6 +12939,52 @@ window.addEventListener("scroll", () => {
     .forwarded-from-name{font-size:13px!important}
 }
 </style>
+
+<style id="vibe-groups-v7-style">
+.vibe-group-username-wrap{display:flex;align-items:center}.vibe-group-username-wrap>span{height:42px;display:flex;align-items:center;padding:0 0 0 13px;background:var(--panel2);border:1px solid var(--border);border-right:0;border-radius:10px 0 0 10px;color:var(--muted);font-weight:800}.vibe-group-username-wrap input{border-radius:0 10px 10px 0!important;flex:1}.vibe-group-username-hint{font-size:11px;color:var(--muted);margin:5px 0 10px}.vibe-group-pinbar{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);background:var(--panel2);cursor:pointer}.vibe-group-pinbar .txt{min-width:0}.vibe-group-pinbar .ttl{font-size:11px;color:var(--accent);font-weight:800}.vibe-group-pinbar .preview{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.vibe-group-poll{padding:14px;background:var(--panel2);border:1px solid var(--border);border-radius:14px;margin-top:7px}.vibe-group-poll-q{font-weight:900;margin-bottom:10px}.vibe-group-poll-option{position:relative;overflow:hidden;width:100%;display:flex;padding:9px 10px;margin:6px 0;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:10px;text-align:left;cursor:pointer}.vibe-group-poll-option .bar{position:absolute;inset:0 auto 0 0;width:var(--pct,0%);background:rgba(139,92,246,.20);pointer-events:none}.vibe-group-poll-option .copy{position:relative;z-index:1;display:flex;justify-content:space-between;width:100%;gap:10px}.vibe-group-poll-option.active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}.vibe-group-poll-meta{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px;margin-top:8px}.forwarded-from[data-forward-type="group"]{cursor:pointer}
+body.vibe-group-admin #attachmentPollButton, body.vibe-group-admin #attachmentPollButtonDesktop{display:flex !important;}
+body.vibe-group-admin #mobileAttachmentMenu #attachmentPollButton{display:flex !important;}
+</style>
+<script id="vibe-groups-v7-script">
+(function(){
+ "use strict";
+ const RX=["❤️","👍","🔥","👎","🥰","👏","😁","🤔","🤯","😂","😮","😢","🎉","👀","💜","💯","😍","😎","🙏","🤩","🥳","😇","🤝","🚀","💥","⭐","✅","❌","❤️‍🔥"];
+ const esc=v=>typeof escapeHTML==='function'?escapeHTML(String(v??'')):String(v??'');
+ const isAdmin=()=>!!(currentGroup&&currentUser&&Array.isArray(currentGroup.admins)&&currentGroup.admins.includes(currentUser.login));
+ const msgText=m=>String(m?.text||m?.attachmentName||(m?.type==='voice'?'Голосовое сообщение':'')).replace(/\s+/g,' ').trim()||'Сообщение';
+ async function groupMessages(){if(!currentGroup||!currentUser)return[];const r=await fetch('/group-messages?groupId='+encodeURIComponent(currentGroup.id)+'&login='+encodeURIComponent(currentUser.login),{cache:'no-store'}).catch(()=>null);return r?.ok?r.json():[]}
+ function pinBar(){const box=document.getElementById('messages');if(!box)return null;let b=document.getElementById('vibeGroupPinBar');if(!b){b=document.createElement('div');b.id='vibeGroupPinBar';b.className='vibe-group-pinbar';box.parentElement?.insertBefore(b,box)}return b}
+ async function refreshPinBar(){const b=pinBar();if(!b)return;if(!currentGroup){b.style.display='none';b.innerHTML='';return}const ms=await groupMessages();const pin=ms.find(m=>m.pinned);if(!pin){b.style.display='none';b.innerHTML='';return}b.style.display='flex';b.innerHTML='<div>📌</div><div class="txt"><div class="ttl">Закреплённое сообщение</div><div class="preview">'+esc(msgText(pin))+'</div></div><div style="margin-left:auto">›</div>';b.onclick=()=>{const el=document.querySelector('.message[data-message-id="'+CSS.escape(String(pin.id))+'"]');el?.scrollIntoView({behavior:'smooth',block:'center'})}}
+ const oldLoadGroup=window.loadGroupMessages;
+ window.loadGroupMessages=async function(force){const r=await oldLoadGroup.apply(this,arguments);setTimeout(refreshPinBar,0);return r};
+
+ // Polls in groups.
+ function openGroupPoll(){
+  let m=document.getElementById('vibeGroupPollModal');
+  if(!m){m=document.createElement('div');m.id='vibeGroupPollModal';m.className='modal';m.innerHTML='<div class="modal-card" style="max-width:520px"><div class="modal-header"><div><div class="modal-title">Новый опрос</div><div class="modal-subtitle">Опрос для участников группы</div></div><button class="modal-close" data-close>✕</button></div><label class="field-label">Вопрос</label><input id="vibeGpQ" class="community-field" maxlength="240" placeholder="Текст вопроса"><label class="field-label">Варианты ответа</label><div id="vibeGpOpts"></div><button id="vibeGpAdd" type="button" class="community-action">＋ Добавить вариант</button><label class="community-check"><input id="vibeGpMulti" type="checkbox"><span></span><span><b>Несколько ответов</b><small>Можно выбрать больше одного.</small></span></label><label class="community-check"><input id="vibeGpChange" type="checkbox" checked><span></span><span><b>Изменение ответа</b><small>Можно проголосовать заново.</small></span></label><label class="community-check"><input id="vibeGpAnon" type="checkbox" checked><span></span><span><b>Анонимный опрос</b><small>Участники не видят авторов голосов.</small></span></label><div class="modal-actions"><button class="primary" id="vibeGpCreate">Создать</button><button type="button" data-close>Отмена</button></div></div>';document.body.appendChild(m);const add=()=>{const box=document.getElementById('vibeGpOpts');if(box.children.length>=12)return;const i=document.createElement('input');i.className='community-field';i.maxLength=140;i.placeholder='Вариант '+(box.children.length+1);i.style.marginBottom='7px';box.appendChild(i)};m.querySelectorAll('[data-close]').forEach(x=>x.onclick=()=>m.classList.add('hidden'));m.querySelector('#vibeGpAdd').onclick=add;m.querySelector('#vibeGpCreate').onclick=async()=>{const q=document.getElementById('vibeGpQ').value.trim();const options=[...document.querySelectorAll('#vibeGpOpts input')].map(x=>x.value.trim()).filter(Boolean);if(!q||options.length<2){showVibeNotice?.('Опрос','Нужны вопрос и минимум 2 варианта.');return}const r=await fetch('/group-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:currentUser.login,groupId:currentGroup.id,type:'poll',poll:{question:q,options,multiple:document.getElementById('vibeGpMulti').checked,allowChange:document.getElementById('vibeGpChange').checked,anonymous:document.getElementById('vibeGpAnon').checked}})}).catch(()=>null);const d=r?.ok?await r.json():{};if(!d.success){showVibeNotice?.('Опрос',d.message||'Не удалось создать');return}m.classList.add('hidden');await loadGroupMessages(true)};add();add();}
+  document.getElementById('vibeGpQ').value='';document.querySelectorAll('#vibeGpOpts input').forEach(x=>x.value='');m.classList.remove('hidden');
+ }
+ const oldPoll=window.openPollComposer;window.openPollComposer=function(){if(currentGroup&&isAdmin())return openGroupPoll();return oldPoll?.apply(this,arguments)};
+
+ // Convert group poll messages from stored attachment JSON to UI.
+ function decoratePolls(messages){document.querySelectorAll('.message[data-group-id="'+CSS.escape(String(currentGroup?.id||''))+'"]').forEach(b=>{const id=String(b.dataset.messageId);if(b.querySelector('.vibe-group-poll'))return;const m=messages.find(x=>String(x.id)===id);if(!m||m.type!=='poll')return;let poll;try{poll=JSON.parse(String(m.attachment||'{}'))}catch{return}const voters=poll.voters&&typeof poll.voters==='object'?poll.voters:{};const total=Object.keys(voters).length;const selected=Array.isArray(voters[currentUser.login])?voters[currentUser.login]:[];const counts=(poll.options||[]).map((_,i)=>Object.values(voters).filter(v=>Array.isArray(v)&&v.includes(i)).length);const w=document.createElement('div');w.className='vibe-group-poll';w.innerHTML='<div class="vibe-group-poll-q">'+esc(poll.question)+'</div>'+poll.options.map((o,i)=>{const pct=total?Math.round(counts[i]*100/total):0;return '<button type="button" class="vibe-group-poll-option '+(selected.includes(i)?'active':'')+'" data-group-poll-option="'+i+'" data-group-poll-message="'+esc(id)+'" style="--pct:'+pct+'%"><span class="bar"></span><span class="copy"><span>'+esc(o)+'</span><b>'+pct+'%</b></span></button>'}).join('')+'<div class="vibe-group-poll-meta"><span>'+total+' голосов</span><span>'+(poll.multiple?'Можно выбрать несколько':'Один вариант')+'</span></div>';const time=b.querySelector('.message-time');time?time.before(w):b.appendChild(w)})}
+ const oldRender=window.renderMessageList;window.renderMessageList=function(messages,force,near,isGroup){const r=oldRender.apply(this,arguments);if(isGroup)setTimeout(()=>decoratePolls(messages),0);return r};
+
+ // Click forwarded group source.
+ document.addEventListener('click',async e=>{const b=e.target.closest?.('.forwarded-from[data-forward-type="group"]');if(!b)return;e.preventDefault();e.stopPropagation();const gid=String(b.dataset.forwardGroupId||'');if(!gid)return;const r=await fetch('/group-jump?groupId='+encodeURIComponent(gid)+'&login='+encodeURIComponent(currentUser.login)).catch(()=>null);const d=r?.ok?await r.json():{};if(!d.success){showVibeNotice?.('Группа',d.message||'Группа недоступна');return}await openGroup(d.group);const mid=String(b.dataset.forwardMessageId||'');if(mid)setTimeout(()=>document.querySelector('.message[data-message-id="'+CSS.escape(mid)+'"]')?.scrollIntoView({behavior:'smooth',block:'center'}),100)},true);
+ // Poll vote.
+ document.addEventListener('click',async e=>{const b=e.target.closest?.('[data-group-poll-option]');if(!b||!currentGroup)return;const wrap=b.closest('.vibe-group-poll');let indices=[Number(b.dataset.groupPollOption)];if(wrap){const active=[...wrap.querySelectorAll('.vibe-group-poll-option.active')].map(x=>Number(x.dataset.groupPollOption));if(!b.classList.contains('active'))indices=[...new Set([...active,Number(b.dataset.groupPollOption)])];}const rr=await fetch('/group-poll-vote',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,groupId:currentGroup.id,messageId:b.dataset.groupPollMessage,optionIndices:indices})}).catch(()=>null);const d=rr?.ok?await rr.json():{};if(!d.success){showVibeNotice?.('Опрос',d.message||'Не удалось сохранить голос');return}await loadGroupMessages(false)},true);
+
+ // Group context menu: pin for admins, reactions, forward, delete.
+ async function groupMenu(e,bubble){const ms=await groupMessages();const info=ms.find(m=>String(m.id)===String(bubble.dataset.messageId));if(!info)return;document.querySelectorAll('.vibe-group-action-menu').forEach(x=>x.remove());const menu=document.createElement('div');menu.className='message-actions vibe-reference-message-actions vibe-group-action-menu';const own=String(info.from)===String(currentUser.login);const pin=!!info.pinned;menu.innerHTML='<div class="message-actions-reactions">'+RX.map(x=>'<button type="button" data-grx="'+esc(x)+'">'+x+'</button>').join('')+'</div><button type="button" data-gcopy>▣ <span>Копировать</span></button><button type="button" data-gforward>↗ <span>Переслать</span></button>'+(isAdmin()?'<button type="button" data-gpin>⚑ <span>'+(pin?'Открепить':'Закрепить')+'</span></button>':'')+(own?'<button type="button" class="message-actions-danger" data-gdelete>🗑 <span>Удалить</span></button>':'');document.body.appendChild(menu);const r=menu.getBoundingClientRect();menu.style.left=Math.max(8,Math.min(e.clientX,innerWidth-r.width-8))+'px';menu.style.top=Math.max(8,Math.min(e.clientY,innerHeight-r.height-8))+'px';menu.onclick=async ev=>{const rb=ev.target.closest?.('[data-grx]');if(rb){await fetch('/message-reaction',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,messageId:info.id,emoji:rb.dataset.grx})});menu.remove();await loadGroupMessages(false);return}if(ev.target.closest('[data-gcopy]')){try{await navigator.clipboard.writeText(String(info.text||''))}catch{}menu.remove();return}if(ev.target.closest('[data-gpin]')){const rr=await fetch('/group-pin',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser.login,groupId:currentGroup.id,messageId:pin?'':info.id})});const d=await rr.json();menu.remove();if(!d.success){showVibeNotice?.('Закрепление',d.message||'Не удалось');return}currentGroup.pinnedMessageId=d.pinnedMessageId||'';await loadGroupMessages(false);return}if(ev.target.closest('[data-gdelete]')){menu.remove();deleteSelectedMessage('all');return}if(ev.target.closest('[data-gforward]')){menu.remove();const to=prompt('Введите логин получателя');if(!to)return;const rr=await fetch('/send-message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from:currentUser.login,to:String(to).replace(/^@+/,''),text:'',forwardedFrom:{type:'group',id:currentGroup.id,groupId:currentGroup.id,messageId:info.id,name:currentGroup.name,username:currentGroup.username,photo:currentGroup.photo,text:msgText(info)}})}).catch(()=>null);const d=rr?.ok?await rr.json():{};if(!d.success)showVibeNotice?.('Пересылка',d.message||'Не удалось переслать')}}}
+ document.addEventListener('contextmenu',async e=>{if(!currentGroup)return;const b=e.target.closest?.('.message[data-group-id]');if(!b||String(b.dataset.groupId)!==String(currentGroup.id))return;e.preventDefault();e.stopImmediatePropagation();await groupMenu(e,b)},true);
+
+ // Poll button visibility: admin only.
+ function syncPollButton(){const active=!!(currentGroup&&isAdmin());document.body.classList.toggle('vibe-group-admin',active);document.querySelectorAll('#attachmentPollButtonDesktop,#attachmentPollButton').forEach(b=>{if(active){b.classList.remove('hidden');b.style.removeProperty('display')}else if(currentChannel){b.classList.remove('hidden');b.style.removeProperty('display')}else{b.classList.add('hidden')}});document.getElementById('mobileAttachmentMenu')?.classList.toggle('vibe-show-poll',active||!!currentChannel)} 
+ const oldOpenGroup=window.openGroup;window.openGroup=async function(){const r=await oldOpenGroup.apply(this,arguments);setTimeout(syncPollButton,0);return r};document.addEventListener('click',()=>setTimeout(syncPollButton,0),true);
+})();
+</script>
+
 </body>
 
 
