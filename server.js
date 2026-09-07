@@ -4060,7 +4060,9 @@ const server =
                 ) {
                     const login = String(url.searchParams.get("login") || "");
                     const query = String(url.searchParams.get("q") || "")
-                        .trim().toLowerCase();
+                        .trim()
+                        .replace(/^@+/, "")
+                        .toLowerCase();
 
                     if (!query) {
                         sendJSON(res, []);
@@ -4074,14 +4076,10 @@ const server =
                         .filter(channel => {
                             if (channel.settings.public === false) return false;
 
-                            const haystack = [
-                                channel.name,
-                                channel.username,
-                                channel.description,
-                                channel.id
-                            ].join(" ").toLowerCase();
-
-                            return haystack.includes(query);
+                            // Public channel search is intentionally username-only.
+                            return String(channel.username || "")
+                                .toLowerCase()
+                                .includes(query);
                         })
                         .map(channel => ({
                             ...channel,
@@ -4157,6 +4155,13 @@ const server =
                             .slice(0, 500);
 
 
+                    const requestedUsername =
+                        String(body.username || "")
+                            .trim()
+                            .replace(/^@+/, "")
+                            .toLowerCase();
+
+
                     const photo =
                         String(
                             body.photo || ""
@@ -4184,6 +4189,19 @@ const server =
                     }
 
 
+                    if (!/^[a-z0-9_]{3,32}$/.test(requestedUsername)) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Введите юзернейм канала: 3–32 символа, только латинские буквы, цифры и _"
+                            },
+                            400
+                        );
+                        return;
+                    }
+
+
                     if (
                         !findUser(owner)
                     ) {
@@ -4203,24 +4221,32 @@ const server =
 
 
                     const channels =
-                        readJSON(
-                            CHANNELS_FILE
+                        getNormalizedChannels();
+
+
+                    if (channels.some(channel =>
+                        String(channel.username || "").toLowerCase() === requestedUsername
+                    )) {
+                        sendJSON(
+                            res,
+                            {
+                                success: false,
+                                message: "Этот юзернейм канала уже занят"
+                            },
+                            409
                         );
+                        return;
+                    }
 
 
                     const channelId =
                         Date.now().toString() +
                         Math.random().toString(36).slice(2);
 
-                    const username = makeUniqueChannelUsername(
-                        makeChannelUsernameSeed(name, channelId),
-                        channels
-                    );
-
                     const channel = {
                         id: channelId,
                         name,
-                        username,
+                        username: requestedUsername,
                         description,
                         photo,
                         owner,
@@ -4346,12 +4372,26 @@ const server =
                     }
 
                     if (typeof body.username === "string") {
-                        const requestedUsername = body.username.trim().replace(/^@+/, "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0,32);
-                        if (!requestedUsername) {
-                            sendJSON(res,{success:false,message:"Некорректный юзернейм канала"},400);
+                        const requestedUsername = body.username
+                            .trim()
+                            .replace(/^@+/, "")
+                            .toLowerCase();
+
+                        if (!/^[a-z0-9_]{3,32}$/.test(requestedUsername)) {
+                            sendJSON(res,{success:false,message:"Юзернейм: 3–32 символа, только латинские буквы, цифры и _"},400);
                             return;
                         }
-                        channel.username = makeUniqueChannelUsername(requestedUsername,channels,channel.id);
+
+                        const taken = channels.some(item =>
+                            String(item.id) !== String(channel.id) &&
+                            String(item.username || "").toLowerCase() === requestedUsername
+                        );
+                        if (taken) {
+                            sendJSON(res,{success:false,message:"Этот юзернейм канала уже занят"},409);
+                            return;
+                        }
+
+                        channel.username = requestedUsername;
                     }
 
 

@@ -2920,6 +2920,12 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
     letter-spacing:.08em;
 }
 .search-channel-result{cursor:pointer;}
+.channel-create-username{display:flex;align-items:center;position:relative;}
+.channel-create-username-prefix{position:absolute;left:14px;z-index:2;color:var(--accent);font-size:17px;font-weight:900;pointer-events:none;}
+.channel-create-username-input{padding-left:30px!important;margin:0;}
+.channel-create-username-input::placeholder{color:var(--muted);}
+.channel-create-username-hint{font-size:11px;color:var(--muted);margin:-1px 0 13px 2px;}
+.channel-username-label{margin-top:13px;}
 
 /* =========================================================
    COMMUNITIES / CREATE MODALS — VIBE REDESIGN
@@ -4798,6 +4804,13 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
         <label class="field-label">Название</label>
         <input id="channelNameInput" class="community-field" placeholder="Например, Vibe News" maxlength="80">
+
+        <label class="field-label channel-username-label">Юзернейм</label>
+        <div class="channel-create-username">
+            <span class="channel-create-username-prefix">@</span>
+            <input id="channelUsernameInput" class="community-field channel-create-username-input" placeholder="vibe_news" maxlength="32" autocomplete="off" autocapitalize="none" spellcheck="false">
+        </div>
+        <div class="channel-create-username-hint">Уникальный адрес канала. 3–32 символа: латиница, цифры и _.</div>
 
         <label class="field-label">Описание</label>
         <textarea id="channelDescriptionInput" class="community-field community-textarea" placeholder="Коротко расскажи о канале" maxlength="500"></textarea>
@@ -7308,7 +7321,7 @@ async function searchUsers() {
                     <div class="search-community-avatar">${avatar}</div>
                     <div class="search-community-info">
                         <div class="search-community-name">${escapeHTML(channel.name || "Канал")}</div>
-                        <div class="search-community-meta">Канал · ${Number(channel.subscriberCount || 0)} подписчиков</div>
+                        <div class="search-community-meta">@${escapeHTML(channel.username || "")} · ${Number(channel.subscriberCount || 0)} подписчиков</div>
                     </div>
                     <button class="search-community-action ${channel.subscribed ? "joined" : ""}" type="button">
                         ${channel.subscribed ? "Открыть" : "Подписаться"}
@@ -10136,6 +10149,7 @@ function openCreateChannel() {
     if ($("channelCreatePreview")) $("channelCreatePreview").innerHTML = vibeIcon("channel");
 
     $("channelNameInput").value = "";
+    if ($("channelUsernameInput")) $("channelUsernameInput").value = "";
     $("channelDescriptionInput").value = "";
     $("channelPublicInput").checked = true;
     $("channelPhotoInput").value = "";
@@ -10225,12 +10239,30 @@ function initChannelPhotoPickers() {
     $("channelProfilePhotoFile")?.removeAttribute("disabled");
 }
 
+$("channelUsernameInput")?.addEventListener("input", event => {
+    const input = event.target;
+    const cleaned = String(input.value || "")
+        .replace(/^@+/, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, "")
+        .slice(0, 32);
+    if (input.value !== cleaned) input.value = cleaned;
+});
+
+
 async function createChannel() {
 
     const name =
         $("channelNameInput")
             .value
             .trim();
+
+    const username =
+        $("channelUsernameInput")
+            .value
+            .trim()
+            .replace(/^@+/, "")
+            .toLowerCase();
 
     const description =
         $("channelDescriptionInput")
@@ -10256,6 +10288,13 @@ async function createChannel() {
         return;
     }
 
+    if (!/^[a-z0-9_]{3,32}$/.test(username)) {
+        $("channelCreateError").textContent =
+            "Введите юзернейм: 3–32 символа, только латинские буквы, цифры и _";
+        $("channelUsernameInput")?.focus();
+        return;
+    }
+
     try {
 
         const response =
@@ -10276,6 +10315,8 @@ async function createChannel() {
                                 currentUser.login,
 
                             name,
+
+                            username,
 
                             description,
 
