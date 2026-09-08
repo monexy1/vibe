@@ -14465,6 +14465,104 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+
+<style id="vibe-final-layout-2026">
+/* Vibe final layout — based on the supplied Vibe reference, while preserving the existing app. */
+:root{--vibe-purple:#7c3aed;--vibe-purple2:#8b5cf6;--vibe-deep:#080a18;--vibe-panel:#0d1122;--vibe-panel2:#151b35;--vibe-border:rgba(148,163,184,.15)}
+html,body,#app{min-height:100%;width:100%;}
+body{background:#080a18;overflow:hidden}
+.layout{height:100dvh!important;display:flex!important;background:#080a18!important}
+.vibe-safe-rail{width:275px!important;flex:0 0 275px!important;padding:28px 20px 18px!important;background:linear-gradient(180deg,#0a0d1d,#080a17)!important;border-right:1px solid var(--vibe-border)!important;box-sizing:border-box!important}
+.vibe-safe-rail-brand{padding:0 12px 38px!important;gap:13px!important}
+.vibe-safe-logo{width:60px!important;height:60px!important;border-radius:17px!important;background:linear-gradient(145deg,#8b5cf6,#6d28d9)!important;box-shadow:0 8px 30px rgba(124,58,237,.25)!important;font-size:34px!important}
+.vibe-safe-title{font-size:28px!important;font-weight:950!important;line-height:1!important}.vibe-safe-sub{font-size:13px!important;margin-top:5px!important;color:#8e96b7!important}
+.vibe-safe-nav{gap:9px!important}.vibe-safe-btn{min-height:64px!important;border:1px solid transparent!important;border-radius:16px!important;background:transparent!important;color:#c4c9e1!important;padding:0 20px!important;font-size:18px!important;font-weight:850!important;justify-content:flex-start!important;gap:18px!important}
+.vibe-safe-btn:hover{background:rgba(124,58,237,.10)!important;color:#fff!important}.vibe-safe-btn.active{background:linear-gradient(100deg,rgba(109,40,217,.72),rgba(76,29,149,.46))!important;border-color:rgba(139,92,246,.7)!important;color:#fff!important;box-shadow:0 8px 30px rgba(76,29,149,.18)!important}
+.vibe-safe-btn svg{width:24px!important;height:24px!important;stroke-width:1.8!important}
+#safeSettings{margin-top:auto!important;min-height:62px!important}
+.vibe-safe-user{margin-top:16px!important;border:1px solid var(--vibe-border)!important;background:rgba(255,255,255,.025)!important;border-radius:16px!important;min-height:76px!important;padding:12px 15px!important;font-size:16px!important;font-weight:850!important;color:#fff!important;display:flex!important;align-items:center!important;cursor:pointer!important}
+.vibe-safe-user:before{content:"V";display:grid;place-items:center;width:45px;height:45px;border-radius:50%;margin-right:11px;background:linear-gradient(145deg,#8b5cf6,#6d28d9);font-weight:950;font-size:20px}
+.vibe-safe-user:after{content:"⋯";margin-left:auto;color:#9aa1c0;font-size:22px}
+.sidebar{flex:0 0 425px!important;width:425px!important;padding:0!important;background:#0b0e1c!important;border-right:1px solid var(--vibe-border)!important;box-sizing:border-box!important}
+.sidebar>.side-top{display:none!important}
+.vibe-chat-header{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--vibe-border);box-sizing:border-box}
+.vibe-chat-title{font-size:28px;font-weight:950;color:#fff}.vibe-create-channel-btn{height:45px;padding:0 18px;border:1px solid rgba(139,92,246,.8);border-radius:14px;background:linear-gradient(100deg,#6d28d9,#7c3aed);color:#fff;font-size:15px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(124,58,237,.18)}
+.vibe-create-channel-btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.vibe-chat-tools{padding:16px 22px 14px;border-bottom:1px solid var(--vibe-border)}
+.vibe-chat-search{height:50px!important;border-radius:14px!important;background:#151a31!important;border:1px solid rgba(148,163,184,.14)!important;font-size:15px!important;padding:0 16px!important}
+.vibe-chat-tabs{display:flex;gap:9px;margin-top:13px;overflow:auto;scrollbar-width:none}.vibe-chat-tabs::-webkit-scrollbar{display:none}
+.vibe-chat-tab{border:1px solid rgba(148,163,184,.12);background:#11162b;color:#aeb5d0;border-radius:999px;padding:9px 16px;font-weight:800;cursor:pointer;white-space:nowrap}.vibe-chat-tab.active{background:linear-gradient(100deg,#7c3aed,#8b5cf6);color:#fff;border-color:transparent;box-shadow:0 6px 20px rgba(124,58,237,.22)}
+.sidebar>.search{display:none!important}.sidebar>.results{margin:0!important;max-height:none!important;overflow:auto!important;padding:0 12px!important}.sidebar>.friends{padding:10px 12px!important}
+.sidebar .person{padding:13px 10px!important;margin-bottom:4px!important;border-radius:15px!important;min-height:68px!important}.sidebar .person:hover,.sidebar .person.active{background:#151a31!important}.sidebar .person-name{font-size:16px!important}.sidebar .person-login{font-size:12px!important}.sidebar .avatar,.sidebar .channel-sidebar-icon{width:50px!important;height:50px!important;min-width:50px!important}.sidebar .chat-count{background:#7c3aed!important}
+.chat{background:#090c1b!important}.chat-head{background:#0c1020!important;border-bottom:1px solid var(--vibe-border)!important}.messages{background:radial-gradient(circle at 75% 25%,rgba(124,58,237,.08),transparent 28%),#090c1b!important}
+.welcome-panel{max-width:850px!important}.welcome-logo{width:135px!important;height:135px!important;border-radius:34px!important;background:linear-gradient(145deg,#080817,#1a1032)!important;border:3px solid #8b5cf6!important;box-shadow:0 0 45px rgba(124,58,237,.38)!important;font-size:80px!important}.welcome-title{font-size:40px!important}.welcome-text{font-size:18px!important}.welcome-actions{grid-template-columns:repeat(4,1fr)!important;max-width:780px!important}.welcome-actions button{min-height:155px!important;border-radius:18px!important;background:rgba(20,26,55,.72)!important;border:1px solid rgba(139,92,246,.15)!important}.welcome-actions button:hover{border-color:rgba(139,92,246,.55)!important;background:rgba(124,58,237,.12)!important}
+/* Full-screen feature windows. */
+#channelsModal,#settingsModal,#friendRequestsModal,#communitiesModal,#profileModal{z-index:50000!important;padding:0!important;align-items:stretch!important;justify-content:stretch!important}
+#channelsModal>.modal-card,#settingsModal>.modal-card,#friendRequestsModal>.modal-card,#communitiesModal>.modal-card,#profileModal>.modal-card{width:100%!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;border-radius:0!important;padding:28px 34px!important;background:radial-gradient(circle at 75% 10%,rgba(124,58,237,.10),transparent 32%),#080a18!important;border:0!important;box-shadow:none!important;overflow:auto!important}
+#channelsModal .modal-header,#settingsModal .modal-header,#friendRequestsModal .modal-header,#profileModal .modal-header{padding-bottom:18px!important;border-bottom:1px solid var(--vibe-border)!important}
+/* The old communities launcher is kept for group creation, but the main Create button goes directly to channels. */
+@media(max-width:700px){
+ body{overflow:hidden}.layout{display:block!important}.vibe-safe-rail{display:none!important}.sidebar{display:flex!important;width:100%!important;height:100dvh!important;flex:1 1 auto!important;border:0!important}.sidebar>.side-top{display:flex!important;height:72px!important;min-height:72px!important;padding:10px 14px!important;margin:0!important;border-bottom:1px solid var(--vibe-border)!important}.sidebar>.side-top .brand{display:flex!important;font-size:25px!important}.sidebar>.side-top #topCommunitiesButton,.sidebar>.side-top #notificationsButton{display:none!important}.sidebar>.side-top #mobileHelpButton{display:grid!important;margin-left:auto!important}
+ .vibe-chat-header{display:none!important}.vibe-chat-tools{padding:12px 14px 12px!important}.vibe-chat-search{height:52px!important}.vibe-chat-tabs{margin-top:10px}.sidebar>.friends{padding:8px 10px 90px!important}.sidebar>.results{padding:0 10px!important}.sidebar .person{min-height:72px!important;padding:12px!important}
+ .chat{position:fixed!important;inset:0!important;z-index:10000!important;display:none!important}.chat.no-selection{display:none!important}.chat:not(.no-selection){display:flex!important}.chat .mobile-back-btn{display:grid!important;place-items:center!important}
+ .welcome-panel{padding:20px 14px!important}.welcome-logo{width:92px!important;height:92px!important;font-size:52px!important;border-radius:25px!important}.welcome-title{font-size:28px!important}.welcome-text{font-size:14px!important}.welcome-actions{grid-template-columns:1fr 1fr!important;gap:10px!important}.welcome-actions button{min-height:125px!important}
+ #vibeMobileCreate{position:fixed!important;right:20px!important;bottom:22px!important;width:62px!important;height:62px!important;border-radius:50%!important;background:linear-gradient(145deg,#8b5cf6,#6d28d9)!important;color:#fff!important;border:0!important;box-shadow:0 12px 30px rgba(124,58,237,.4)!important;font-size:34px!important;display:grid!important;place-items:center!important;z-index:60000!important}
+ #channelsModal>.modal-card,#settingsModal>.modal-card,#friendRequestsModal>.modal-card,#communitiesModal>.modal-card,#profileModal>.modal-card{padding:14px!important}
+}
+</style>
+
+<script id="vibe-final-layout-controller">
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=v=>typeof escapeHTML==='function'?escapeHTML(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+function call(name,...args){try{if(typeof window[name]==='function')return window[name](...args)}catch(e){console.error('[Vibe]',name,e)}}
+function buildChatHeader(){
+ const sidebar=document.querySelector('.sidebar'); if(!sidebar||$('vibeChatHeader'))return;
+ const h=document.createElement('div');h.id='vibeChatHeader';h.className='vibe-chat-header';
+ h.innerHTML='<div class="vibe-chat-title">Чаты</div><button type="button" class="vibe-create-channel-btn" id="vibeCreateChannelBtn">＋&nbsp; Создать</button>';
+ sidebar.insertBefore(h,sidebar.querySelector('.search'));
+ $('vibeCreateChannelBtn').onclick=e=>{e.preventDefault();e.stopPropagation();call('openCreateChannel')};
+ const tools=document.createElement('div');tools.className='vibe-chat-tools';
+ tools.innerHTML='<input id="vibeChatSearch" class="vibe-chat-search" type="text" placeholder="Поиск людей..."><div class="vibe-chat-tabs"><button type="button" class="vibe-chat-tab active" data-filter="all">Все</button><button type="button" class="vibe-chat-tab" data-filter="private">Личные</button><button type="button" class="vibe-chat-tab" data-filter="groups">Группы</button><button type="button" class="vibe-chat-tab" data-filter="channels">Каналы</button></div>';
+ sidebar.insertBefore(tools,sidebar.querySelector('.search'));
+ const old=$('searchInput'), neu=$('vibeChatSearch');
+ if(old){neu.value=old.value;neu.addEventListener('input',()=>{old.value=neu.value;call('searchUsers')})}
+ tools.querySelectorAll('.vibe-chat-tab').forEach(tab=>tab.addEventListener('click',()=>{
+   tools.querySelectorAll('.vibe-chat-tab').forEach(x=>x.classList.remove('active'));tab.classList.add('active');
+   const filter=tab.dataset.filter;
+   document.querySelectorAll('#friends .person').forEach(item=>{
+     if(filter==='all')item.style.display='';
+     else if(filter==='channels')item.style.display=item.querySelector('.channel-sidebar-icon')?'':'none';
+     else if(filter==='groups'){const txt=item.textContent||'';item.style.display=/Группа/i.test(txt)?'':'none'}
+     else if(filter==='private')item.style.display=item.querySelector('.channel-sidebar-icon')?'none':'';
+   });
+ }) );
+}
+function updateProfileCard(){
+ const u=window.currentUser; const el=document.querySelector('.vibe-safe-user'); if(!el)return;
+ if(!u){el.textContent='Профиль';return}
+ el.innerHTML='';
+ const av=document.createElement('span');av.className='vibe-safe-user-avatar';av.innerHTML=u.photo?'<img src="'+esc(u.photo)+'" alt="">':'V';
+ const info=document.createElement('span');info.className='vibe-safe-user-info';info.innerHTML='<b>'+esc(u.name||u.login)+'</b><small>@'+esc(u.login||'')+'</small>';
+ const dots=document.createElement('span');dots.className='vibe-safe-user-dots';dots.textContent='⋯';el.append(av,info,dots);
+ el.onclick=e=>{e.preventDefault();e.stopPropagation();call('openProfile')};
+}
+function makeChannelCreateDirect(){
+ const welcome=document.querySelector('.welcome-actions button:nth-child(2)');
+ if(welcome){welcome.onclick=e=>{e.preventDefault();call('openCreateChannel')};const b=welcome.querySelector('b');const s=welcome.querySelector('small');if(b)b.textContent='Создай канал';if(s)s.textContent='Публикации и новости'}
+}
+function patchCreateMobile(){const b=$('vibeMobileCreate');if(!b)return;b.textContent='+';b.title='Создать канал';b.onclick=e=>{e.preventDefault();e.stopImmediatePropagation();call('openCreateChannel')}}
+function hideArchive(){['vibeRailArchive','safeArchive'].forEach(id=>$(id)?.remove())}
+function boot(){buildChatHeader();updateProfileCard();makeChannelCreateDirect();patchCreateMobile();hideArchive();
+ const obs=new MutationObserver(()=>updateProfileCard());const app=$('app');if(app)obs.observe(app,{subtree:true,childList:true});
+ window.addEventListener('pageshow',()=>{document.body.classList.remove('booting');setTimeout(()=>{buildChatHeader();patchCreateMobile();updateProfileCard()},50)});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,120));else setTimeout(boot,120);
+})();
+</script>
+
 </body>
 
 
