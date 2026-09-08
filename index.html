@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Vibe — Мессенджер</title>
+<title>Vibe</title>
 
 <style>
 
@@ -3440,170 +3440,80 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 @media (max-width:560px){.email-link-actions{grid-template-columns:1fr;}}
 </style>
 
-<style id="vibe-final-redesign">
-/* =========================================================
-   VIBE FINAL REDESIGN — visual layer only
-   No existing application logic is replaced.
-========================================================= */
+<style id="vibe-neon-ui-v20">
 :root{
-  --bg:#080810;
-  --panel:#0f0f1b;
-  --panel2:#171727;
-  --text:#f8f7ff;
-  --muted:#9695aa;
-  --accent:#8b5cf6;
-  --accent2:#6d28d9;
-  --bubble:#1b1b30;
-  --border:rgba(255,255,255,.075);
-  --mine-shadow:0 10px 28px rgba(124,58,237,.28);
+  --vibe-purple:#7c3aed;--vibe-purple2:#a855f7;--vibe-blue:#3b82f6;
+  --vibe-bg:#070812;--vibe-panel:#0e1020;--vibe-panel2:#15182b;
+  --vibe-line:rgba(168,85,247,.18);--vibe-glow:0 0 24px rgba(124,58,237,.20);
 }
-
-html,body{background:#080810;color:var(--text)}
-body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
-  radial-gradient(900px 600px at 82% 0%,rgba(124,58,237,.13),transparent 60%),
-  radial-gradient(700px 500px at 15% 100%,rgba(76,29,149,.10),transparent 65%),#080810;}
-
-button,input,textarea,select{font-family:inherit}
-button{transition:background .16s ease,border-color .16s ease,transform .16s ease,box-shadow .16s ease,filter .16s ease}
-button:active{transform:scale(.985)}
-
-/* AUTH */
-#authScreen{background:
-  radial-gradient(520px 420px at 50% 30%,rgba(139,92,246,.18),transparent 68%),
-  #080810 !important;}
-#authScreen .auth-card{position:relative;overflow:hidden;background:rgba(15,15,27,.92);border:1px solid rgba(139,92,246,.22);border-radius:28px;padding:34px;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 80px rgba(109,40,217,.10);backdrop-filter:blur(18px)}
-#authScreen .auth-card:before{content:"";position:absolute;left:-90px;top:-100px;width:220px;height:220px;border-radius:50%;background:rgba(139,92,246,.13);filter:blur(20px);pointer-events:none}
-#authScreen .logo{position:relative;font-size:36px;letter-spacing:-1.5px;text-shadow:0 8px 35px rgba(139,92,246,.35)}
-#authScreen .logo:before{content:"V";display:inline-grid;place-items:center;width:43px;height:43px;margin-right:10px;border-radius:13px;background:linear-gradient(145deg,#9b5cff,#5b21b6);box-shadow:0 10px 30px rgba(124,58,237,.32);font-size:24px;vertical-align:-5px}
-#authScreen .subtitle{font-size:14px;color:#9b99af;margin-top:9px}
-#authScreen input,#authScreen select{background:#151526;border-color:rgba(255,255,255,.07);border-radius:14px}
-#authScreen .primary{background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 10px 26px rgba(109,40,217,.24)}
-#authScreen .secondary{background:#171727;border:1px solid rgba(255,255,255,.06)}
-
-/* MAIN APP */
-#app{background:transparent}
-.layout{grid-template-columns:300px minmax(0,1fr);gap:0;background:transparent}
-.sidebar{position:relative;padding:16px 13px 14px;background:linear-gradient(180deg,rgba(16,16,28,.98),rgba(10,10,18,.98));border-right:1px solid rgba(255,255,255,.06);box-shadow:12px 0 40px rgba(0,0,0,.16);z-index:4}
-.side-top{padding:2px 3px 14px;margin-bottom:13px;border-bottom:1px solid rgba(255,255,255,.06);gap:7px}
-.side-top .brand{margin-right:auto;font-size:25px;letter-spacing:-.8px;text-shadow:none}
-.brand::before{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,#9b5cff,#5b21b6);box-shadow:0 8px 22px rgba(124,58,237,.30);font-size:21px}
-.icon-btn{width:38px;height:38px;border-radius:11px;background:#151526;border:1px solid rgba(255,255,255,.055);color:#d7d5e5}
-.icon-btn:hover{background:#211c3b;border-color:rgba(139,92,246,.32);color:#fff;box-shadow:0 5px 18px rgba(109,40,217,.14)}
-.search{margin-bottom:11px}
-.search input{height:45px;padding:0 14px 0 42px;border-radius:13px;background:#151526;border-color:rgba(255,255,255,.065);color:#f4f2ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
-.search:before{content:"";position:absolute;left:14px;top:13px;width:15px;height:15px;border:2px solid #88869b;border-radius:50%;z-index:2;pointer-events:none}
-.search:after{content:"";position:absolute;left:28px;top:28px;width:7px;height:2px;background:#88869b;transform:rotate(45deg);z-index:2;pointer-events:none;border-radius:2px}
-.results{max-height:180px}
-.friends{padding:1px 1px 8px;scrollbar-width:thin;scrollbar-color:rgba(139,92,246,.35) transparent}
-.person{gap:11px;padding:10px 9px;margin-bottom:3px;border:1px solid transparent;border-radius:14px;background:transparent}
-.person:hover{transform:none;background:#151526;border-color:rgba(255,255,255,.055)}
-.person.active{background:linear-gradient(90deg,rgba(124,58,237,.24),rgba(124,58,237,.08));border-color:rgba(139,92,246,.24);box-shadow:inset 3px 0 0 #8b5cf6}
-.person .avatar,.channel-sidebar-icon{width:45px;height:45px;min-width:45px;border-radius:13px;background:linear-gradient(145deg,#8b5cf6,#4c1d95);box-shadow:0 5px 14px rgba(0,0,0,.20)}
-.person .avatar{border-radius:50%}
-.person-name{font-size:14px;font-weight:800;letter-spacing:-.1px}
-.person-login{font-size:11px;color:#88879a;margin-top:3px}
-.chat-count{min-width:22px;height:22px;background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,.25);font-size:11px}
-.channel-sidebar-icon{overflow:hidden}
-.channel-sidebar-icon img{border-radius:inherit}
-
-/* Desktop chat */
-.chat{background:
-  radial-gradient(900px 600px at 65% 10%,rgba(109,40,217,.08),transparent 60%),
-  #090912}
-.chat-head{min-height:70px;padding:10px 18px;background:rgba(14,14,24,.90);border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(18px);box-shadow:0 5px 20px rgba(0,0,0,.10)}
-.chat-head .avatar{width:43px;height:43px;min-width:43px;border-radius:50%;background:linear-gradient(145deg,#8b5cf6,#4c1d95)}
-.chat-name{font-size:15px;font-weight:850}
-.chat-status{font-size:11px;color:#858397;margin-top:3px}
-.call-buttons{gap:5px}
-.call-buttons button{width:40px;height:40px;border-radius:11px;background:#151526;border:1px solid rgba(255,255,255,.055)}
-.call-buttons button:hover{background:#211c3b;color:#fff;border-color:rgba(139,92,246,.30)}
-.connection-indicator{padding:5px 9px;border-radius:9px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.045)}
-
-.messages{padding:24px 30px 20px;background:
-  radial-gradient(500px 380px at 75% 35%,rgba(124,58,237,.055),transparent 70%),
-  repeating-linear-gradient(135deg,rgba(255,255,255,.012) 0 1px,transparent 1px 42px);}
-.message{padding:10px 13px;border-radius:16px;background:#181827;border:1px solid rgba(255,255,255,.035);box-shadow:0 5px 16px rgba(0,0,0,.12)}
-.message.mine{background:linear-gradient(135deg,#7c3aed,#5b21b6);border-color:rgba(167,139,250,.18);box-shadow:0 9px 24px rgba(91,33,182,.24)}
-.message-time{font-size:9px;color:#aaa8ba}
-
-/* Welcome screen */
-.welcome-panel{width:min(620px,100%);padding:28px;border:1px solid rgba(255,255,255,.06)!important;border-radius:24px!important;background:linear-gradient(145deg,rgba(22,22,39,.82),rgba(12,12,21,.82))!important;box-shadow:0 20px 55px rgba(0,0,0,.22),0 0 55px rgba(109,40,217,.06)!important}
-.welcome-logo{width:64px!important;height:64px!important;border-radius:19px!important;background:linear-gradient(145deg,#9b5cff,#5b21b6)!important;box-shadow:0 14px 35px rgba(109,40,217,.28)!important}
-.welcome-title{font-size:24px!important;letter-spacing:-.6px}
-.welcome-text{color:#9391a5!important;max-width:450px}
-.welcome-actions{gap:9px!important}
-.welcome-actions button{border:1px solid rgba(255,255,255,.055)!important;background:#151526!important;border-radius:15px!important}
-.welcome-actions button:hover{background:#1d1930!important;border-color:rgba(139,92,246,.28)!important;transform:translateY(-1px)}
-.welcome-action-icon{background:rgba(139,92,246,.13)!important;color:#b58cff!important}
-
-/* Composer */
-.composer{padding:11px 16px 13px;background:rgba(13,13,22,.94);border-top:1px solid rgba(255,255,255,.06);backdrop-filter:blur(18px)}
-.composer input{height:45px;padding:0 14px;border-radius:13px;background:#151526;border-color:rgba(255,255,255,.06)}
-.composer button{border-radius:12px}
-.composer-icon-btn,.emoji-btn,.voice-btn{background:#151526!important;border:1px solid rgba(255,255,255,.055)!important;color:#aaa8ba!important}
-.composer-icon-btn:hover,.emoji-btn:hover,.voice-btn:hover{background:#211c3b!important;color:#fff!important;border-color:rgba(139,92,246,.28)!important}
-.composer > .composer-tools + button:last-child,.composer button[type="submit"]{background:linear-gradient(135deg,#8b5cf6,#6d28d9)!important;box-shadow:0 7px 20px rgba(109,40,217,.24)}
-
-/* Lists / channels / cards */
-.channel-item{padding:10px;border-radius:14px;border-color:rgba(255,255,255,.055);background:#121220}
-.channel-item:hover{background:#18182a;border-color:rgba(139,92,246,.22)}
-.channel-action{border-radius:10px!important;background:#7c3aed!important;box-shadow:none!important}
-.channel-action.subscribed{background:#181827!important;border-color:rgba(255,255,255,.07)!important}
-
-/* Modals */
-.modal{background:rgba(3,3,8,.72);backdrop-filter:blur(9px)}
-.modal-card{background:linear-gradient(145deg,#121220,#0d0d17);border-color:rgba(139,92,246,.16);border-radius:22px;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 55px rgba(109,40,217,.08)}
-.modal-close{background:#181827;border:1px solid rgba(255,255,255,.05)}
-.modal-close:hover{background:#7f1d1d}
-.modal input,.modal textarea,.modal select{background:#171727;border-color:rgba(255,255,255,.065);border-radius:12px}
-.setting-section,.profile-edit-section{background:#151526!important;border-color:rgba(255,255,255,.055)!important}
-
-/* Mobile bottom navigation — added as a presentation layer; existing actions remain untouched */
-.vibe-mobile-nav{display:none}
-
-@media (min-width:751px){
-  .sidebar{min-width:300px}
-  .vibe-mobile-nav{display:none!important}
+body:not(.light):not(.ocean):not(.sunset){
+ background:radial-gradient(circle at 72% 18%,rgba(89,36,145,.18),transparent 34%),#070812;
 }
-
-@media (max-width:750px){
-  body{background:#080810}
-  .layout{display:block!important}
-  .sidebar{padding:10px 10px max(8px,env(safe-area-inset-bottom))!important;background:linear-gradient(180deg,#0e0e19,#090910);border:0;box-shadow:none}
-  .side-top{padding:2px 2px 10px;margin-bottom:9px;border-bottom:1px solid rgba(255,255,255,.055)}
-  .side-top .brand{font-size:23px}
-  .brand::before{width:33px;height:33px;border-radius:10px;font-size:19px}
-  .icon-btn{width:40px;height:40px;border-radius:11px}
-  .search{margin-bottom:8px}
-  .search input{height:44px;border-radius:13px;font-size:14px}
-  .friends{padding-bottom:68px}
-  .person{padding:10px 9px;margin-bottom:2px;border-radius:13px}
-  .person .avatar,.channel-sidebar-icon{width:47px;height:47px;min-width:47px}
-  .person-name{font-size:14px}
-  .person-login{font-size:11px}
-  .chat{background:#090912}
-  .chat-head{min-height:61px;padding:7px 9px;background:rgba(14,14,24,.96)}
-  .messages{padding:10px 9px 8px;background:#090912}
-  .message{max-width:84%;padding:9px 11px;border-radius:15px}
-  .composer{padding:7px!important;gap:4px;background:rgba(13,13,22,.97)}
-  .composer input{height:40px;border-radius:12px;font-size:16px}
-  .composer-icon-btn,.composer-text-btn{border-radius:11px!important}
-  .welcome-panel{margin:8px auto;width:calc(100% - 4px);padding:22px 15px!important;border-radius:20px!important}
-  .welcome-title{font-size:21px!important}
-  .welcome-actions{grid-template-columns:1fr!important}
-  .vibe-mobile-nav{position:absolute;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));height:58px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px;border:1px solid rgba(255,255,255,.065);border-radius:17px;background:rgba(17,17,29,.96);box-shadow:0 15px 40px rgba(0,0,0,.42);backdrop-filter:blur(18px);z-index:15}
-  .vibe-mobile-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:13px;background:transparent;color:#858397;font-size:9px;font-weight:750}
-  .vibe-mobile-nav-item:hover,.vibe-mobile-nav-item.active{background:rgba(139,92,246,.13);color:#c8b5ff}
-  .vibe-mobile-nav-icon{width:22px;height:22px;display:grid;place-items:center}
-  .vibe-mobile-nav-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-  .modal-card{border-radius:19px!important}
+/* Desktop: image-like 3-column messenger layout */
+@media(min-width:701px){
+ .layout{grid-template-columns:190px 360px minmax(0,1fr)!important;background:#080914;gap:0}
+ .vibe-rail{grid-column:1;height:100%;display:flex;flex-direction:column;padding:18px 12px;border-right:1px solid var(--vibe-line);background:linear-gradient(180deg,#0b0c18,#080912);z-index:20}
+ .sidebar{grid-column:2;grid-row:1;min-width:0!important;padding:0!important;border-right:1px solid var(--vibe-line)!important;background:linear-gradient(180deg,#0d0f1c,#0a0b15)!important;overflow:hidden}
+ .chat{grid-column:3;grid-row:1;background:radial-gradient(circle at 65% 35%,rgba(93,40,160,.12),transparent 42%),#080914!important}
+ .side-top{height:72px;margin:0!important;padding:14px 16px!important;border-bottom:1px solid var(--vibe-line)!important;gap:8px!important}
+ .side-top .brand{font-size:24px!important;margin-right:auto}
+ .side-top .icon-btn{width:38px!important;height:38px!important}
+ .side-top .icon-btn#topCommunitiesButton{display:none}
+ .search{padding:12px 14px 8px;margin:0!important}
+ .search input{height:42px!important;border-radius:13px!important;background:#15172a!important;border-color:rgba(255,255,255,.06)!important}
+ .friends{padding:4px 8px 14px!important}
+ .person{padding:10px 9px!important;border-radius:14px!important;margin-bottom:3px!important}
+ .person.active{background:linear-gradient(100deg,rgba(124,58,237,.32),rgba(124,58,237,.12))!important;box-shadow:inset 3px 0 0 var(--vibe-purple2),0 0 18px rgba(124,58,237,.08)!important}
+ .person:hover{background:rgba(124,58,237,.13)!important}
+ .vibe-rail-brand{display:flex;align-items:center;gap:10px;padding:2px 7px 20px}
+ .vibe-rail-logo{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:1000;font-size:25px;color:#fff;background:linear-gradient(145deg,#7c3aed,#4f46e5);box-shadow:0 0 22px rgba(124,58,237,.48);border:1px solid rgba(255,255,255,.16)}
+ .vibe-rail-title{font-weight:900;font-size:20px}.vibe-rail-sub{font-size:10px;color:#8f91a8;margin-top:1px}
+ .vibe-rail-nav{display:flex;flex-direction:column;gap:5px;flex:1}
+ .vibe-rail-btn{width:100%;height:48px;border:1px solid transparent;border-radius:13px;background:transparent;color:#a9abc0;display:flex;align-items:center;gap:12px;padding:0 13px;font-weight:750;cursor:pointer;transition:.18s}
+ .vibe-rail-btn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+ .vibe-rail-btn:hover{background:rgba(124,58,237,.12);color:#fff;border-color:rgba(124,58,237,.18);transform:translateX(1px)}
+ .vibe-rail-btn.active{background:linear-gradient(100deg,rgba(124,58,237,.38),rgba(124,58,237,.15));color:#fff;border-color:rgba(168,85,247,.28);box-shadow:var(--vibe-glow)}
+ .vibe-rail-badge{margin-left:auto;min-width:22px;height:22px;padding:0 6px;border-radius:99px;background:#7c3aed;color:#fff;display:grid;place-items:center;font-size:11px}
+ .vibe-rail-bottom{padding-top:12px;border-top:1px solid var(--vibe-line)}
+ .vibe-rail-user{display:flex;align-items:center;gap:9px;padding:10px 7px;color:#fff;cursor:pointer;border-radius:13px}
+ .vibe-rail-user:hover{background:rgba(255,255,255,.04)}
+ .vibe-rail-user .avatar{width:34px;height:34px;min-width:34px}
+ .vibe-rail-user-name{font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .vibe-rail-user-status{font-size:10px;color:#777b93}
+ .vibe-list-tabs{display:flex;gap:4px;padding:0 14px 8px;border-bottom:1px solid var(--vibe-line)}
+ .vibe-list-tab{border:0;background:transparent;color:#8588a0;padding:7px 9px;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer}
+ .vibe-list-tab.active{background:rgba(124,58,237,.18);color:#fff}
+ .vibe-new-chat{margin:0 14px 14px;height:44px;border:0;border-radius:13px;background:linear-gradient(90deg,#6d28d9,#7c3aed);color:#fff;font-weight:900;font-size:13px;cursor:pointer;box-shadow:0 8px 22px rgba(124,58,237,.22)} .vibe-new-chat:hover{filter:brightness(1.08);transform:translateY(-1px)}
+ .chat-head{min-height:72px!important;padding:10px 18px!important;background:rgba(10,11,23,.86)!important;border-bottom:1px solid var(--vibe-line)!important;backdrop-filter:blur(18px)}
+ .chat-head .avatar{width:44px;height:44px;min-width:44px;box-shadow:0 0 0 2px rgba(124,58,237,.25)}
+ .chat-name{font-size:15px!important}.chat-status{color:#777b93!important}
+ .call-buttons button{background:#15172a!important;border:1px solid rgba(255,255,255,.06)!important;border-radius:12px!important}
+ .call-buttons button:hover{background:#262044!important;color:#c084fc}
+ .messages{background-image:radial-gradient(rgba(168,85,247,.12) 1px,transparent 1px);background-size:28px 28px}
+ .composer{margin:0 14px 14px!important;border:1px solid rgba(168,85,247,.18)!important;border-radius:17px!important;background:rgba(15,16,31,.94)!important;box-shadow:0 10px 40px rgba(0,0,0,.25)}
 }
-
-@media (max-width:420px){
-  .side-top .brand{font-size:22px}
-  .icon-btn{width:38px;height:38px}
-  .vibe-mobile-nav{left:6px;right:6px}
+/* Mobile mirrors the reference structure without sacrificing existing controls */
+@media(max-width:700px){
+ .vibe-rail{display:none!important}
+ .layout{display:block!important}
+ .sidebar{width:100%!important;border:0!important;padding:0!important}
+ .side-top{padding:12px 14px!important}
+ .side-top .brand{font-size:24px!important}
+ .search{padding:8px 12px!important}
+ .friends{padding:4px 8px 82px!important}
+ .chat{position:fixed!important;inset:0!important;z-index:50}
+ .chat.no-selection{display:none!important}
+ .chat:not(.no-selection){display:flex!important}
+ .chat-head{min-height:64px!important;padding:8px 10px!important}
+ .chat-head .call-buttons button{width:38px;height:38px}
+ .messages{padding-bottom:8px!important}
+ .composer{margin:0!important;border-radius:0!important;border-left:0!important;border-right:0!important;border-bottom:0!important}
+ .vibe-mobile-bottom{display:flex!important}
 }
+.vibe-mobile-bottom{display:none;position:fixed;left:0;right:0;bottom:0;z-index:90;background:rgba(10,11,22,.96);border-top:1px solid var(--vibe-line);backdrop-filter:blur(18px);padding-bottom:env(safe-area-inset-bottom)}
+.vibe-mobile-bottom button{flex:1;border:0;background:transparent;color:#8588a0;height:58px;font-size:10px;font-weight:800}
+.vibe-mobile-bottom button.active{color:#b66cff}
+.vibe-mobile-bottom svg{display:block;margin:0 auto 3px;width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 </style>
 
 </head>
@@ -3785,33 +3695,6 @@ button:active{transform:scale(.985)}
             <div id="searchResults" class="results"></div>
 
             <div id="friends" class="friends"></div>
-
-            <nav class="vibe-mobile-nav" aria-label="Навигация Vibe">
-                <button type="button" class="vibe-mobile-nav-item active" onclick="closeMobileChat(); renderChats();">
-                    <span class="vibe-mobile-nav-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H11l-5 3v-3H4z"/></svg>
-                    </span>
-                    <span>Чаты</span>
-                </button>
-                <button type="button" class="vibe-mobile-nav-item" onclick="openFriendRequests()">
-                    <span class="vibe-mobile-nav-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19.5c.6-3.4 2.5-5.2 5.5-5.2s4.9 1.8 5.5 5.2M14.5 15c2.5-.5 5 1.1 5.8 3.8"/></svg>
-                    </span>
-                    <span>Друзья</span>
-                </button>
-                <button type="button" class="vibe-mobile-nav-item" onclick="openChannels()">
-                    <span class="vibe-mobile-nav-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 5 16 7-16 7 3-7z"/><path d="M7 12h13"/></svg>
-                    </span>
-                    <span>Каналы</span>
-                </button>
-                <button type="button" class="vibe-mobile-nav-item" onclick="openSettings()">
-                    <span class="vibe-mobile-nav-icon">
-                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2.1 2.1M15.9 15.9 18 18M18 6l-2.1 2.1M8.1 15.9 6 18"/><circle cx="12" cy="12" r="4"/></svg>
-                    </span>
-                    <span>Настройки</span>
-                </button>
-            </nav>
         </aside>
 
 
@@ -18274,3 +18157,85 @@ body.vibe-group-admin #attachmentPollButtonDesktop{display:flex!important;}
   },true);
 })();
 </script>
+
+
+<script id="vibe-ui-v20-controller">
+(function(){
+ 'use strict';
+ const icon=(d)=>`<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+ function railButton(id,label,svg,fn,badge){
+   return `<button type="button" class="vibe-rail-btn" id="${id}" title="${label}">${icon(svg)}<span>${label}</span>${badge?`<span class="vibe-rail-badge">${badge}</span>`:''}</button>`;
+ }
+ function closePanels(){
+   ['communitiesModal','channelsModal','settingsModal','profileModal','friendRequestsModal'].forEach(id=>document.getElementById(id)?.classList.add('hidden'));
+ }
+ function focusSearch(){
+   const el=document.getElementById('searchInput'); if(el){el.focus();el.scrollIntoView({block:'nearest'});}
+ }
+ function setActive(id){document.querySelectorAll('.vibe-rail-btn').forEach(b=>b.classList.remove('active'));document.getElementById(id)?.classList.add('active');}
+ function build(){
+   const layout=document.querySelector('.layout'), sidebar=document.querySelector('.sidebar');
+   if(!layout||!sidebar||document.querySelector('.vibe-rail')) return;
+   const rail=document.createElement('aside'); rail.className='vibe-rail';
+   rail.innerHTML=`
+    <div class="vibe-rail-brand"><div class="vibe-rail-logo">V</div><div><div class="vibe-rail-title">Vibe</div><div class="vibe-rail-sub">Мессенджер</div></div></div>
+    <nav class="vibe-rail-nav">
+      ${railButton('vibeRailChats','Чаты',`<rect x="3" y="4" width="18" height="15" rx="4"/><path d="m7 19-1 2 4-2"/>`,()=>{closePanels();setActive('vibeRailChats');focusSearch();})}
+      ${railButton('vibeRailFriends','Друзья',`<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19.5c.6-3.4 2.5-5.2 5.5-5.2s4.9 1.8 5.5 5.2M14.5 15c2.5-.5 5 1.1 5.8 3.8"`,()=>{closePanels();setActive('vibeRailFriends');if(typeof openFriendRequests==='function')openFriendRequests();})}
+      ${railButton('vibeRailChannels','Каналы',`<path d="M4 6h16v12H4z"/><path d="m8 9 8 3-8 3z"/>`,()=>{setActive('vibeRailChannels');if(typeof openChannels==='function')openChannels();})}
+      ${railButton('vibeRailCalls','Звонки',`<path d="M7.2 4.5 9.5 7 8 9.5c1.1 2.2 2.3 3.4 4.5 4.5l2.5-1.5 2.5 2.3c.7.7.6 1.9-.2 2.5l-1.2.9c-.8.6-1.8.7-2.7.3-5.4-2.4-8.5-5.5-10.9-10.9-.4-.9-.3-1.9.3-2.7l.9-1.2c.6-.8 1.8-.9 2.5-.2Z"`,()=>{setActive('vibeRailCalls');if(typeof currentChat!=='undefined'&&currentChat&&typeof startCall==='function')startCall(false);else if(typeof openInstructions==='function')openInstructions();})}
+      ${railButton('vibeRailArchive','Архив',`<path d="M4 7h16v13H4z"/><path d="M3 4h18v3H3zM9 11h6"/>`,()=>{setActive('vibeRailArchive');document.querySelectorAll('#friends .person').forEach(x=>x.style.display='none');if(typeof window.showVibeNotice==='function')window.showVibeNotice('Архив','Архивный режим включён. Вернитесь в «Чаты», чтобы показать переписки.');})}
+    </nav>
+    <div class="vibe-rail-bottom">
+      <button type="button" class="vibe-rail-btn" id="vibeRailSettings">${icon('<path d="M12 3.8l1 .2.6 2a6.4 6.4 0 0 1 1.7 1l2-.6 1.1 1.9-1.4 1.6c.2.6.3 1.2.3 1.9s-.1 1.3-.3 1.9l1.4 1.6-1.1 1.9-2-.6a6.4 6.4 0 0 1-1.7 1l-.6 2-2 .2-.6-2a6.4 6.4 0 0 1-1.7-1l-2 .6-1.1-1.9 1.4-1.6a6.4 6.4 0 0 1-.3-1.9c0-.7.1-1.3.3-1.9L4 8.3l1.1-1.9 2 .6a6.4 6.4 0 0 1 1.7-1l.6-2 2-.2Z"/><circle cx="12" cy="11.8" r="2.4"/>')}<span>Настройки</span></button>
+      <div class="vibe-rail-user" id="vibeRailUser"><div class="avatar" id="vibeRailAvatar">V</div><div style="min-width:0"><div class="vibe-rail-user-name" id="vibeRailUserName">Vibe</div><div class="vibe-rail-user-status">В сети</div></div></div>
+    </div>`;
+   layout.insertBefore(rail,sidebar);
+   rail.querySelector('#vibeRailChats').classList.add('active');
+   rail.querySelector('#vibeRailSettings').onclick=()=>{setActive('vibeRailSettings');if(typeof openSettings==='function')openSettings();};
+   rail.querySelector('#vibeRailUser').onclick=()=>{if(typeof openProfile==='function')openProfile();};
+   const newChat=document.createElement('button');
+   newChat.type='button'; newChat.className='vibe-new-chat'; newChat.innerHTML='<span>＋</span>Новый чат';
+   newChat.onclick=()=>{focusSearch();};
+   sidebar.appendChild(newChat);
+   const tabs=document.createElement('div'); tabs.className='vibe-list-tabs';
+   tabs.innerHTML='<button type="button" class="vibe-list-tab active">Все</button><button type="button" class="vibe-list-tab">Новые</button><button type="button" class="vibe-list-tab">Семья</button><button type="button" class="vibe-list-tab">Каналы</button>';
+   sidebar.querySelector('.search')?.insertAdjacentElement('afterend',tabs);
+   tabs.querySelectorAll('.vibe-list-tab').forEach((b,i)=>b.onclick=()=>{
+     tabs.querySelectorAll('.vibe-list-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+     const items=[...document.querySelectorAll('#friends .person')];
+     items.forEach((el,j)=>el.style.display=(i===0||i===1&&j<3||i===2&&/сем|family/i.test(el.innerText)||i===3&&/канал/i.test(el.innerText))?'':'none');
+   });
+   const mobile=document.createElement('nav');mobile.className='vibe-mobile-bottom';
+   mobile.innerHTML='<button type="button" class="active" data-action="ch">'+icon('<rect x="3" y="4" width="18" height="15" rx="4"/><path d="m7 19-1 2 4-2"/>')+'Чаты</button><button type="button" data-action="fr">'+icon('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19.5c.6-3.4 2.5-5.2 5.5-5.2s4.9 1.8 5.5 5.2"/>')+'Друзья</button><button type="button" data-action="plus">'+icon('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>')+'Создать</button><button type="button" data-action="ca">'+icon('<path d="M4 6h16v12H4z"/><path d="m8 9 8 3-8 3z"/>')+'Каналы</button><button type="button" data-action="se">'+icon('<path d="M12 3.8l1 .2.6 2a6.4 6.4 0 0 1 1.7 1l2-.6 1.1 1.9-1.4 1.6c.2.6.3 1.2.3 1.9s-.1 1.3-.3 1.9l1.4 1.6-1.1 1.9-2-.6a6.4 6.4 0 0 1-1.7 1l-.6 2-2 .2-.6-2a6.4 6.4 0 0 1-1.7-1l-2 .6-1.1-1.9 1.4-1.6a6.4 6.4 0 0 1-.3-1.9c0-.7.1-1.3.3-1.9L4 8.3l1.1-1.9 2 .6a6.4 6.4 0 0 1 1.7-1l.6-2 2-.2Z"/>')+'Настройки</button>';
+   document.body.appendChild(mobile);
+   mobile.querySelector('[data-action="ch"]').onclick=()=>{mobile.querySelectorAll('button').forEach(x=>x.classList.remove('active'));mobile.querySelector('[data-action="ch"]').classList.add('active');document.querySelector('.chat')?.classList.add('no-selection');};
+   mobile.querySelector('[data-action="fr"]').onclick=()=>{if(typeof openFriendRequests==='function')openFriendRequests();};
+   mobile.querySelector('[data-action="plus"]').onclick=()=>{if(typeof openCreateMenu==='function')openCreateMenu();};
+   mobile.querySelector('[data-action="ca"]').onclick=()=>{if(typeof openChannels==='function')openChannels();};
+   mobile.querySelector('[data-action="se"]').onclick=()=>{if(typeof openSettings==='function')openSettings();};
+   const chatHead=document.querySelector('.chat-head');
+   const calls=document.getElementById('callButtons');
+   if(chatHead && calls && !document.getElementById('vibeChatExtraActions')){
+     const extra=document.createElement('div');
+     extra.id='vibeChatExtraActions';
+     extra.className='call-buttons';
+     extra.innerHTML='<button type=\"button\" title=\"Поиск в чате\" aria-label=\"Поиск в чате\">'+icon('<circle cx=\"10.8\" cy=\"10.8\" r=\"6.8\"/><path d=\"m16 16 5 5\"/>')+'</button><button type=\"button\" title=\"Меню чата\" aria-label=\"Меню чата\">'+icon('<circle cx=\"12\" cy=\"5\" r=\"1\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"12\" r=\"1\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"19\" r=\"1\" fill=\"currentColor\"/>')+'</button>';
+     extra.children[0].onclick=focusSearch;
+     extra.children[1].onclick=()=>{if(typeof openCurrentChatProfile==='function')openCurrentChatProfile();};
+     chatHead.insertBefore(extra,calls);
+   }
+   const oldTop=document.getElementById('topSettingsButton');
+   const observer=new MutationObserver(()=>{
+     const u=document.getElementById('vibeRailUserName');
+     if(u&&typeof currentUser!=='undefined'&&currentUser)u.textContent=currentUser.name||currentUser.login||'Vibe';
+     const av=document.getElementById('vibeRailAvatar');
+     if(av&&typeof currentUser!=='undefined'&&currentUser?.photo){av.innerHTML='<img src="'+String(currentUser.photo).replace(/"/g,'&quot;')+'" alt="">';}
+   });
+   observer.observe(document.body,{subtree:true,childList:true});
+   void oldTop;
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build();
+})();
+</script>
+
