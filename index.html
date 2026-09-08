@@ -14199,6 +14199,172 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<style id="vibe-v26-final-navigation-fix">
+/* V26: one navigation system only; remove the duplicate top Vibe wordmark. */
+.vibe-safe-rail{
+  position:relative !important;
+  z-index:5000 !important;
+  pointer-events:auto !important;
+}
+.vibe-safe-rail *{pointer-events:auto !important}
+.vibe-safe-btn,.vibe-safe-user{position:relative !important;z-index:5001 !important}
+.sidebar .side-top .brand{display:none !important}
+#topCommunitiesButton{display:none !important}
+/* The navigation page is a real full-screen web section, not an invisible click blocker. */
+#vibeNavPage{
+  position:fixed !important;
+  inset:0 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  z-index:20000 !important;
+  pointer-events:auto !important;
+}
+#vibeNavPage.hidden{display:none !important;pointer-events:none !important}
+#vibeNavPage .vibe-page-head,
+#vibeNavPage .vibe-page-body{pointer-events:auto !important}
+@media(max-width:700px){
+  .vibe-safe-rail{display:none !important}
+  .sidebar .side-top .brand{display:flex !important}
+  #topCommunitiesButton,#notificationsButton{display:none !important}
+  #mobileHelpButton{display:grid !important}
+  .vibe-mobile-create{z-index:20001 !important;pointer-events:auto !important}
+}
+</style>
+
+<script id="vibe-v26-final-navigation-fix">
+(function(){
+  "use strict";
+
+  function byId(id){ return document.getElementById(id); }
+  function call(name){
+    try{
+      var fn=window[name];
+      if(typeof fn==="function") return fn.apply(window,Array.prototype.slice.call(arguments,1));
+    }catch(err){ console.error("Vibe navigation error:",name,err); }
+  }
+
+  function closeOldWindows(){
+    [
+      "communitiesModal","channelsModal","settingsModal",
+      "friendRequestsModal","vibeHelpModal"
+    ].forEach(function(id){
+      var el=byId(id);
+      if(el) el.classList.add("hidden");
+    });
+  }
+
+  function goChats(){
+    closeOldWindows();
+    var p=byId("vibeNavPage");
+    if(p) p.classList.add("hidden");
+    var chat=document.querySelector(".chat");
+    if(chat) chat.classList.remove("no-selection");
+  }
+
+  function goFriends(){
+    closeOldWindows();
+    call("openFriendsPage");
+  }
+
+  function goChannels(){
+    closeOldWindows();
+    call("openChannels");
+  }
+
+  function goCalls(){
+    closeOldWindows();
+    call("openCallsPage");
+  }
+
+  function goArchive(){
+    closeOldWindows();
+    call("openArchivePage");
+  }
+
+  function goSettings(){
+    closeOldWindows();
+    if(typeof window.openSettingsPage==="function") call("openSettingsPage");
+    else call("openSettings");
+  }
+
+  function goProfile(){
+    closeOldWindows();
+    call("openProfile");
+  }
+
+  function goHelp(){
+    call("openInstructions");
+  }
+
+  function goCreate(){
+    if(typeof window.openCommunities==="function") call("openCommunities");
+    else call("openCreateMenu");
+  }
+
+  function setActive(id){
+    document.querySelectorAll(".vibe-safe-btn").forEach(function(b){
+      b.classList.remove("active");
+    });
+    var b=byId(id);
+    if(b) b.classList.add("active");
+  }
+
+  function intercept(e){
+    if(e.defaultPrevented) return;
+    var t=e.target && e.target.closest ? e.target.closest(
+      "#safeChats,#safeFriends,#safeChannels,#safeCalls,#safeArchive,#safeSettings,.vibe-safe-user,#vibeMobileCreate,#mobileHelpButton"
+    ) : null;
+    if(!t) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    if(t.id==="safeChats"){setActive("safeChats");goChats();return;}
+    if(t.id==="safeFriends"){setActive("safeFriends");goFriends();return;}
+    if(t.id==="safeChannels"){setActive("safeChannels");goChannels();return;}
+    if(t.id==="safeCalls"){setActive("safeCalls");goCalls();return;}
+    if(t.id==="safeArchive"){setActive("safeArchive");goArchive();return;}
+    if(t.id==="safeSettings"){setActive("safeSettings");goSettings();return;}
+    if(t.id==="vibeMobileCreate"){goCreate();return;}
+    if(t.id==="mobileHelpButton"){goHelp();return;}
+    if(t.classList.contains("vibe-safe-user")){goProfile();return;}
+  }
+
+  function install(){
+    /* Capture phase runs before all older navigation patches. */
+    document.addEventListener("click",intercept,true);
+
+    /* Do not allow any old script to recreate a second safe rail. */
+    var rails=document.querySelectorAll(".vibe-safe-rail");
+    if(rails.length>1){
+      for(var i=1;i<rails.length;i++) rails[i].remove();
+    }
+
+    /* Fix the original side-top logo: keep the left Vibe logo only. */
+    var oldBrand=document.querySelector(".sidebar .side-top .brand");
+    if(oldBrand) oldBrand.style.display="none";
+
+    /* Make the browser's normal reload behavior explicit. */
+    window.addEventListener("pageshow",function(){
+      document.body.classList.remove("booting");
+    });
+
+    /* Mobile create button is one stable button. */
+    var create=byId("vibeMobileCreate");
+    if(create) create.onclick=function(e){
+      e.preventDefault();e.stopImmediatePropagation();goCreate();
+    };
+  }
+
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",install,{once:true});
+  }else{
+    install();
+  }
+})();
+</script>
+
 </body>
 
 
