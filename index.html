@@ -7,7 +7,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Vibe</title>
+<title>Vibe — Мессенджер</title>
 
 <style>
 
@@ -3439,6 +3439,173 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 .email-link-actions button{min-width:0;}
 @media (max-width:560px){.email-link-actions{grid-template-columns:1fr;}}
 </style>
+
+<style id="vibe-final-redesign">
+/* =========================================================
+   VIBE FINAL REDESIGN — visual layer only
+   No existing application logic is replaced.
+========================================================= */
+:root{
+  --bg:#080810;
+  --panel:#0f0f1b;
+  --panel2:#171727;
+  --text:#f8f7ff;
+  --muted:#9695aa;
+  --accent:#8b5cf6;
+  --accent2:#6d28d9;
+  --bubble:#1b1b30;
+  --border:rgba(255,255,255,.075);
+  --mine-shadow:0 10px 28px rgba(124,58,237,.28);
+}
+
+html,body{background:#080810;color:var(--text)}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:
+  radial-gradient(900px 600px at 82% 0%,rgba(124,58,237,.13),transparent 60%),
+  radial-gradient(700px 500px at 15% 100%,rgba(76,29,149,.10),transparent 65%),#080810;}
+
+button,input,textarea,select{font-family:inherit}
+button{transition:background .16s ease,border-color .16s ease,transform .16s ease,box-shadow .16s ease,filter .16s ease}
+button:active{transform:scale(.985)}
+
+/* AUTH */
+#authScreen{background:
+  radial-gradient(520px 420px at 50% 30%,rgba(139,92,246,.18),transparent 68%),
+  #080810 !important;}
+#authScreen .auth-card{position:relative;overflow:hidden;background:rgba(15,15,27,.92);border:1px solid rgba(139,92,246,.22);border-radius:28px;padding:34px;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 80px rgba(109,40,217,.10);backdrop-filter:blur(18px)}
+#authScreen .auth-card:before{content:"";position:absolute;left:-90px;top:-100px;width:220px;height:220px;border-radius:50%;background:rgba(139,92,246,.13);filter:blur(20px);pointer-events:none}
+#authScreen .logo{position:relative;font-size:36px;letter-spacing:-1.5px;text-shadow:0 8px 35px rgba(139,92,246,.35)}
+#authScreen .logo:before{content:"V";display:inline-grid;place-items:center;width:43px;height:43px;margin-right:10px;border-radius:13px;background:linear-gradient(145deg,#9b5cff,#5b21b6);box-shadow:0 10px 30px rgba(124,58,237,.32);font-size:24px;vertical-align:-5px}
+#authScreen .subtitle{font-size:14px;color:#9b99af;margin-top:9px}
+#authScreen input,#authScreen select{background:#151526;border-color:rgba(255,255,255,.07);border-radius:14px}
+#authScreen .primary{background:linear-gradient(135deg,#8b5cf6,#6d28d9);box-shadow:0 10px 26px rgba(109,40,217,.24)}
+#authScreen .secondary{background:#171727;border:1px solid rgba(255,255,255,.06)}
+
+/* MAIN APP */
+#app{background:transparent}
+.layout{grid-template-columns:300px minmax(0,1fr);gap:0;background:transparent}
+.sidebar{position:relative;padding:16px 13px 14px;background:linear-gradient(180deg,rgba(16,16,28,.98),rgba(10,10,18,.98));border-right:1px solid rgba(255,255,255,.06);box-shadow:12px 0 40px rgba(0,0,0,.16);z-index:4}
+.side-top{padding:2px 3px 14px;margin-bottom:13px;border-bottom:1px solid rgba(255,255,255,.06);gap:7px}
+.side-top .brand{margin-right:auto;font-size:25px;letter-spacing:-.8px;text-shadow:none}
+.brand::before{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,#9b5cff,#5b21b6);box-shadow:0 8px 22px rgba(124,58,237,.30);font-size:21px}
+.icon-btn{width:38px;height:38px;border-radius:11px;background:#151526;border:1px solid rgba(255,255,255,.055);color:#d7d5e5}
+.icon-btn:hover{background:#211c3b;border-color:rgba(139,92,246,.32);color:#fff;box-shadow:0 5px 18px rgba(109,40,217,.14)}
+.search{margin-bottom:11px}
+.search input{height:45px;padding:0 14px 0 42px;border-radius:13px;background:#151526;border-color:rgba(255,255,255,.065);color:#f4f2ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)}
+.search:before{content:"";position:absolute;left:14px;top:13px;width:15px;height:15px;border:2px solid #88869b;border-radius:50%;z-index:2;pointer-events:none}
+.search:after{content:"";position:absolute;left:28px;top:28px;width:7px;height:2px;background:#88869b;transform:rotate(45deg);z-index:2;pointer-events:none;border-radius:2px}
+.results{max-height:180px}
+.friends{padding:1px 1px 8px;scrollbar-width:thin;scrollbar-color:rgba(139,92,246,.35) transparent}
+.person{gap:11px;padding:10px 9px;margin-bottom:3px;border:1px solid transparent;border-radius:14px;background:transparent}
+.person:hover{transform:none;background:#151526;border-color:rgba(255,255,255,.055)}
+.person.active{background:linear-gradient(90deg,rgba(124,58,237,.24),rgba(124,58,237,.08));border-color:rgba(139,92,246,.24);box-shadow:inset 3px 0 0 #8b5cf6}
+.person .avatar,.channel-sidebar-icon{width:45px;height:45px;min-width:45px;border-radius:13px;background:linear-gradient(145deg,#8b5cf6,#4c1d95);box-shadow:0 5px 14px rgba(0,0,0,.20)}
+.person .avatar{border-radius:50%}
+.person-name{font-size:14px;font-weight:800;letter-spacing:-.1px}
+.person-login{font-size:11px;color:#88879a;margin-top:3px}
+.chat-count{min-width:22px;height:22px;background:#7c3aed;box-shadow:0 4px 12px rgba(124,58,237,.25);font-size:11px}
+.channel-sidebar-icon{overflow:hidden}
+.channel-sidebar-icon img{border-radius:inherit}
+
+/* Desktop chat */
+.chat{background:
+  radial-gradient(900px 600px at 65% 10%,rgba(109,40,217,.08),transparent 60%),
+  #090912}
+.chat-head{min-height:70px;padding:10px 18px;background:rgba(14,14,24,.90);border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(18px);box-shadow:0 5px 20px rgba(0,0,0,.10)}
+.chat-head .avatar{width:43px;height:43px;min-width:43px;border-radius:50%;background:linear-gradient(145deg,#8b5cf6,#4c1d95)}
+.chat-name{font-size:15px;font-weight:850}
+.chat-status{font-size:11px;color:#858397;margin-top:3px}
+.call-buttons{gap:5px}
+.call-buttons button{width:40px;height:40px;border-radius:11px;background:#151526;border:1px solid rgba(255,255,255,.055)}
+.call-buttons button:hover{background:#211c3b;color:#fff;border-color:rgba(139,92,246,.30)}
+.connection-indicator{padding:5px 9px;border-radius:9px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.045)}
+
+.messages{padding:24px 30px 20px;background:
+  radial-gradient(500px 380px at 75% 35%,rgba(124,58,237,.055),transparent 70%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.012) 0 1px,transparent 1px 42px);}
+.message{padding:10px 13px;border-radius:16px;background:#181827;border:1px solid rgba(255,255,255,.035);box-shadow:0 5px 16px rgba(0,0,0,.12)}
+.message.mine{background:linear-gradient(135deg,#7c3aed,#5b21b6);border-color:rgba(167,139,250,.18);box-shadow:0 9px 24px rgba(91,33,182,.24)}
+.message-time{font-size:9px;color:#aaa8ba}
+
+/* Welcome screen */
+.welcome-panel{width:min(620px,100%);padding:28px;border:1px solid rgba(255,255,255,.06)!important;border-radius:24px!important;background:linear-gradient(145deg,rgba(22,22,39,.82),rgba(12,12,21,.82))!important;box-shadow:0 20px 55px rgba(0,0,0,.22),0 0 55px rgba(109,40,217,.06)!important}
+.welcome-logo{width:64px!important;height:64px!important;border-radius:19px!important;background:linear-gradient(145deg,#9b5cff,#5b21b6)!important;box-shadow:0 14px 35px rgba(109,40,217,.28)!important}
+.welcome-title{font-size:24px!important;letter-spacing:-.6px}
+.welcome-text{color:#9391a5!important;max-width:450px}
+.welcome-actions{gap:9px!important}
+.welcome-actions button{border:1px solid rgba(255,255,255,.055)!important;background:#151526!important;border-radius:15px!important}
+.welcome-actions button:hover{background:#1d1930!important;border-color:rgba(139,92,246,.28)!important;transform:translateY(-1px)}
+.welcome-action-icon{background:rgba(139,92,246,.13)!important;color:#b58cff!important}
+
+/* Composer */
+.composer{padding:11px 16px 13px;background:rgba(13,13,22,.94);border-top:1px solid rgba(255,255,255,.06);backdrop-filter:blur(18px)}
+.composer input{height:45px;padding:0 14px;border-radius:13px;background:#151526;border-color:rgba(255,255,255,.06)}
+.composer button{border-radius:12px}
+.composer-icon-btn,.emoji-btn,.voice-btn{background:#151526!important;border:1px solid rgba(255,255,255,.055)!important;color:#aaa8ba!important}
+.composer-icon-btn:hover,.emoji-btn:hover,.voice-btn:hover{background:#211c3b!important;color:#fff!important;border-color:rgba(139,92,246,.28)!important}
+.composer > .composer-tools + button:last-child,.composer button[type="submit"]{background:linear-gradient(135deg,#8b5cf6,#6d28d9)!important;box-shadow:0 7px 20px rgba(109,40,217,.24)}
+
+/* Lists / channels / cards */
+.channel-item{padding:10px;border-radius:14px;border-color:rgba(255,255,255,.055);background:#121220}
+.channel-item:hover{background:#18182a;border-color:rgba(139,92,246,.22)}
+.channel-action{border-radius:10px!important;background:#7c3aed!important;box-shadow:none!important}
+.channel-action.subscribed{background:#181827!important;border-color:rgba(255,255,255,.07)!important}
+
+/* Modals */
+.modal{background:rgba(3,3,8,.72);backdrop-filter:blur(9px)}
+.modal-card{background:linear-gradient(145deg,#121220,#0d0d17);border-color:rgba(139,92,246,.16);border-radius:22px;box-shadow:0 30px 90px rgba(0,0,0,.55),0 0 55px rgba(109,40,217,.08)}
+.modal-close{background:#181827;border:1px solid rgba(255,255,255,.05)}
+.modal-close:hover{background:#7f1d1d}
+.modal input,.modal textarea,.modal select{background:#171727;border-color:rgba(255,255,255,.065);border-radius:12px}
+.setting-section,.profile-edit-section{background:#151526!important;border-color:rgba(255,255,255,.055)!important}
+
+/* Mobile bottom navigation — added as a presentation layer; existing actions remain untouched */
+.vibe-mobile-nav{display:none}
+
+@media (min-width:751px){
+  .sidebar{min-width:300px}
+  .vibe-mobile-nav{display:none!important}
+}
+
+@media (max-width:750px){
+  body{background:#080810}
+  .layout{display:block!important}
+  .sidebar{padding:10px 10px max(8px,env(safe-area-inset-bottom))!important;background:linear-gradient(180deg,#0e0e19,#090910);border:0;box-shadow:none}
+  .side-top{padding:2px 2px 10px;margin-bottom:9px;border-bottom:1px solid rgba(255,255,255,.055)}
+  .side-top .brand{font-size:23px}
+  .brand::before{width:33px;height:33px;border-radius:10px;font-size:19px}
+  .icon-btn{width:40px;height:40px;border-radius:11px}
+  .search{margin-bottom:8px}
+  .search input{height:44px;border-radius:13px;font-size:14px}
+  .friends{padding-bottom:68px}
+  .person{padding:10px 9px;margin-bottom:2px;border-radius:13px}
+  .person .avatar,.channel-sidebar-icon{width:47px;height:47px;min-width:47px}
+  .person-name{font-size:14px}
+  .person-login{font-size:11px}
+  .chat{background:#090912}
+  .chat-head{min-height:61px;padding:7px 9px;background:rgba(14,14,24,.96)}
+  .messages{padding:10px 9px 8px;background:#090912}
+  .message{max-width:84%;padding:9px 11px;border-radius:15px}
+  .composer{padding:7px!important;gap:4px;background:rgba(13,13,22,.97)}
+  .composer input{height:40px;border-radius:12px;font-size:16px}
+  .composer-icon-btn,.composer-text-btn{border-radius:11px!important}
+  .welcome-panel{margin:8px auto;width:calc(100% - 4px);padding:22px 15px!important;border-radius:20px!important}
+  .welcome-title{font-size:21px!important}
+  .welcome-actions{grid-template-columns:1fr!important}
+  .vibe-mobile-nav{position:absolute;left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));height:58px;display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:4px;border:1px solid rgba(255,255,255,.065);border-radius:17px;background:rgba(17,17,29,.96);box-shadow:0 15px 40px rgba(0,0,0,.42);backdrop-filter:blur(18px);z-index:15}
+  .vibe-mobile-nav-item{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;border-radius:13px;background:transparent;color:#858397;font-size:9px;font-weight:750}
+  .vibe-mobile-nav-item:hover,.vibe-mobile-nav-item.active{background:rgba(139,92,246,.13);color:#c8b5ff}
+  .vibe-mobile-nav-icon{width:22px;height:22px;display:grid;place-items:center}
+  .vibe-mobile-nav-icon svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .modal-card{border-radius:19px!important}
+}
+
+@media (max-width:420px){
+  .side-top .brand{font-size:22px}
+  .icon-btn{width:38px;height:38px}
+  .vibe-mobile-nav{left:6px;right:6px}
+}
+</style>
+
 </head>
 
 <body class="booting">
@@ -3618,6 +3785,33 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             <div id="searchResults" class="results"></div>
 
             <div id="friends" class="friends"></div>
+
+            <nav class="vibe-mobile-nav" aria-label="Навигация Vibe">
+                <button type="button" class="vibe-mobile-nav-item active" onclick="closeMobileChat(); renderChats();">
+                    <span class="vibe-mobile-nav-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5h16v11H11l-5 3v-3H4z"/></svg>
+                    </span>
+                    <span>Чаты</span>
+                </button>
+                <button type="button" class="vibe-mobile-nav-item" onclick="openFriendRequests()">
+                    <span class="vibe-mobile-nav-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19.5c.6-3.4 2.5-5.2 5.5-5.2s4.9 1.8 5.5 5.2M14.5 15c2.5-.5 5 1.1 5.8 3.8"/></svg>
+                    </span>
+                    <span>Друзья</span>
+                </button>
+                <button type="button" class="vibe-mobile-nav-item" onclick="openChannels()">
+                    <span class="vibe-mobile-nav-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 5 16 7-16 7 3-7z"/><path d="M7 12h13"/></svg>
+                    </span>
+                    <span>Каналы</span>
+                </button>
+                <button type="button" class="vibe-mobile-nav-item" onclick="openSettings()">
+                    <span class="vibe-mobile-nav-icon">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v3M12 17.5v3M3.5 12h3M17.5 12h3M6 6l2.1 2.1M15.9 15.9 18 18M18 6l-2.1 2.1M8.1 15.9 6 18"/><circle cx="12" cy="12" r="4"/></svg>
+                    </span>
+                    <span>Настройки</span>
+                </button>
+            </nav>
         </aside>
 
 
