@@ -7695,10 +7695,17 @@ async function searchUsers() {
                 const item = document.createElement("div");
                 item.className = "person";
                 item.innerHTML = personHTML(user);
-                item.onclick = () => {
-                    openUserProfile(user.login);
+                item.onclick = async () => {
+                    try {
+                        const key = "vibeRecentChats_" + String(currentUser?.login || "");
+                        const saved = JSON.parse(localStorage.getItem(key) || "[]");
+                        const next = saved.filter(x => String(x.login) !== String(user.login));
+                        next.unshift({ login: user.login, user });
+                        localStorage.setItem(key, JSON.stringify(next.slice(0, 100)));
+                    } catch {}
                     $("searchInput").value = "";
                     box.innerHTML = "";
+                    await openChat(user.login);
                 };
                 box.appendChild(item);
             });
@@ -7894,26 +7901,39 @@ async function loadChats() {
         return;
     }
 
+    let serverChats = [];
     try {
-
-        const response =
-            await fetch(
-                "/chats?login=" +
-                encodeURIComponent(
-                    currentUser.login
-                )
-            );
-
-        if (!response.ok) {
-            return;
-        }
-
-        chats =
-            await response.json();
-
-        renderChats();
-
+        const response = await fetch(
+            "/chats?login=" + encodeURIComponent(currentUser.login)
+        );
+        if (response.ok) serverChats = await response.json();
     } catch {}
+
+    // Keep chats that were opened from search even before the first message.
+    // This is per-account and survives a normal page refresh.
+    let localChats = [];
+    try {
+        const key = "vibeRecentChats_" + String(currentUser.login);
+        localChats = JSON.parse(localStorage.getItem(key) || "[]");
+        if (!Array.isArray(localChats)) localChats = [];
+    } catch { localChats = []; }
+
+    const merged = new Map();
+    serverChats.forEach(c => { if (c?.login) merged.set(String(c.login), c); });
+    localChats.forEach(c => {
+        if (!c?.login || String(c.login) === String(currentUser.login)) return;
+        const key = String(c.login);
+        if (!merged.has(key)) merged.set(key, {
+            login: key,
+            user: c.user || { login: key, name: key },
+            lastMessage: "",
+            lastTime: c.lastTime || ""
+        });
+    });
+
+    chats = Array.from(merged.values());
+    renderChats();
+
 }
 
 
@@ -8256,6 +8276,19 @@ async function openChat(login) {
     currentGroup = null;
     currentChannel = null;
     currentChat = login;
+
+    try {
+        fetch('/open-chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:currentUser?.login||'',other:String(login)})}).catch(()=>{});
+    } catch {}
+
+    try {
+        const key = "vibeRecentChats_" + String(currentUser?.login || "");
+        const saved = JSON.parse(localStorage.getItem(key) || "[]");
+        const existing = saved.filter(x => String(x.login) !== String(login));
+        const known = Array.isArray(friends) ? friends.find(x => String(x.login) === String(login)) : null;
+        existing.unshift({ login: String(login), user: known || { login: String(login), name: String(login) } });
+        localStorage.setItem(key, JSON.stringify(existing.slice(0, 100)));
+    } catch {}
 
     document.querySelectorAll(".channel-only-tools").forEach(el => el.classList.add("hidden"));
     $("attachmentPhotoButton")?.classList.remove("hidden");
@@ -14362,6 +14395,73 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   }else{
     install();
   }
+})();
+</script>
+
+
+<style id="vibe-v27-final-ui-fix">
+/* V27 — desktop top create button, clean left navigation, no Archive, normal settings. */
+#topCommunitiesButton{display:grid!important;}
+#notificationsButton{display:none!important;}
+#mobileHelpButton{display:none!important;}
+#topCommunitiesButton{width:42px!important;height:42px!important;border-radius:12px!important;}
+#topCommunitiesButton .vibe-icon{width:21px!important;height:21px!important;}
+#vibeRailArchive,#safeArchive{display:none!important;}
+#vibeRailSettings,#safeSettings{min-height:42px!important;height:42px!important;}
+#vibeRailSettings svg,#safeSettings svg{width:21px!important;height:21px!important;}
+/* Keep the actual site clickable. */
+.vibe-safe-rail,.vibe-safe-rail *,.vibe-mobile-create,.side-top,.side-top *{pointer-events:auto!important;}
+@media(max-width:700px){
+  #topCommunitiesButton,#notificationsButton{display:none!important;}
+  #mobileHelpButton{display:grid!important;}
+  .vibe-safe-rail{display:none!important;}
+  .vibe-mobile-create{display:grid!important;}
+}
+</style>
+<script id="vibe-v27-final-ui-script">
+(function(){
+  'use strict';
+  function byId(id){return document.getElementById(id)}
+  function removeArchive(){
+    ['vibeRailArchive','safeArchive'].forEach(function(id){var el=byId(id);if(el)el.remove()});
+    document.querySelectorAll('[data-vibe-nav="archive"]').forEach(function(el){el.remove()});
+  }
+  function bindTopCreate(){
+    var b=byId('topCommunitiesButton');
+    if(!b)return;
+    b.style.display='grid';
+    b.onclick=function(e){e.preventDefault();e.stopImmediatePropagation();
+      try{if(typeof window.openCommunities==='function')window.openCommunities();else if(typeof window.openCreateMenu==='function')window.openCreateMenu()}catch(err){console.error(err)}
+    };
+  }
+  function bindSearchOpenChat(){
+    var input=byId('searchInput');
+    var box=byId('searchResults');
+    if(!input||!box)return;
+    // Original searchUsers is kept; this capture handler only redirects person results.
+    box.addEventListener('click',function(e){
+      var item=e.target.closest('.person');
+      if(!item)return;
+      var login=item.dataset.vibeLogin || item.querySelector('.person-login')?.textContent?.trim()?.replace(/^@/,'');
+      if(!login)return;
+      var userName=item.querySelector('.person-name')?.textContent?.trim()||login;
+      // If this is a search result, open the chat directly.
+      if(item.closest('#searchResults')){
+        e.preventDefault();e.stopImmediatePropagation();
+        try{
+          var key='vibeRecentChats_'+String(window.currentUser?.login||'');
+          var arr=JSON.parse(localStorage.getItem(key)||'[]'); if(!Array.isArray(arr))arr=[];
+          arr=[{login:String(login),user:{login:String(login),name:userName}}].concat(arr.filter(x=>String(x.login)!==String(login))).slice(0,100);
+          localStorage.setItem(key,JSON.stringify(arr));
+        }catch{}
+        input.value=''; box.innerHTML='';
+        if(typeof window.openChat==='function')window.openChat(login);
+      }
+    },true);
+  }
+  function fix(){removeArchive();bindTopCreate();bindSearchOpenChat();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(fix,100)});else setTimeout(fix,100);
+  window.addEventListener('pageshow',fix);
 })();
 </script>
 
