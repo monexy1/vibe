@@ -14020,173 +14020,100 @@ body.vibe-group-admin #mobileAttachmentMenu #attachmentPollButton{display:flex !
 </script>
 <style id="vibe-email-notifications">.register-verification-section{margin-top:12px;padding:14px;border:1px solid var(--border);background:var(--panel2);border-radius:16px;display:flex;flex-direction:column;gap:9px}.register-verification-title{font-size:15px;font-weight:900}.register-verification-hint{font-size:12px;color:var(--muted);line-height:1.4}.register-verification-section input{text-align:center;letter-spacing:7px;font-size:22px;font-weight:800}.notification-badge{position:absolute;top:5px;right:5px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}.icon-btn{position:relative}.vibe-notification-toasts{position:fixed;right:20px;bottom:20px;z-index:5000;display:flex;flex-direction:column;gap:10px;max-width:min(360px,calc(100vw - 40px));pointer-events:none}.vibe-notification-toast{pointer-events:auto;background:var(--panel);border:1px solid var(--border);box-shadow:0 15px 40px rgba(0,0,0,.35);border-radius:16px;padding:12px 14px;animation:vibeToastIn .18s ease-out}.vibe-notification-toast-title{font-weight:900;font-size:13px;margin-bottom:4px}.vibe-notification-toast-text{font-size:12px;color:var(--muted);line-height:1.35}@keyframes vibeToastIn{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}</style>
 
-<style id="vibe-v21-navigation-fix">
-/* VIBE v21 — navigation / responsive fixes */
-.vibe-page{position:fixed;inset:0;z-index:10000;background:radial-gradient(circle at 70% 20%,rgba(124,58,237,.13),transparent 34%),#080914;color:#fff;display:flex;flex-direction:column;overflow:hidden}
-.vibe-page.hidden{display:none!important}
-.vibe-page-head{height:76px;min-height:76px;display:flex;align-items:center;gap:14px;padding:0 24px;border-bottom:1px solid rgba(168,85,247,.18);background:rgba(10,11,23,.94);backdrop-filter:blur(18px)}
-.vibe-page-head .vibe-page-icon{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#7c3aed,#4f46e5);font-size:23px;font-weight:1000;box-shadow:0 0 22px rgba(124,58,237,.32)}
-.vibe-page-title{font-size:22px;font-weight:900}.vibe-page-sub{font-size:11px;color:#8588a0;margin-top:2px}
-.vibe-page-close{margin-left:auto;width:40px;height:40px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:#15172a;color:#fff;font-size:19px;cursor:pointer}
-.vibe-page-body{flex:1;min-height:0;overflow:auto;padding:26px;max-width:1100px;width:100%;margin:0 auto}
-.vibe-page-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
-.vibe-page-btn{border:1px solid rgba(168,85,247,.22);background:#15172a;color:#fff;border-radius:12px;padding:10px 14px;font-weight:800;cursor:pointer}.vibe-page-btn.primary{background:linear-gradient(90deg,#6d28d9,#7c3aed);border-color:transparent}
-.vibe-page-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.vibe-page-card{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(255,255,255,.07);border-radius:16px;background:rgba(255,255,255,.025)}
-.vibe-page-card:hover{border-color:rgba(168,85,247,.3);background:rgba(124,58,237,.07)}
-.vibe-page-avatar{width:52px;height:52px;min-width:52px;border-radius:15px;overflow:hidden;background:linear-gradient(145deg,#7c3aed,#4f46e5);display:grid;place-items:center;font-weight:900}.vibe-page-avatar img{width:100%;height:100%;object-fit:cover}
-.vibe-page-info{min-width:0;flex:1}.vibe-page-name{font-weight:850;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.vibe-page-meta{color:#8588a0;font-size:11px;margin-top:4px}
-.vibe-page-actions{display:flex;gap:6px;flex-wrap:wrap}.vibe-page-actions button{border:0;border-radius:10px;padding:8px 10px;background:#20203a;color:#fff;font-weight:800;cursor:pointer}
-.vibe-empty{min-height:240px;display:grid;place-items:center;text-align:center;color:#8588a0;border:1px dashed rgba(168,85,247,.18);border-radius:18px;padding:30px}
-.vibe-call-history{display:flex;flex-direction:column;gap:8px}.vibe-call-row{display:flex;align-items:center;gap:12px;padding:13px;border:1px solid rgba(255,255,255,.07);border-radius:15px;background:rgba(255,255,255,.025)}
-.vibe-call-type{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;background:rgba(124,58,237,.18);color:#c084fc}
-.vibe-call-time{margin-left:auto;color:#777b93;font-size:11px}.vibe-danger{color:#ff9a9a!important;background:rgba(239,68,68,.10)!important}
-/* Make the existing feature windows truly full-screen on desktop and mobile. */
-#channelsModal,#settingsModal,#friendRequestsModal,#communitiesModal{z-index:10010!important;padding:0!important;align-items:stretch!important;justify-content:stretch!important}
-#channelsModal>.modal-card,#settingsModal>.modal-card,#friendRequestsModal>.modal-card,#communitiesModal>.modal-card{width:100%!important;max-width:none!important;height:100dvh!important;max-height:none!important;border-radius:0!important;margin:0!important;padding:24px!important;overflow:auto!important;background:radial-gradient(circle at 70% 15%,rgba(124,58,237,.12),transparent 34%),#080914!important;border:0!important;box-shadow:none!important}
-#channelsModal .modal-header,#settingsModal .modal-header,#friendRequestsModal .modal-header,#communitiesModal .modal-header{position:sticky;top:0;z-index:2;background:rgba(8,9,20,.92);backdrop-filter:blur(14px);padding-bottom:14px}
-/* Remove the unwanted top settings button. Keep the help button on phones. */
-#topSettingsButton{display:none!important}
-.vibe-new-chat{display:none!important}
-/* Normal gear icon in the left rail. */
-#vibeRailSettings svg{width:21px!important;height:21px!important}
-/* Archive controls injected into private chat rows. */
-.vibe-archive-chat-btn{margin-left:auto;flex:0 0 auto;width:32px;height:32px;border:0;border-radius:9px;background:rgba(255,255,255,.045);color:#8f91a8;cursor:pointer;opacity:0;transition:.15s}
-.person:hover .vibe-archive-chat-btn,.vibe-archive-chat-btn:focus{opacity:1}.vibe-archive-chat-btn:hover{color:#fff;background:rgba(124,58,237,.22)}
+
+<style id="vibe-final-navigation">
+/* Final navigation: no invisible full-screen click blockers. */
+#vibeFinalRail{position:absolute;left:0;top:0;bottom:0;width:82px;z-index:50;display:flex;flex-direction:column;align-items:center;padding:14px 8px;background:linear-gradient(180deg,#0c0e1b,#080a13);border-right:1px solid var(--border);pointer-events:auto}
+#vibeFinalRail .vfr-logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(135deg,#8b5cf6,#5b21b6);font-weight:900;font-size:23px;margin-bottom:18px;box-shadow:0 8px 28px rgba(124,58,237,.25)}
+#vibeFinalRail .vfr-btn{position:relative;width:60px;height:58px;margin:3px 0;border:0;border-radius:14px;background:transparent;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9px;font-weight:800;pointer-events:auto}
+#vibeFinalRail .vfr-btn svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#vibeFinalRail .vfr-btn:hover,#vibeFinalRail .vfr-btn.active{background:rgba(139,92,246,.15);color:#fff}
+#vibeFinalRail .vfr-bottom{margin-top:auto}.vfr-user{font-size:9px;color:var(--muted);text-align:center;max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#vibeFinalRailSettings{font-size:9px}
+#vibeFinalPage{position:fixed;inset:0;z-index:5000;background:var(--bg);display:none;flex-direction:column;pointer-events:auto}
+#vibeFinalPage.open{display:flex}
+#vibeFinalPage .vfp-head{height:70px;min-height:70px;display:flex;align-items:center;padding:0 24px;gap:14px;border-bottom:1px solid var(--border);background:var(--panel)}
+#vibeFinalPage .vfp-head h2{margin:0;font-size:21px}.vfp-head p{margin:3px 0 0;color:var(--muted);font-size:11px}
+#vibeFinalClose{margin-left:auto;width:40px;height:40px;border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:12px;cursor:pointer;font-size:20px}
+#vibeFinalBody{flex:1;overflow:auto;padding:24px}
+#vibeFinalBody .vfp-inner{max-width:1050px;margin:auto}
+.vfp-card{background:var(--panel);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:12px}
+.vfp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.vfp-btn{border:1px solid var(--border);background:var(--panel2);color:var(--text);padding:10px 14px;border-radius:11px;cursor:pointer;font-weight:800}.vfp-btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+.vfp-empty{text-align:center;color:var(--muted);padding:80px 20px}.vfp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+#vibeFinalRailSpacer{display:none}
+@media(min-width:701px){
+  #app .layout{padding-left:82px}
+  #app .sidebar{position:relative;z-index:2}
+  #app .chat{position:relative;z-index:1}
+  #topSettingsButton{display:none!important}
+}
 @media(max-width:700px){
- .side-top .icon-btn#topCommunitiesButton,.side-top .icon-btn#topSettingsButton,.side-top .icon-btn#notificationsButton{display:none!important}
- .side-top .mobile-help-button{display:inline-flex!important;margin-left:auto}
- .vibe-page-head{height:64px;min-height:64px;padding:0 12px}.vibe-page-title{font-size:18px}.vibe-page-sub{display:none}.vibe-page-body{padding:14px 12px 82px}.vibe-page-grid{grid-template-columns:1fr}.vibe-page-card{padding:12px}.vibe-page-close{width:38px;height:38px}
- #channelsModal>.modal-card,#settingsModal>.modal-card,#friendRequestsModal>.modal-card,#communitiesModal>.modal-card{padding:12px!important}
- .vibe-archive-chat-btn{opacity:1}
+  #vibeFinalRail{display:none}
+  #app .layout{padding-left:0!important}
+  #topSettingsButton,#notificationsButton,#topCommunitiesButton{display:none!important}
+  #mobileHelpButton{display:flex!important}
+  #vibeFinalPage .vfp-head{padding:0 14px;height:62px;min-height:62px}
+  #vibeFinalBody{padding:14px}
 }
 </style>
-
-<script id="vibe-v21-navigation-controller">
+<script id="vibe-final-navigation-script">
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
-const icon=d=>`<svg viewBox="0 0 24 24" aria-hidden="true" style="width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round">${d}</svg>`;
-function ensurePage(){
- let p=$('vibeNavPage');
- if(p)return p;
- p=document.createElement('section');p.id='vibeNavPage';p.className='vibe-page hidden';
- p.innerHTML=`<header class="vibe-page-head"><div class="vibe-page-icon">V</div><div><div class="vibe-page-title" id="vibeNavTitle">Vibe</div><div class="vibe-page-sub" id="vibeNavSub">Раздел Vibe</div></div><button class="vibe-page-close" type="button" id="vibeNavClose">×</button></header><main class="vibe-page-body" id="vibeNavBody"></main>`;
- document.body.appendChild(p);$('vibeNavClose').onclick=closePage;return p;
+const esc=v=>typeof escapeHTML==='function'?escapeHTML(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const svg=d=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+function makeUI(){
+  if(!$('app')||$('vibeFinalRail')) return;
+  const rail=document.createElement('aside'); rail.id='vibeFinalRail';
+  rail.innerHTML='<div class="vfr-logo">V</div>'+
+    '<button type="button" class="vfr-btn active" data-page="ch">'+svg('<rect x="3" y="4" width="18" height="15" rx="4"/><path d="m7 19-1 2 4-2"/>')+'<span>Чаты</span></button>'+
+    '<button type="button" class="vfr-btn" data-page="fr">'+svg('<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3.5 19.5c.6-3.4 2.5-5.2 5.5-5.2s4.9 1.8 5.5 5.2M14.5 15c2.5-.5 5 1.1 5.8 3.8"/>')+'<span>Друзья</span></button>'+
+    '<button type="button" class="vfr-btn" data-page="ca">'+svg('<path d="M4 6h16v12H4z"/><path d="m8 9 8 3-8 3z"/>')+'<span>Каналы</span></button>'+
+    '<button type="button" class="vfr-btn" data-page="gr">'+svg('<path d="M5 5h14v14H5z"/><path d="M9 9h6M9 13h6M9 17h3"/>')+'<span>Группы</span></button>'+
+    '<button type="button" class="vfr-btn" data-page="cl">'+svg('<path d="M7.2 4.5 9.5 7 8 9.5c1.1 2.2 2.3 3.4 4.5 4.5l2.5-1.5 2.5 2.3c.7.7.6 1.9-.2 2.5l-1.2.9c-.8.6-1.8.7-2.7.3-5.4-2.4-8.5-5.5-10.9-10.9-.4-.9-.3-1.9.3-2.7l.9-1.2c.6-.8 1.8-.9 2.5-.2Z"/>')+'<span>Звонки</span></button>'+
+    '<button type="button" class="vfr-btn" data-page="ar">'+svg('<path d="M4 7h16v13H4z"/><path d="M3 4h18v3H3zM9 11h6"/>')+'<span>Архив</span></button>'+
+    '<div class="vfr-bottom"><button type="button" class="vfr-btn" id="vibeFinalRailSettings">'+svg('<path d="M12 3.8l1 .2.6 2a6.4 6.4 0 0 1 1.7 1l2-.6 1.1 1.9-1.4 1.6c.2.6.3 1.2.3 1.9s-.1 1.3-.3 1.9l1.4 1.6-1.1 1.9-2-.6a6.4 6.4 0 0 1-1.7 1l-.6 2-2 .2-.6-2a6.4 6.4 0 0 1-1.7-1l-2 .6-1.1-1.9 1.4-1.6a6.4 6.4 0 0 1-.3-1.9c0-.7.1-1.3.3-1.9L4 8.3l1.1-1.9 2 .6a6.4 6.4 0 0 1 1.7-1l.6-2 2-.2Z"/><circle cx="12" cy="11.8" r="2.4"/>')+'<span>Настройки</span></button></div>';
+  $('app').prepend(rail);
+  const page=document.createElement('section');page.id='vibeFinalPage';
+  page.innerHTML='<header class="vfp-head"><div><h2 id="vfpTitle">Vibe</h2><p id="vfpSub"></p></div><button type="button" id="vibeFinalClose" aria-label="Закрыть">×</button></header><main id="vibeFinalBody"><div class="vfp-inner"></div></main>';
+  document.body.appendChild(page);
+  $('vibeFinalClose').onclick=closePage;
+  rail.querySelectorAll('[data-page]').forEach(b=>b.addEventListener('click',()=>openPage(b.dataset.page)));
+  $('vibeFinalRailSettings').addEventListener('click',()=>openPage('se'));
 }
-function closePage(){ $('vibeNavPage')?.classList.add('hidden'); }
-function page(title,sub,html){const p=ensurePage();$('vibeNavTitle').textContent=title;$('vibeNavSub').textContent=sub||'';$('vibeNavBody').innerHTML=html;p.classList.remove('hidden');return p;}
-function safe(v){return typeof escapeHTML==='function'?escapeHTML(v):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
-function archived(){try{return JSON.parse(localStorage.getItem('vibeArchivedChats')||'[]')}catch{return[]}}
-function saveArchived(a){localStorage.setItem('vibeArchivedChats',JSON.stringify([...new Set(a)]));}
-function syncArchiveRows(){
- const set=new Set(archived());
- document.querySelectorAll('#friends .person').forEach(el=>{
-   let login=el.dataset.vibeLogin;
-   if(!login){const t=el.querySelector('.person-login')?.textContent?.trim()||'';const m=t.match(/@([A-Za-z0-9_.-]+)/);if(m){login=m[1];el.dataset.vibeLogin=login}}
-   if(login){el.style.display=set.has(login)?'none':'';if(!el.querySelector('.vibe-archive-chat-btn')){const b=document.createElement('button');b.type='button';b.className='vibe-archive-chat-btn';b.title='В архив';b.textContent='▣';b.onclick=e=>{e.stopPropagation();vibeArchive(login)};el.appendChild(b)}}
- });
+function closePage(){ $('vibeFinalPage')?.classList.remove('open'); document.querySelectorAll('#vibeFinalRail .vfr-btn').forEach(b=>b.classList.remove('active')); $('vibeFinalRail [data-page="ch"]')?.classList.add('active');}
+function show(title,sub,html){
+  $('vfpTitle').textContent=title;$('vfpSub').textContent=sub||'';$('vibeFinalBody').querySelector('.vfp-inner').innerHTML=html;$('vibeFinalPage').classList.add('open');
 }
-window.vibeArchive=function(login){saveArchived([...archived(),login]);syncArchiveRows();renderArchive();if(typeof window.showVibeNotice==='function')window.showVibeNotice('Архив',`@${login} перемещён в архив`)};
-window.vibeUnarchive=function(login){saveArchived(archived().filter(x=>x!==login));syncArchiveRows();renderArchive()};
-function renderArchive(){
- const p=$('vibeNavPage');if(!p||p.classList.contains('hidden'))return;
- const body=$('vibeNavBody');const set=new Set(archived());
- if(!set.size){body.innerHTML='<div class="vibe-empty"><div><b style="font-size:18px;color:#fff">Архив пуст</b><div style="margin-top:8px">Здесь будут люди, которых ты добавишь в архив.</div></div></div>';return}
- const arr=[...set];body.innerHTML='<div class="vibe-page-toolbar"><button class="vibe-page-btn" id="vibeClearArchive">Очистить архив</button></div><div class="vibe-page-grid" id="vibeArchiveGrid"></div>';
- arr.forEach(login=>{const user=(friends||[]).find(x=>x.login===login);const name=user?.name||login;const photo=user?.photo;const card=document.createElement('div');card.className='vibe-page-card';card.innerHTML=`<div class="vibe-page-avatar">${photo?`<img src="${safe(photo)}" alt="">`:icon('<circle cx="12" cy="8" r="3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"')}</div><div class="vibe-page-info"><div class="vibe-page-name">${safe(name)}</div><div class="vibe-page-meta">@${safe(login)}</div></div><div class="vibe-page-actions"><button data-open>Открыть</button><button data-unarchive>Вернуть</button></div>`;card.querySelector('[data-open]').onclick=()=>{closePage();vibeUnarchive(login);if(typeof openChat==='function')openChat(login)};card.querySelector('[data-unarchive]').onclick=()=>vibeUnarchive(login);$('vibeArchiveGrid').appendChild(card)});
- $('vibeClearArchive').onclick=()=>{saveArchived([]);syncArchiveRows();renderArchive()};
-}
-async function openFriendsPage(){
- closePage();
- try{if(typeof loadFriends==='function')await loadFriends()}catch{}
- const list=Array.isArray(friends)?friends:[];
- const html=`<div class="vibe-page-toolbar"><button class="vibe-page-btn primary" id="vibeFriendRequests">Заявки в друзья</button><button class="vibe-page-btn" id="vibeFindFriend">Найти человека</button></div><div class="vibe-page-grid" id="vibeFriendsGrid"></div>`;
- const p=page('Друзья','Твои друзья в Vibe',html);const grid=$('vibeFriendsGrid');
- if(!list.length){grid.innerHTML='<div class="vibe-empty"><div><b style="font-size:18px;color:#fff">Пока нет друзей</b><div style="margin-top:8px">Найди человека через поиск и добавь его в друзья.</div></div></div>'}else list.forEach(u=>{const c=document.createElement('div');c.className='vibe-page-card';c.innerHTML=`<div class="vibe-page-avatar">${u.photo?`<img src="${safe(u.photo)}" alt="">`:icon('<circle cx="12" cy="8" r="3"/><path d="M5.5 20c.6-3.6 2.7-5.6 6.5-5.6s5.9 2 6.5 5.6"')}</div><div class="vibe-page-info"><div class="vibe-page-name">${safe(u.name||u.login)}</div><div class="vibe-page-meta">@${safe(u.login)} · ${u.online?'В сети':'Не в сети'}</div></div><div class="vibe-page-actions"><button data-chat>Написать</button><button data-archive>Архив</button></div>`;c.querySelector('[data-chat]').onclick=()=>{closePage();openChat(u.login)};c.querySelector('[data-archive]').onclick=()=>vibeArchive(u.login);grid.appendChild(c)});
- $('vibeFriendRequests').onclick=()=>{closePage();if(typeof openFriendRequests==='function')openFriendRequests()};$('vibeFindFriend').onclick=()=>{closePage();document.querySelector('#searchInput')?.focus()};
-}
-function getCallHistory(){try{return JSON.parse(localStorage.getItem('vibeCallHistory')||'[]')}catch{return[]}}
-function saveCallHistory(a){localStorage.setItem('vibeCallHistory',JSON.stringify(a.slice(-100)))}
-function logCall(login,video,direction='outgoing'){if(!login)return;const a=getCallHistory();a.push({login,video,direction,time:new Date().toISOString()});saveCallHistory(a)}
-function renderCalls(){
- const h=getCallHistory();const body=$('vibeNavBody');
- body.innerHTML=`<div class="vibe-page-toolbar"><button class="vibe-page-btn vibe-danger" id="vibeClearCalls">Очистить историю</button></div><div class="vibe-call-history" id="vibeCallHistory"></div>`;
- const box=$('vibeCallHistory');if(!h.length){box.innerHTML='<div class="vibe-empty"><div><b style="font-size:18px;color:#fff">История звонков пуста</b><div style="margin-top:8px">Здесь появятся твои исходящие и входящие звонки.</div></div></div>'}else [...h].reverse().forEach(x=>{const row=document.createElement('div');row.className='vibe-call-row';const d=new Date(x.time);row.innerHTML=`<div class="vibe-call-type">${x.video?'▣':'☎'}</div><div class="vibe-page-info"><div class="vibe-page-name">@${safe(x.login)}</div><div class="vibe-page-meta">${x.direction==='incoming'?'Входящий':'Исходящий'} · ${x.video?'видео':'аудио'}</div></div><div class="vibe-call-time">${d.toLocaleString()}</div><button class="vibe-page-btn" data-call>Позвонить</button>`;row.querySelector('[data-call]').onclick=()=>{closePage();openChat(x.login);setTimeout(()=>{if(typeof startCall==='function')startCall(!!x.video)},150)};box.appendChild(row)});
- $('vibeClearCalls').onclick=()=>{saveCallHistory([]);renderCalls()};
-}
-function openCallsPage(){page('Звонки','История звонков', '<div id="vibeCallsMount"></div>');renderCalls()}
-function openArchivePage(){page('Архив','Архивированные люди', '<div></div>');renderArchive()}
-function openSettingsPage(){if(typeof openSettings==='function')openSettings()}
-function activateRail(id){document.querySelectorAll('.vibe-rail-btn').forEach(b=>b.classList.remove('active'));$(id)?.classList.add('active')}
-function installNavigation(){
- const rail=document.querySelector('.vibe-rail');if(!rail)return;
- const bind=(id,fn)=>$(id)&&($(id).onclick=e=>{e.preventDefault();fn();});
- bind('vibeRailChats',()=>{closePage();activateRail('vibeRailChats');document.querySelector('.chat')?.classList.remove('no-selection')});
- bind('vibeRailFriends',()=>{activateRail('vibeRailFriends');openFriendsPage()});
- bind('vibeRailChannels',()=>{activateRail('vibeRailChannels');if(typeof openChannels==='function')openChannels()});
- bind('vibeRailCalls',()=>{activateRail('vibeRailCalls');openCallsPage()});
- bind('vibeRailArchive',()=>{activateRail('vibeRailArchive');openArchivePage()});
- bind('vibeRailSettings',()=>{activateRail('vibeRailSettings');openSettingsPage()});
- // Mobile bottom navigation.
- document.querySelectorAll('.vibe-mobile-bottom button').forEach(b=>{b.onclick=function(e){const a=this.dataset.action;if(a==='plus'){if(typeof window.openCreateMenu==='function')window.openCreateMenu();return}if(a==='fr'){openFriendsPage();return}if(a==='ca'){if(typeof openChannels==='function')openChannels();return}if(a==='se'){openSettingsPage();return}if(a==='ch'){closePage();document.querySelector('.chat')?.classList.add('no-selection')}}});
- // Make mobile create button open BOTH group and channel creation choices.
- window.openCreateMenu=function(){if(typeof openCommunities==='function')openCommunities()};
-}
-// Existing renderChats runs frequently; observe the chat list and decorate private rows with archive controls.
-const obs=new MutationObserver(()=>{if($('friends'))syncArchiveRows()});
-function boot(){installNavigation();if($('friends'))obs.observe($('friends'),{childList:true,subtree:true});syncArchiveRows();
- // Log outgoing calls without touching the original call implementation.
- if(typeof window.startCall==='function'&&!window.startCall.__vibeWrapped){const original=window.startCall;const wrapped=function(video){try{if(typeof currentChat!=='undefined'&&currentChat)logCall(currentChat,!!video,'outgoing')}catch{}return original.apply(this,arguments)};wrapped.__vibeWrapped=true;window.startCall=wrapped}
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,50));else setTimeout(boot,50);
-})();
-</script>
-
-
-<style id="vibe-click-repair-final">
-/* FINAL CLICK REPAIR: navigation must stay above the chat layer */
-@media (min-width:701px){
-  .layout{position:relative;z-index:1}
-  .vibe-rail{position:relative;z-index:1000!important;pointer-events:auto!important}
-  .sidebar{position:relative;z-index:900!important;pointer-events:auto!important}
-  .vibe-rail-btn,.vibe-rail-user,.vibe-list-tab,.person,.side-top button,.search input{pointer-events:auto!important}
-  .chat{position:relative!important;z-index:1!important}
-}
-@media (max-width:700px){
-  .vibe-mobile-bottom{z-index:100000!important;pointer-events:auto!important}
-  .vibe-mobile-bottom button{pointer-events:auto!important}
-  #vibeNavPage{z-index:200000!important}
-}
-#topSettingsButton{display:none!important}
-.vibe-new-chat{display:none!important}
-</style>
-
-<script id="vibe-click-repair-final-script">
-(function(){
-'use strict';
-function $(id){return document.getElementById(id)}
-function active(id){document.querySelectorAll('.vibe-rail-btn').forEach(function(b){b.classList.remove('active')});$(id)?.classList.add('active')}
-function safeCall(fn){try{if(typeof fn==='function')return fn()}catch(e){console.error('Vibe navigation:',e)}}
-function bind(){
-  const rail=document.querySelector('.vibe-rail');
-  if(!rail)return false;
-  const handlers={
-    vibeRailChats:function(){active('vibeRailChats');$('vibeNavPage')?.classList.add('hidden');document.querySelector('.chat')?.classList.remove('no-selection')},
-    vibeRailFriends:function(){active('vibeRailFriends');safeCall(window.openFriendsPage)},
-    vibeRailChannels:function(){active('vibeRailChannels');safeCall(window.openChannels)},
-    vibeRailCalls:function(){active('vibeRailCalls');safeCall(window.openCallsPage)},
-    vibeRailArchive:function(){active('vibeRailArchive');safeCall(window.openArchivePage)},
-    vibeRailSettings:function(){active('vibeRailSettings');safeCall(window.openSettingsPage||window.openSettings)},
-  };
-  Object.keys(handlers).forEach(function(id){const b=$(id);if(!b)return;b.onclick=function(e){e.preventDefault();e.stopPropagation();handlers[id]()}});
-  const mobile=document.querySelector('.vibe-mobile-bottom');
-  if(mobile){
-    mobile.querySelectorAll('button').forEach(function(b){b.onclick=function(e){e.preventDefault();e.stopPropagation();const a=b.dataset.action; if(a==='plus')return safeCall(window.openCreateMenu);if(a==='fr')return safeCall(window.openFriendsPage);if(a==='ca')return safeCall(window.openChannels);if(a==='se')return safeCall(window.openSettingsPage||window.openSettings);if(a==='ch'){document.querySelector('.chat')?.classList.add('no-selection');$('vibeNavPage')?.classList.add('hidden')}}});
+async function openPage(type){
+  document.querySelectorAll('#vibeFinalRail .vfr-btn').forEach(b=>b.classList.remove('active'));
+  const b=document.querySelector('#vibeFinalRail [data-page="'+type+'"]');if(b)b.classList.add('active');
+  if(type==='ch'){closePage();document.querySelector('.chat')?.classList.remove('no-selection');return}
+  if(type==='se'){ if(typeof openSettings==='function'){openSettings();} return; }
+  if(type==='ca'){ if(typeof openChannels==='function'){openChannels();} else show('Каналы','Каналы Vibe','<div class="vfp-empty">Функция каналов пока недоступна.</div>'); return; }
+  if(type==='gr'){ if(typeof openCommunities==='function'){openCommunities();} else show('Группы','Группы Vibe','<div class="vfp-empty">Функция групп пока недоступна.</div>'); return; }
+  if(type==='fr'){
+    let list=[];try{if(typeof loadFriends==='function')await loadFriends();list=Array.isArray(window.friends)?window.friends:[];}catch{}
+    show('Друзья','Твои друзья и заявки','<div class="vfp-actions"><button type="button" class="vfp-btn primary" id="vfpRequests">Заявки в друзья</button></div><div id="vfpFriends" class="vfp-grid"></div>');
+    const box=$('vfpFriends');
+    if(!list.length){box.innerHTML='<div class="vfp-empty">Пока нет друзей.<br>Найди человека через поиск и добавь его в друзья.</div>'}
+    else list.forEach(u=>{const c=document.createElement('div');c.className='vfp-card';c.innerHTML='<b>'+esc(u.name||u.login)+'</b><div style="color:var(--muted);font-size:12px;margin:6px 0 12px">@'+esc(u.login)+'</div><button type="button" class="vfp-btn" data-chat>Открыть чат</button>';c.querySelector('[data-chat]').onclick=()=>{closePage();if(typeof openChat==='function')openChat(u.login)};box.appendChild(c)});
+    $('vfpRequests').onclick=()=>{closePage();if(typeof openFriendRequests==='function')openFriendRequests()};
+    return;
   }
-  return true;
+  if(type==='cl'){
+    let hist=[];try{hist=JSON.parse(localStorage.getItem('vibeCallHistory')||'[]')}catch{}
+    show('Звонки','История звонков','<div class="vfp-actions"><button type="button" class="vfp-btn" id="vfpClearCalls">Очистить историю</button></div><div id="vfpCalls"></div>');
+    const box=$('vfpCalls');if(!hist.length)box.innerHTML='<div class="vfp-empty">История звонков пуста.</div>';
+    else hist.slice().reverse().forEach(x=>{const d=document.createElement('div');d.className='vfp-card';d.innerHTML='<b>@'+esc(x.login)+'</b><div style="color:var(--muted);font-size:12px;margin:5px 0">'+(x.video?'Видеозвонок':'Аудиозвонок')+' · '+new Date(x.time).toLocaleString()+'</div>';box.appendChild(d)});
+    $('vfpClearCalls').onclick=()=>{localStorage.removeItem('vibeCallHistory');openPage('cl')};return;
+  }
+  if(type==='ar'){
+    show('Архив','Архивированные чаты','<div class="vfp-empty">Архив готов. Архивирование чатов можно использовать через меню переписки.</div>');return;
+  }
 }
-function boot(){if(bind())return;setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200)}
+function boot(){makeUI();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 </script>
