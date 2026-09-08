@@ -18619,10 +18619,6 @@ body.vibe-group-admin #attachmentPollButtonDesktop{display:flex!important;}
    rail.querySelector('#vibeRailChats').classList.add('active');
    rail.querySelector('#vibeRailSettings').onclick=()=>{setActive('vibeRailSettings');if(typeof openSettings==='function')openSettings();};
    rail.querySelector('#vibeRailUser').onclick=()=>{if(typeof openProfile==='function')openProfile();};
-   const newChat=document.createElement('button');
-   newChat.type='button'; newChat.className='vibe-new-chat'; newChat.innerHTML='<span>＋</span>Новый чат';
-   newChat.onclick=()=>{focusSearch();};
-   sidebar.appendChild(newChat);
    const tabs=document.createElement('div'); tabs.className='vibe-list-tabs';
    tabs.innerHTML='<button type="button" class="vibe-list-tab active">Все</button><button type="button" class="vibe-list-tab">Новые</button><button type="button" class="vibe-list-tab">Семья</button><button type="button" class="vibe-list-tab">Каналы</button>';
    sidebar.querySelector('.search')?.insertAdjacentElement('afterend',tabs);
@@ -18651,13 +18647,28 @@ body.vibe-group-admin #attachmentPollButtonDesktop{display:flex!important;}
      chatHead.insertBefore(extra,calls);
    }
    const oldTop=document.getElementById('topSettingsButton');
-   const observer=new MutationObserver(()=>{
+   // Keep the rail user card in sync without observing the whole document.
+   // Observing document.body here caused an endless MutationObserver loop:
+   // updating the user name/avatar itself creates another mutation.
+   function syncRailUser(){
      const u=document.getElementById('vibeRailUserName');
-     if(u&&typeof currentUser!=='undefined'&&currentUser)u.textContent=currentUser.name||currentUser.login||'Vibe';
      const av=document.getElementById('vibeRailAvatar');
-     if(av&&typeof currentUser!=='undefined'&&currentUser?.photo){av.innerHTML='<img src="'+String(currentUser.photo).replace(/"/g,'&quot;')+'" alt="">';}
-   });
-   observer.observe(document.body,{subtree:true,childList:true});
+     if(typeof currentUser==='undefined'||!currentUser)return;
+     const name=currentUser.name||currentUser.login||'Vibe';
+     if(u && u.textContent!==name) u.textContent=name;
+     if(av){
+       if(currentUser.photo){
+         const safe=String(currentUser.photo).replace(/"/g,'&quot;');
+         const html='<img src="'+safe+'" alt="">';
+         if(av.innerHTML!==html) av.innerHTML=html;
+       }else if(av.textContent!=='V'){
+         av.textContent='V';
+       }
+     }
+   }
+   window.addEventListener('vibe-user-changed',syncRailUser);
+   setInterval(syncRailUser,1500);
+   syncRailUser();
    void oldTop;
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',build);else build();
