@@ -14143,6 +14143,54 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 })();
 </script>
 
+
+<style id="vibe-click-repair-final">
+/* FINAL CLICK REPAIR: navigation must stay above the chat layer */
+@media (min-width:701px){
+  .layout{position:relative;z-index:1}
+  .vibe-rail{position:relative;z-index:1000!important;pointer-events:auto!important}
+  .sidebar{position:relative;z-index:900!important;pointer-events:auto!important}
+  .vibe-rail-btn,.vibe-rail-user,.vibe-list-tab,.person,.side-top button,.search input{pointer-events:auto!important}
+  .chat{position:relative!important;z-index:1!important}
+}
+@media (max-width:700px){
+  .vibe-mobile-bottom{z-index:100000!important;pointer-events:auto!important}
+  .vibe-mobile-bottom button{pointer-events:auto!important}
+  #vibeNavPage{z-index:200000!important}
+}
+#topSettingsButton{display:none!important}
+.vibe-new-chat{display:none!important}
+</style>
+
+<script id="vibe-click-repair-final-script">
+(function(){
+'use strict';
+function $(id){return document.getElementById(id)}
+function active(id){document.querySelectorAll('.vibe-rail-btn').forEach(function(b){b.classList.remove('active')});$(id)?.classList.add('active')}
+function safeCall(fn){try{if(typeof fn==='function')return fn()}catch(e){console.error('Vibe navigation:',e)}}
+function bind(){
+  const rail=document.querySelector('.vibe-rail');
+  if(!rail)return false;
+  const handlers={
+    vibeRailChats:function(){active('vibeRailChats');$('vibeNavPage')?.classList.add('hidden');document.querySelector('.chat')?.classList.remove('no-selection')},
+    vibeRailFriends:function(){active('vibeRailFriends');safeCall(window.openFriendsPage)},
+    vibeRailChannels:function(){active('vibeRailChannels');safeCall(window.openChannels)},
+    vibeRailCalls:function(){active('vibeRailCalls');safeCall(window.openCallsPage)},
+    vibeRailArchive:function(){active('vibeRailArchive');safeCall(window.openArchivePage)},
+    vibeRailSettings:function(){active('vibeRailSettings');safeCall(window.openSettingsPage||window.openSettings)},
+  };
+  Object.keys(handlers).forEach(function(id){const b=$(id);if(!b)return;b.onclick=function(e){e.preventDefault();e.stopPropagation();handlers[id]()}});
+  const mobile=document.querySelector('.vibe-mobile-bottom');
+  if(mobile){
+    mobile.querySelectorAll('button').forEach(function(b){b.onclick=function(e){e.preventDefault();e.stopPropagation();const a=b.dataset.action; if(a==='plus')return safeCall(window.openCreateMenu);if(a==='fr')return safeCall(window.openFriendsPage);if(a==='ca')return safeCall(window.openChannels);if(a==='se')return safeCall(window.openSettingsPage||window.openSettings);if(a==='ch'){document.querySelector('.chat')?.classList.add('no-selection');$('vibeNavPage')?.classList.add('hidden')}}});
+  }
+  return true;
+}
+function boot(){if(bind())return;setTimeout(bind,100);setTimeout(bind,500);setTimeout(bind,1200)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+</script>
+
 </body>
 
 
