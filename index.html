@@ -3508,7 +3508,7 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             id="registerButton"
             class="secondary"
             style="margin-top:8px;"
-            onclick="openRegister()"
+            onclick="window.openRegister()"
         >
             Создать аккаунт
         </button>
@@ -6273,21 +6273,36 @@ window.addEventListener(
 ========================================================= */
 
 function openRegister() {
-    resetRegistrationVerification();
-    const modal = $("registerModal");
+    // Registration must work even if another optional Vibe module failed to initialize.
+    const modal = document.getElementById("registerModal");
     if (!modal) return;
 
-    $("registerMessage").textContent = "";
-    $("registerLogin").value = $("loginInput").value.trim();
-    $("registerUsername").value = "";
-    $("registerPassword").value = $("passwordInput").value;
-    $("registerName").value = "";
-    $("registerBirthDate").value = "";
-    $("registerBirthDateDisplay").value = "";
-    $("registerEmail").value = "";
-    closeVibeBirthdayPicker();
+    try { resetRegistrationVerification(); } catch {}
+
+    const setValue = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.value = value;
+    };
+
+    const loginInput = document.getElementById("loginInput");
+    setValue("registerMessage", "");
+    setValue("registerLogin", loginInput?.value?.trim() || "");
+    setValue("registerUsername", "");
+    setValue("registerPassword", document.getElementById("passwordInput")?.value || "");
+    setValue("registerName", "");
+    setValue("registerBirthDate", "");
+    setValue("registerBirthDateDisplay", "");
+    setValue("registerEmail", "");
+    document.getElementById("registerMessage")?.replaceChildren();
+    try { closeVibeBirthdayPicker(); } catch {}
+
+    // Put the modal above the auth screen and show it immediately.
+    modal.style.zIndex = "5000";
     modal.classList.remove("hidden");
 }
+
+// Explicitly expose this handler for the inline button onclick.
+window.openRegister = openRegister;
 
 
 async function login() {
