@@ -3507,8 +3507,8 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <button
             id="registerButton"
             class="secondary"
-            type="button"
             style="margin-top:8px;"
+            onclick="window.openRegister()"
         >
             Создать аккаунт
         </button>
@@ -3548,6 +3548,178 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 <!-- =========================================================
      APP
 ========================================================= -->
+
+
+<!-- =========================================================
+     REGISTER
+========================================================= -->
+
+<div id="registerModal" class="modal hidden">
+
+    <div class="modal-card">
+
+        <div class="modal-header">
+
+            <div id="registerTitle" class="modal-title">
+                Создание аккаунта
+            </div>
+
+            <button
+                class="modal-close"
+                onclick="closeModal('registerModal')"
+                title="Закрыть"
+            >
+                ✕
+            </button>
+
+        </div>
+
+        <select id="registerLanguage" onchange="changeRegisterLanguage()"><option value="ru">Русский</option><option value="en">English</option>
+
+        </select>
+
+        <input
+            id="registerLogin"
+            placeholder="Логин"
+            autocomplete="username"
+        >
+
+        <div class="register-username-field">
+            <div class="register-username-label">Юзернейм <span>*</span></div>
+            <div class="register-username-input-wrap">
+                <span>@</span>
+                <input
+                    id="registerUsername"
+                    placeholder="username"
+                    maxlength="32"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+            </div>
+            <div class="register-username-hint">3–32 символа · латиница, цифры и _</div>
+        </div>
+
+        <div class="password-field">
+
+            <input
+                id="registerPassword"
+                type="password"
+                placeholder="Пароль"
+                autocomplete="new-password"
+            >
+
+            <button
+                type="button"
+                class="password-toggle"
+                onclick="togglePasswordVisibility('registerPassword',this)"
+                title="Показать пароль"
+            >
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
+            </button>
+
+        </div>
+
+        <input
+            id="registerName"
+            placeholder="Имя"
+        >
+
+        <div class="birthday-card">
+
+            <div class="birthday-card-title">
+                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 9.5h16"/></svg></span> Дата рождения
+            </div>
+
+            <div class="birthday-card-description">
+                Необязательно. Можно указать дату позже в профиле.
+            </div>
+
+            <div class="birthday-input-wrap vibe-date-picker-wrap">
+
+                <input
+                    id="registerBirthDateDisplay"
+                    type="text"
+                    placeholder="ДД.ММ.ГГГГ"
+                    autocomplete="off"
+                    readonly
+                    aria-label="Дата рождения"
+                >
+
+                <input
+                    id="registerBirthDate"
+                    type="hidden"
+                    value=""
+                >
+
+                <button
+                    type="button"
+                    class="birthday-icon vibe-date-picker-button"
+                    onclick="toggleVibeBirthdayPicker(event)"
+                    aria-label="Выбрать дату"
+                >📅</button>
+
+                <div id="vibeBirthdayPicker" class="vibe-birthday-picker hidden">
+                    <div class="vibe-birthday-head">
+                        <button type="button" onclick="vibeBirthdayPrevMonth(event)" aria-label="Предыдущий месяц">‹</button>
+                        <div id="vibeBirthdayMonth"></div>
+                        <button type="button" onclick="vibeBirthdayNextMonth(event)" aria-label="Следующий месяц">›</button>
+                    </div>
+                    <div class="vibe-birthday-week">
+                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+                    </div>
+                    <div id="vibeBirthdayDays" class="vibe-birthday-days"></div>
+                    <div class="vibe-birthday-footer">
+                        <button type="button" onclick="clearVibeBirthday(event)">Очистить</button>
+                        <button type="button" onclick="setVibeBirthdayToday(event)">Сегодня</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <input
+            id="registerEmail"
+            type="email"
+            placeholder="Email"
+            autocomplete="email"
+            required
+        >
+
+        <div id="registerVerificationSection" class="register-verification-section hidden">
+            <div class="register-verification-title">Подтверждение email</div>
+            <div id="registerVerificationHint" class="register-verification-hint">Мы отправили 6-значный код на вашу почту.</div>
+            <input id="registerVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Введите код">
+            <button type="button" id="registerVerifyButton" class="primary" onclick="verifyRegistrationCode()">Подтвердить email</button>
+            <button type="button" id="registerResendButton" onclick="resendRegistrationCode()">Отправить код повторно</button>
+        </div>
+
+        <div class="modal-actions">
+
+            <button
+                type="button"
+                class="primary"
+                onclick="register()"
+            >
+                Создать
+            </button>
+
+            <button
+                onclick="closeModal('registerModal')"
+            >
+                Отмена
+            </button>
+
+        </div>
+
+        <div
+            id="registerMessage"
+            class="auth-message"
+        ></div>
+
+    </div>
+
+</div>
 
 <div id="app" class="app hidden">
 
@@ -3782,176 +3954,6 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 </div>
 
 
-<!-- =========================================================
-     REGISTER
-========================================================= -->
-
-<div id="registerModal" class="modal hidden">
-
-    <div class="modal-card">
-
-        <div class="modal-header">
-
-            <div id="registerTitle" class="modal-title">
-                Создание аккаунта
-            </div>
-
-            <button
-                class="modal-close"
-                onclick="closeModal('registerModal')"
-                title="Закрыть"
-            >
-                ✕
-            </button>
-
-        </div>
-
-        <select id="registerLanguage" onchange="changeRegisterLanguage()"><option value="ru">Русский</option><option value="en">English</option>
-
-        </select>
-
-        <input
-            id="registerLogin"
-            placeholder="Логин"
-            autocomplete="username"
-        >
-
-        <div class="register-username-field">
-            <div class="register-username-label">Юзернейм <span>*</span></div>
-            <div class="register-username-input-wrap">
-                <span>@</span>
-                <input
-                    id="registerUsername"
-                    placeholder="username"
-                    maxlength="32"
-                    autocomplete="off"
-                    spellcheck="false"
-                >
-            </div>
-            <div class="register-username-hint">3–32 символа · латиница, цифры и _</div>
-        </div>
-
-        <div class="password-field">
-
-            <input
-                id="registerPassword"
-                type="password"
-                placeholder="Пароль"
-                autocomplete="new-password"
-            >
-
-            <button
-                type="button"
-                class="password-toggle"
-                onclick="togglePasswordVisibility('registerPassword',this)"
-                title="Показать пароль"
-            >
-                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z"/><circle cx="12" cy="12" r="2.2"/></svg></span>
-            </button>
-
-        </div>
-
-        <input
-            id="registerName"
-            placeholder="Имя"
-        >
-
-        <div class="birthday-card">
-
-            <div class="birthday-card-title">
-                <span class="vibe-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 9.5h16"/></svg></span> Дата рождения
-            </div>
-
-            <div class="birthday-card-description">
-                Необязательно. Можно указать дату позже в профиле.
-            </div>
-
-            <div class="birthday-input-wrap vibe-date-picker-wrap">
-
-                <input
-                    id="registerBirthDateDisplay"
-                    type="text"
-                    placeholder="ДД.ММ.ГГГГ"
-                    autocomplete="off"
-                    readonly
-                    aria-label="Дата рождения"
-                >
-
-                <input
-                    id="registerBirthDate"
-                    type="hidden"
-                    value=""
-                >
-
-                <button
-                    type="button"
-                    class="birthday-icon vibe-date-picker-button"
-                    onclick="toggleVibeBirthdayPicker(event)"
-                    aria-label="Выбрать дату"
-                >📅</button>
-
-                <div id="vibeBirthdayPicker" class="vibe-birthday-picker hidden">
-                    <div class="vibe-birthday-head">
-                        <button type="button" onclick="vibeBirthdayPrevMonth(event)" aria-label="Предыдущий месяц">‹</button>
-                        <div id="vibeBirthdayMonth"></div>
-                        <button type="button" onclick="vibeBirthdayNextMonth(event)" aria-label="Следующий месяц">›</button>
-                    </div>
-                    <div class="vibe-birthday-week">
-                        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
-                    </div>
-                    <div id="vibeBirthdayDays" class="vibe-birthday-days"></div>
-                    <div class="vibe-birthday-footer">
-                        <button type="button" onclick="clearVibeBirthday(event)">Очистить</button>
-                        <button type="button" onclick="setVibeBirthdayToday(event)">Сегодня</button>
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-
-        <input
-            id="registerEmail"
-            type="email"
-            placeholder="Email"
-            autocomplete="email"
-            required
-        >
-
-        <div id="registerVerificationSection" class="register-verification-section hidden">
-            <div class="register-verification-title">Подтверждение email</div>
-            <div id="registerVerificationHint" class="register-verification-hint">Мы отправили 6-значный код на вашу почту.</div>
-            <input id="registerVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Введите код">
-            <button type="button" id="registerVerifyButton" class="primary" onclick="verifyRegistrationCode()">Подтвердить email</button>
-            <button type="button" id="registerResendButton" onclick="resendRegistrationCode()">Отправить код повторно</button>
-        </div>
-
-        <div class="modal-actions">
-
-            <button
-                type="button"
-                class="primary"
-                onclick="register()"
-            >
-                Создать
-            </button>
-
-            <button
-                onclick="closeModal('registerModal')"
-            >
-                Отмена
-            </button>
-
-        </div>
-
-        <div
-            id="registerMessage"
-            class="auth-message"
-        ></div>
-
-    </div>
-
-</div>
 
 
 <!-- =========================================================
@@ -6296,11 +6298,14 @@ function openRegister() {
     document.getElementById("registerMessage")?.replaceChildren();
     try { closeVibeBirthdayPicker(); } catch {}
 
-    // Put the modal above the auth screen and show it immediately.
+    // The registration modal lives outside #app, so it can be opened before login.
     modal.style.zIndex = "5000";
     modal.classList.remove("hidden");
-    modal.style.display = "flex";
     modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("register-open");
+
+    // Focus the first field immediately so the registration menu is visibly active.
+    setTimeout(() => document.getElementById("registerLogin")?.focus(), 0);
 }
 
 // Explicitly expose this handler for the inline button onclick.
@@ -12323,10 +12328,12 @@ function closeModal(id) {
         return;
     }
 
-    element.classList.add("hidden");
+    element
+        .classList
+        .add("hidden");
     if (id === "registerModal") {
-        element.style.display = "none";
         element.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("register-open");
     }
 }
 
@@ -12436,22 +12443,15 @@ document.addEventListener("click", function(event) {
     }
 }, true);
 
-document.addEventListener("click", function(event) {
-    const registerButton = event.target.closest?.("#registerButton");
-    if (!registerButton) return;
-    event.preventDefault();
-    event.stopPropagation();
-    if (typeof window.openRegister === "function") {
-        window.openRegister();
-    } else {
-        const modal = document.getElementById("registerModal");
-        if (modal) {
-            modal.classList.remove("hidden");
-            modal.style.display = "flex";
-            modal.style.zIndex = "5000";
-        }
-    }
-}, true);
+const registerOpenButton = $("registerButton");
+if (registerOpenButton) {
+    registerOpenButton.type = "button";
+    registerOpenButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        openRegister();
+    });
+}
 
 initChannelPhotoPickers();
 setupGroupPhotoPicker();
@@ -14230,31 +14230,6 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 })();
 </script>
 
-
-<script id="vibe-register-button-final-fix">
-(function(){
-  function bindRegisterButton(){
-    const btn=document.getElementById("registerButton");
-    if(!btn || btn.dataset.vibeRegisterBound) return;
-    btn.dataset.vibeRegisterBound="1";
-    btn.onclick=function(e){
-      e.preventDefault();
-      e.stopPropagation();
-      const modal=document.getElementById("registerModal");
-      if(!modal) return;
-      modal.classList.remove("hidden");
-      modal.style.display="flex";
-      modal.style.zIndex="5000";
-      modal.setAttribute("aria-hidden","false");
-      if(typeof window.resetRegistrationVerification==='function') window.resetRegistrationVerification();
-      const login=document.getElementById("loginInput"), reg=document.getElementById("registerLogin");
-      if(reg && login) reg.value=login.value.trim();
-    };
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bindRegisterButton);
-  else bindRegisterButton();
-})();
-</script>
 </html>
 <style>
 /* =========================================================
