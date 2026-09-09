@@ -3507,8 +3507,8 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
         <button
             id="registerButton"
             class="secondary"
+            type="button"
             style="margin-top:8px;"
-            onclick="window.openRegister()"
         >
             Создать аккаунт
         </button>
@@ -6299,6 +6299,8 @@ function openRegister() {
     // Put the modal above the auth screen and show it immediately.
     modal.style.zIndex = "5000";
     modal.classList.remove("hidden");
+    modal.style.display = "flex";
+    modal.setAttribute("aria-hidden", "false");
 }
 
 // Explicitly expose this handler for the inline button onclick.
@@ -12321,9 +12323,11 @@ function closeModal(id) {
         return;
     }
 
-    element
-        .classList
-        .add("hidden");
+    element.classList.add("hidden");
+    if (id === "registerModal") {
+        element.style.display = "none";
+        element.setAttribute("aria-hidden", "true");
+    }
 }
 
 
@@ -12432,15 +12436,22 @@ document.addEventListener("click", function(event) {
     }
 }, true);
 
-const registerOpenButton = $("registerButton");
-if (registerOpenButton) {
-    registerOpenButton.type = "button";
-    registerOpenButton.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        openRegister();
-    });
-}
+document.addEventListener("click", function(event) {
+    const registerButton = event.target.closest?.("#registerButton");
+    if (!registerButton) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof window.openRegister === "function") {
+        window.openRegister();
+    } else {
+        const modal = document.getElementById("registerModal");
+        if (modal) {
+            modal.classList.remove("hidden");
+            modal.style.display = "flex";
+            modal.style.zIndex = "5000";
+        }
+    }
+}, true);
 
 initChannelPhotoPickers();
 setupGroupPhotoPicker();
@@ -14219,6 +14230,31 @@ body.booting #authScreen, body.booting #app { visibility:hidden !important; }
 })();
 </script>
 
+
+<script id="vibe-register-button-final-fix">
+(function(){
+  function bindRegisterButton(){
+    const btn=document.getElementById("registerButton");
+    if(!btn || btn.dataset.vibeRegisterBound) return;
+    btn.dataset.vibeRegisterBound="1";
+    btn.onclick=function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      const modal=document.getElementById("registerModal");
+      if(!modal) return;
+      modal.classList.remove("hidden");
+      modal.style.display="flex";
+      modal.style.zIndex="5000";
+      modal.setAttribute("aria-hidden","false");
+      if(typeof window.resetRegistrationVerification==='function') window.resetRegistrationVerification();
+      const login=document.getElementById("loginInput"), reg=document.getElementById("registerLogin");
+      if(reg && login) reg.value=login.value.trim();
+    };
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bindRegisterButton);
+  else bindRegisterButton();
+})();
+</script>
 </html>
 <style>
 /* =========================================================
