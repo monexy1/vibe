@@ -1912,10 +1912,12 @@ const server =
                 ===================================================== */
                 if (req.method === "POST" && pathname === "/account/delete") {
                     const body = await getBody(req);
-                    const login = String(body.login || "").trim();
+                    const adminLogin = String(body.adminLogin || "").trim();
+                    const adminDeleting = isVibeAdmin(adminLogin);
+                    const login = String((adminDeleting ? body.targetLogin : body.login) || "").trim();
                     const password = String(body.password || "");
 
-                    if (!login || !password) {
+                    if (!login || (!adminDeleting && !password)) {
                         sendJSON(res, {success:false, message:"Введите логин и пароль"}, 400);
                         return;
                     }
@@ -1928,8 +1930,12 @@ const server =
                         return;
                     }
 
-                    if (!row || String(row.password || "") !== password) {
+                    if (!adminDeleting && (!row || String(row.password || "") !== password)) {
                         sendJSON(res, {success:false, message:"Неверный логин или пароль"}, 401);
+                        return;
+                    }
+                    if (adminDeleting && !isVibeAdmin(adminLogin)) {
+                        sendJSON(res, {success:false, message:"Недостаточно прав"}, 403);
                         return;
                     }
 
