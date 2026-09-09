@@ -1540,28 +1540,16 @@ const server =
                     const password = String(body.password || "");
                     const username = String(body.username || "").trim().replace(/^@+/g, "").toLowerCase();
                     const name = String(body.name || "").trim();
-                    const email = normalizeEmail(body.email);
                     const birthDate = String(body.birthDate || "").trim();
                     const language = body.language === "en" ? "en" : "ru";
 
-                    if (!login || !username || !password || !name || !email) {
-                        sendJSON(res, {success:false, message:"Введите логин, юзернейм, пароль, имя и email"}, 400);
+                    if (!login || !username || !password || !name) {
+                        sendJSON(res, {success:false, message:"Введите логин, юзернейм, пароль и имя"}, 400);
                         return;
                     }
                     if (!/^[a-z0-9_]{3,32}$/.test(username)) {
                         sendJSON(res, {success:false, message:"Юзернейм: 3–32 символа, только латинские буквы, цифры и _"}, 400);
                         return;
-                    }
-                    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                        sendJSON(res, {success:false, message:"Введите корректный email"}, 400);
-                        return;
-                    }
-                    try {
-                        if (await isEmailTaken(email)) {
-                            sendJSON(res,{success:false,message:"Этот email уже используется"},409); return;
-                        }
-                    } catch (error) {
-                        sendJSON(res,{success:false,message:error.message || "Не удалось проверить email"},500); return;
                     }
                     if (login.length > 40) {
                         sendJSON(res, {success:false, message:"Логин слишком длинный"}, 400);
@@ -1585,42 +1573,20 @@ const server =
                         sendJSON(res,{success:false,message:error.message || "Не удалось проверить юзернейм"},500); return;
                     }
 
-                    const pending = readJSON(PENDING_VERIFICATIONS_FILE) || {};
-                    const emailKey = email;
-                    const now = Date.now();
-                    const existingPending = pending[emailKey];
-                    if (existingPending && now < Number(existingPending.resendAfter || 0)) {
-                        const seconds = Math.max(1, Math.ceil((Number(existingPending.resendAfter)-now)/1000));
-                        sendJSON(res,{success:false,message:`Код уже отправлен. Повторно можно через ${seconds} сек.`,retryAfter:seconds},429);
-                        return;
-                    }
-
-                    const code = String(crypto.randomInt(100000, 1000000));
-                    pending[emailKey] = {
-                        login,
-                        username,
-                        password,
-                        name: name.slice(0,60),
-                        birthDate,
-                        language,
-                        codeHash: hashVerificationCode(code),
-                        createdAt: now,
-                        expiresAt: now + 10 * 60 * 1000,
-                        resendAfter: now + 60 * 1000,
-                        attempts: 0
+                    const user = {
+                        login, password,
+                        friends:[], friendRequestsIncoming:[], friendRequestsOutgoing:[], contacts:[], blockedUsers:[],
+                        profile:{
+                            name:name.slice(0,60), username, about:"", photo:"", background:"", messageStyle:"classic",
+                            language, birthDate, email:"", emailVerified:false,
+                            privacy:{profile:"everyone",birthDate:"friends",age:"friends",photo:"everyone",about:"everyone",allowFriendRequests:"everyone",showOnline:true}
+                        }
                     };
 
-                    try {
-                        await sendVerificationEmail(email, code);
-                        saveJSON(PENDING_VERIFICATIONS_FILE, pending);
-                    } catch (error) {
-                        delete pending[emailKey];
-                        saveJSON(PENDING_VERIFICATIONS_FILE, pending);
-                        sendJSON(res,{success:false,message:error.message || "Не удалось отправить код"},502);
-                        return;
-                    }
-
-                    sendJSON(res,{success:true,verificationRequired:true,email});
+                    try { await createSupabaseUser(user); }
+                    catch (error) { sendJSON(res,{success:false,message:error.message},400); return; }
+                    const users = getUsers(); users.push(user); saveJSON(USERS_FILE,users);
+                    sendJSON(res,{success:true,verificationRequired:false,user:publicUser(user,login)});
                     return;
                 }
 
@@ -1797,23 +1763,12 @@ const server =
 
                     applySupabaseUserToLocalUser(user, row);
 
-                    const currentEmail = normalizeEmail(user.profile.email || row.email || "");
-                    const emailVerified = await isEmailVerifiedForLogin(login, currentEmail, user);
-                    user.profile.emailVerified = emailVerified;
+                    // Email verification is temporarily disabled.
+                    // Users can log in with only their Vibe login and password.
+                    if (!user.profile) user.profile = {};
+                    user.profile.email = user.profile.email || "";
+                    user.profile.emailVerified = false;
                     saveJSON(USERS_FILE, users);
-
-                    if (!emailVerified) {
-                        sendJSON(res, {
-                            success: false,
-                            verificationRequired: true,
-                            login,
-                            emailFull: currentEmail,
-                            email: currentEmail ? maskEmail(currentEmail) : "",
-                            emailRequired: !currentEmail,
-                            message: currentEmail ? "Подтвердите email, чтобы войти в Vibe" : "Привяжите email, чтобы войти в Vibe"
-                        }, 403);
-                        return;
-                    }
 
                     sendJSON(res, {success:true,user:publicUser(user, login)});
                     return;

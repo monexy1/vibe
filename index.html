@@ -3678,22 +3678,6 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
 
         </div>
 
-        <input
-            id="registerEmail"
-            type="email"
-            placeholder="Email"
-            autocomplete="email"
-            required
-        >
-
-        <div id="registerVerificationSection" class="register-verification-section hidden">
-            <div class="register-verification-title">Подтверждение email</div>
-            <div id="registerVerificationHint" class="register-verification-hint">Мы отправили 6-значный код на вашу почту.</div>
-            <input id="registerVerificationCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Введите код">
-            <button type="button" id="registerVerifyButton" class="primary" onclick="verifyRegistrationCode()">Подтвердить email</button>
-            <button type="button" id="registerResendButton" onclick="resendRegistrationCode()">Отправить код повторно</button>
-        </div>
-
         <div class="modal-actions">
 
             <button
@@ -6549,32 +6533,33 @@ async function register() {
     const password = $("registerPassword").value.trim();
     const name = $("registerName").value.trim();
     const birthDate = $("registerBirthDate").value;
-    const email = $("registerEmail").value.trim().toLowerCase();
     const language = $("registerLanguage").value;
 
-    if (registrationVerificationPending) { await verifyRegistrationCode(); return; }
-    if (!loginValue || !usernameValue || !password || !name || !email) {
-        $("registerMessage").textContent = language === "ru" ? "Заполни логин, юзернейм, пароль, имя и email" : "Fill in login, username, password, name and email";
+    if (!loginValue || !usernameValue || !password || !name) {
+        $("registerMessage").textContent = language === "ru" ? "Заполни логин, юзернейм, пароль и имя" : "Fill in login, username, password and name";
         return;
     }
     if (!/^[a-z0-9_]{3,32}$/.test(usernameValue)) {
-        $("registerMessage").textContent = language === "ru" ? "Юзернейм: 3–32 символа, только латинские буквы, цифры и _" : "Username: 3–32 characters, only Latin letters, numbers and _"; return;
+        $("registerMessage").textContent = language === "ru" ? "Юзернейм: 3–32 символа, только латинские буквы, цифры и _" : "Username: 3–32 characters, only Latin letters, numbers and _";
+        return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        $("registerMessage").textContent = language === "ru" ? "Введите корректный email" : "Enter a valid email"; return;
+    if (password.length < 4) {
+        $("registerMessage").textContent = language === "ru" ? "Пароль должен содержать минимум 4 символа" : "Password must contain at least 4 characters";
+        return;
     }
-    if (password.length < 4) { $("registerMessage").textContent = language === "ru" ? "Пароль должен содержать минимум 4 символа" : "Password must contain at least 4 characters"; return; }
     try {
-        const response = await fetch("/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:loginValue,username:usernameValue,password,name,language,birthDate,email})});
+        const response = await fetch("/register", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({login:loginValue,username:usernameValue,password,name,language,birthDate})});
         const data = await response.json();
         if (!data.success) { $("registerMessage").textContent = data.message || "Ошибка"; return; }
-        registrationVerificationEmail=email; registrationVerificationPending=true;
-        $("registerVerificationSection")?.classList.remove("hidden");
-        $("registerVerificationHint").textContent = language === "ru" ? `Мы отправили 6-значный код на ${email}. Код действует 10 минут.` : `A 6-digit code was sent to ${email}. The code is valid for 10 minutes.`;
-        $("registerVerificationCode").value=""; $("registerVerificationCode").focus();
-        $("registerMessage").textContent = language === "ru" ? "Проверь почту и введи код." : "Check your email and enter the code.";
-        document.querySelectorAll("#registerModal input, #registerModal select").forEach(el=>{if(!["registerVerificationCode","registerLanguage"].includes(el.id))el.disabled=true;});
-    } catch { $("registerMessage").textContent = language === "ru" ? "Ошибка соединения с сервером" : "Server connection error"; }
+        currentUser = data.user;
+        const extra = {language,birthDate, email:"",background:"default",privacyBirthDate:"everyone",privacyPhoto:"everyone",privacyAbout:"everyone",theme:localStorage.getItem("vibeTheme")||"dark"};
+        saveExtraProfile(currentUser.login,extra);
+        siteLanguage=language; localStorage.setItem("vibeLanguage",siteLanguage); saveLoginState(currentUser);
+        closeModal("registerModal");
+        showApp();
+    } catch {
+        $("registerMessage").textContent = language === "ru" ? "Ошибка соединения с сервером" : "Server connection error";
+    }
 }
 
 async function verifyRegistrationCode() {
