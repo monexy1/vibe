@@ -774,7 +774,14 @@ function normalizeUser(user) {
    CHANNEL NORMALIZATION
 ========================================================= */
 
+const VIBE_ADMIN_LOGINS = String(process.env.VIBE_ADMIN_LOGINS || "monexy")
+    .split(",").map(v => v.trim().toLowerCase()).filter(Boolean);
+function isVibeAdmin(login) {
+    return VIBE_ADMIN_LOGINS.includes(String(login || "").trim().toLowerCase());
+}
+
 function normalizeChannel(channel) {
+    if (typeof channel.verified !== "boolean") channel.verified = false;
 
     if (!Array.isArray(channel.subscribers)) {
         channel.subscribers = [];
@@ -4573,6 +4580,7 @@ const server =
                         description,
                         photo,
                         owner,
+                        verified: false,
 
                         subscribers:
                             [owner],
@@ -4968,6 +4976,32 @@ const server =
                 }
 
 
+
+                /* =====================================================
+                   OFFICIAL CHANNEL VERIFICATION — Vibe admin only
+                ===================================================== */
+                if (pathname === "/channel-verification" && req.method === "GET") {
+                    const login = String(parsedUrl.searchParams.get("login") || "").trim();
+                    const channelId = String(parsedUrl.searchParams.get("channelId") || "").trim();
+                    const channel = getNormalizedChannels().find(c => String(c.id) === channelId);
+                    sendJSON(res, { success: !!channel, admin: isVibeAdmin(login), verified: !!channel?.verified });
+                    return;
+                }
+
+                if (pathname === "/channel-verification" && req.method === "POST") {
+                    const body = await getBody(req);
+                    const login = String(body.login || "").trim();
+                    if (!isVibeAdmin(login)) { sendJSON(res, {success:false, message:"Только администратор Vibe может выдавать официальную галочку"}, 403); return; }
+                    const channels = getNormalizedChannels();
+                    const channel = channels.find(c => String(c.id) === String(body.channelId || ""));
+                    if (!channel) { sendJSON(res, {success:false, message:"Канал не найден"}, 404); return; }
+                    channel.verified = !!body.verified;
+                    saveJSON(CHANNELS_FILE, channels);
+                    try { await putVibeState(VIBE_STATE_KEYS.channels, channels); } catch {}
+                    (channel.subscribers || []).forEach(sub => sendToUser(sub, {type:"channel-verification", channelId:channel.id, verified:channel.verified}));
+                    sendJSON(res, {success:true, verified:channel.verified, channel});
+                    return;
+                }
 
                 /* =====================================================
                    CHANNEL DELETE
