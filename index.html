@@ -3578,9 +3578,10 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
             </nav>
 
             <div class="vibe-sidebar-spacer"></div>
-            <button class="vibe-settings-nav" onclick="vibeNavigate('settings')">
+            <button class="vibe-settings-nav" onclick="openSettings()">
                 <span class="vibe-nav-icon">⚙</span><span>Настройки</span>
             </button>
+            <button id="vibeAdminButton" class="vibe-admin-button hidden" type="button" onclick="openVibeAdmin()">★ Панель администратора</button>
             <button class="vibe-profile-card" onclick="openProfile()">
                 <div id="vibeSidebarAvatar" class="vibe-mini-avatar">V</div>
                 <div class="vibe-profile-copy">
@@ -3609,10 +3610,10 @@ html, body, #app, .app, .sidebar, .main, .messages, .friends, .results,
                 <div id="searchResults" class="results vibe-search-results"></div>
             </div>
             <div id="vibeFilterRow" class="vibe-filter-row">
-                <button class="vibe-filter active">Все</button>
-                <button class="vibe-filter">Личные</button>
-                <button class="vibe-filter">Группы</button>
-                <button class="vibe-filter">Каналы</button>
+                <button class="vibe-filter active" data-vibe-filter="all" type="button" onclick="vibeApplyFilter('all')">Все</button>
+                <button class="vibe-filter" data-vibe-filter="personal" type="button" onclick="vibeApplyFilter('personal')">Личные</button>
+                <button class="vibe-filter" data-vibe-filter="groups" type="button" onclick="vibeApplyFilter('groups')">Группы</button>
+                <button class="vibe-filter" data-vibe-filter="channels" type="button" onclick="vibeApplyFilter('channels')">Каналы</button>
             </div>
             <div id="friends" class="friends vibe-chat-list"></div>
             <div id="vibeSpecialView" class="vibe-special-view hidden"></div>
@@ -18025,6 +18026,8 @@ body.vibe-group-admin #attachmentPollButtonDesktop{display:flex!important;}
   },true);
 })();
 
+</script>
+<style id="vibe-navigation-admin-fix">
 /* VIBE 2026.09 — navigation/filter/admin polish */
 .vibe-nav-icon{width:27px;height:27px;display:grid;place-items:center;color:#c7d0ee;flex:0 0 27px}
 .vibe-nav-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -18045,6 +18048,22 @@ body.vibe-group-admin #attachmentPollButtonDesktop{display:flex!important;}
 .vibe-admin-search{width:100%;height:40px;border:1px solid #2b3554;border-radius:11px;background:#11182d;color:#fff;padding:0 12px;outline:none}
 .vibe-creator-badge{display:inline-flex;align-items:center;justify-content:center;width:17px;height:17px;margin-left:5px;border-radius:50%;background:linear-gradient(135deg,#ffd45a,#ff9d28);color:#24170a;font-size:10px;font-weight:1000;vertical-align:middle;box-shadow:0 0 10px rgba(255,180,50,.35)}
 .vibe-admin-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(139,92,246,.14);border:1px solid rgba(139,92,246,.35);color:#bd9aff;font-size:10px;font-weight:900}
+
+/* VIBE ICON VISIBILITY FIX */
+.vibe-nav-item .vibe-nav-icon, .vibe-settings-nav .vibe-nav-icon{color:#a970ff!important;text-shadow:0 0 10px rgba(139,92,246,.25)}
+.vibe-nav-item .vibe-nav-icon svg, .vibe-settings-nav .vibe-nav-icon svg{width:23px!important;height:23px!important;fill:none!important;stroke:#a970ff!important;stroke-width:2.1!important;stroke-linecap:round!important;stroke-linejoin:round!important;opacity:1!important}
+.vibe-nav-item.active .vibe-nav-icon, .vibe-nav-item.active .vibe-nav-icon svg{color:#fff!important;stroke:#fff!important}
+.vibe-nav-item:hover .vibe-nav-icon, .vibe-nav-item:hover .vibe-nav-icon svg, .vibe-settings-nav:hover .vibe-nav-icon, .vibe-settings-nav:hover .vibe-nav-icon svg{color:#c49bff!important;stroke:#c49bff!important}
+.vibe-settings-nav .vibe-nav-icon{font-size:0}
+.vibe-settings-nav .vibe-nav-icon::before{content:'⚙';font-size:22px;color:#a970ff;filter:drop-shadow(0 0 7px rgba(139,92,246,.35))}
+.vibe-help-small{background:linear-gradient(135deg,#7c3aed,#a855f7)!important;border:1px solid #b67cff!important;color:#fff!important;border-radius:10px!important;width:34px!important;height:34px!important;box-shadow:0 0 14px rgba(124,58,237,.3)!important}
+.vibe-admin-button.hidden{display:none!important}
+.vibe-admin-button{display:block}
+.vibe-filter{position:relative;z-index:5;pointer-events:auto!important}
+
+</style>
+<script id="vibe-navigation-admin-script">
+
 
 /* VIBE REDESIGN INTERACTIONS */
 let vibeCurrentScreen='chats';
@@ -18071,7 +18090,7 @@ const _vibeOriginalStartCall=window.startCall;if(typeof _vibeOriginalStartCall==
 let vibeChatFilter='all';
 function vibeApplyFilter(filter){
   vibeChatFilter=filter;
-  document.querySelectorAll('#vibeFilterRow .vibe-filter').forEach((b,i)=>b.classList.toggle('active',['all','personal','groups','channels'][i]===filter));
+  document.querySelectorAll('#vibeFilterRow .vibe-filter').forEach(b=>b.classList.toggle('active',(b.dataset.vibeFilter||'all')===filter));
   if(vibeCurrentScreen!=='chats') return;
   renderVibeFilteredChats();
 }
@@ -18093,7 +18112,7 @@ async function renderVibeFilteredChats(){
     mine.forEach(c=>{const item=document.createElement('div');item.className='person';const icon=c.photo?`<img src="${escapeHTML(c.photo)}">`:vibeIcon('channel');const ver=c.verified?'<span class="vibe-official-badge" title="Официальный канал">✓</span>':'';item.innerHTML=`<div class="channel-sidebar-icon">${icon}</div><div class="person-info"><div class="person-name">${escapeHTML(c.name||'Канал')}${ver}</div><div class="person-login">@${escapeHTML(c.username||'')} · ${Number(c.subscriberCount||c.subscribers?.length||0)} подписчиков</div></div>`;item.onclick=()=>openChannel(c);box.appendChild(item);});
   }
 }
-function setupVibeFilters(){document.querySelectorAll('#vibeFilterRow .vibe-filter').forEach((b,i)=>{b.onclick=()=>vibeApplyFilter(['all','personal','groups','channels'][i]);});}
+function setupVibeFilters(){document.querySelectorAll('#vibeFilterRow .vibe-filter').forEach(b=>{b.onclick=()=>vibeApplyFilter(b.dataset.vibeFilter||'all');});}
 const vibeOriginalNavigate=vibeNavigate;
 vibeNavigate=async function(screen){await vibeOriginalNavigate(screen);if(screen==='chats'){try{await loadGroups();}catch{} try{await loadChannels();}catch{} setupVibeFilters(); vibeApplyFilter(vibeChatFilter);}}
 const vibeOriginalRenderChats=renderChats;
@@ -18117,5 +18136,5 @@ async function loadVibeAdminUsers(q=''){if(!vibeIsCreator())return;const box=$('
 async function vibeAdminDeleteUser(target){if(!vibeIsCreator())return;if(!confirm('Удалить аккаунт @'+target+'? Это действие нельзя отменить.'))return;const r=await fetch('/account/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({adminLogin:'monexy',targetLogin:target})}).catch(()=>null);const d=await r?.json().catch(()=>({}));if(!d?.success){alert(d?.message||'Не удалось удалить аккаунт');return}alert('Аккаунт @'+target+' удалён.');loadVibeAdminUsers($('vibeAdminUserSearch')?.value||'');}
 
 window.vibeNavigate=vibeNavigate;window.vibeApplyFilter=vibeApplyFilter;window.openVibeAdmin=openVibeAdmin;window.closeVibeAdmin=closeVibeAdmin;
-document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{vibeUpdateSidebarProfile();ensureVibeCreatorBadge();if(vibeIsCreator()){const card=$('vibeProfileCard');if(card&&!$('vibeAdminButton')){const b=document.createElement('button');b.id='vibeAdminButton';b.className='vibe-admin-button';b.textContent='★ Панель администратора';b.onclick=openVibeAdmin;card.parentElement?.insertBefore(b,card);}}vibeNavigate('chats');},250);});
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{vibeUpdateSidebarProfile();ensureVibeCreatorBadge();const adminButton=$('vibeAdminButton');if(adminButton){adminButton.classList.toggle('hidden',!vibeIsCreator());}vibeNavigate('chats');},250);});
 </script>
